@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Overview</title>
+<title>Small Area Estimation for Urban Analytics - [WIP] Tutorial: Working with population microdata</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../pages/tutorial-dataprep.html" rel="next">
-<link href="../index.html" rel="prev">
+<link href="../pages/reporting.html" rel="next">
+<link href="../pages/unit-level-popcell.html" rel="prev">
 <link href="../assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -63,8 +63,6 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 <link rel="stylesheet" href="../styles.css">
 </head>
@@ -95,36 +93,49 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Tutorial</span>
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
-        <li class="dropdown-header">I. Preparation</li>
+        <li class="dropdown-header">I. Data Preparation</li>
         <li>
-    <a class="dropdown-item" href="../pages/prepare-inputs.html" rel="" target="">
+    <a class="dropdown-item" href="../pages/dataprep-microdata.html" rel="" target="">
+ <span class="dropdown-text">1. Survey microdata</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../pages/dataprep-auxdata.html" rel="" target="">
+ <span class="dropdown-text">2. Auxiliary data</span></a>
+  </li>  
+        <li class="dropdown-header">II. Area-Level Estimation</li>
+        <li>
+    <a class="dropdown-item" href="../pages/area-level-sae.html" rel="" target="">
  <span class="dropdown-text">1. Overview</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/tutorial-dataprep.html" rel="" target="">
- <span class="dropdown-text">2. Example</span></a>
-  </li>  
-        <li class="dropdown-header">II. Estimation</li>
-        <li>
-    <a class="dropdown-item" href="../pages/direct-estimation.html" rel="" target="">
- <span class="dropdown-text">1. Direct estimation</span></a>
+    <a class="dropdown-item" href="../pages/area-level-direct.html" rel="" target="">
+ <span class="dropdown-text">2. Direct Estimation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/bayesian-area-sae.html" rel="" target="">
- <span class="dropdown-text">2. Area-level estimation</span></a>
+    <a class="dropdown-item" href="../pages/area-level-fh-bayesian.html" rel="" target="">
+ <span class="dropdown-text">3. Bayesian Fay-Herriot</span></a>
   </li>  
-        <li>
-    <a class="dropdown-item" href="../pages/reporting.html" rel="" target="">
- <span class="dropdown-text">3. Reporting and visualisation</span></a>
-  </li>  
-        <li class="dropdown-header">III. Extended Topics</li>
-        <li>
-    <a class="dropdown-item" href="../pages/frequentist-sae.html" rel="" target="">
- <span class="dropdown-text">1. Frequentist approaches to SAE</span></a>
-  </li>  
+        <li class="dropdown-header">III. Unit-Level Estimation</li>
         <li>
     <a class="dropdown-item" href="../pages/unit-level-sae.html" rel="" target="">
- <span class="dropdown-text">2. Unit-level estimation and MRP</span></a>
+ <span class="dropdown-text">1. Overview</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../pages/unit-level-popcell.html" rel="" target="">
+ <span class="dropdown-text">2. MRP with Population Cells</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../pages/unit-level-popunit.html" rel="" target="">
+ <span class="dropdown-text">3. Bayesian Microdata Prediction</span></a>
+  </li>  
+        <li class="dropdown-header">IV. Extended Topics</li>
+        <li>
+    <a class="dropdown-item" href="../pages/reporting.html" rel="" target="">
+ <span class="dropdown-text">1. Reporting and visualisation</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../pages/frequentist-sae.html" rel="" target="">
+ <span class="dropdown-text">2. Frequentist approaches to SAE</span></a>
   </li>  
     </ul>
   </li>
@@ -158,7 +169,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Tutorial</li><li class="breadcrumb-item"><a href="../pages/prepare-inputs.html">I. Preparation</a></li><li class="breadcrumb-item"><a href="../pages/prepare-inputs.html">Overview</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Tutorial</li><li class="breadcrumb-item"><a href="../pages/unit-level-sae.html">III. Unit-Level Estimation</a></li><li class="breadcrumb-item"><a href="../pages/unit-level-popunit.html">[WIP] Tutorial: Working with population microdata</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -206,23 +217,23 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
- <span class="menu-text">I. Preparation</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false">
+ <span class="menu-text">I. Data Preparation</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 show">  
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/prepare-inputs.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Overview</span></a>
+  <a href="../pages/dataprep-microdata.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Prep for Microdata</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/tutorial-dataprep.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Example</span></a>
+  <a href="../pages/dataprep-auxdata.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data Prep for Auxiliary Data</span></a>
   </div>
 </li>
       </ul>
@@ -230,7 +241,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
- <span class="menu-text">II. Estimation</span></a>
+ <span class="menu-text">II. Area-Level Estimation</span></a>
           <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -238,49 +249,72 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/direct-estimation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Direct Estimation</span></a>
+  <a href="../pages/area-level-sae.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/bayesian-area-sae.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-Level Estimation (Fay-Herriot)</span></a>
+  <a href="../pages/area-level-direct.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tutorial: Direct Estimation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/reporting.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">[WIP] Reporting and Visualisation</span></a>
+  <a href="../pages/area-level-fh-bayesian.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tutorial: Fay-Herriot estimation</span></a>
   </div>
 </li>
       </ul>
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false">
- <span class="menu-text">III. Extended Topics</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="false" aria-label="Toggle section">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true">
+ <span class="menu-text">III. Unit-Level Estimation</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-5" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-5" class="collapse list-unstyled sidebar-section depth2 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pages/unit-level-sae.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pages/unit-level-popcell.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Tutorial: Working with population cells</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pages/unit-level-popunit.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">[WIP] Tutorial: Working with population microdata</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+          <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false">
+ <span class="menu-text">IV. Extended Topics</span></a>
+          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="false" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth2 ">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../pages/reporting.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Reporting and Visualisation</span></a>
+  </div>
+</li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../pages/frequentist-sae.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">[WIP] Frequentist Approach to SAE</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pages/covariates.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">[WIP] Covariate calibration</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-sae.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">[WIP] Unit-Level Estimation and MRP</span></a>
   </div>
 </li>
       </ul>
@@ -289,13 +323,13 @@ ul.task-list li input[type="checkbox"] {
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true">
  <span class="menu-text">Resources</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-6" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-7" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-6" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-7" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../pages/sae-toolkit.html" class="sidebar-item-text sidebar-link">
@@ -320,13 +354,8 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#define-the-estimands" id="toc-define-the-estimands" class="nav-link active" data-scroll-target="#define-the-estimands"><span class="header-section-number">1</span> Define the Estimands</a>
-  <ul class="collapse">
-  <li><a href="#estimation-geography" id="toc-estimation-geography" class="nav-link" data-scroll-target="#estimation-geography"><span class="header-section-number">1.1</span> Estimation geography</a></li>
-  <li><a href="#measure-outcome" id="toc-measure-outcome" class="nav-link" data-scroll-target="#measure-outcome"><span class="header-section-number">1.2</span> Measure &amp; Outcome</a></li>
-  </ul></li>
-  <li><a href="#weights-and-domain-sizes" id="toc-weights-and-domain-sizes" class="nav-link" data-scroll-target="#weights-and-domain-sizes"><span class="header-section-number">2</span> Weights and domain sizes</a></li>
-  <li><a href="#preparation-summary" id="toc-preparation-summary" class="nav-link" data-scroll-target="#preparation-summary"><span class="header-section-number">3</span> Preparation Summary</a></li>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background"><span class="header-section-number">1</span> Background</a></li>
+  <li><a href="#practical-tutorial" id="toc-practical-tutorial" class="nav-link" data-scroll-target="#practical-tutorial"><span class="header-section-number">2</span> Practical Tutorial</a></li>
   </ul>
 </nav>
     </div>
@@ -335,7 +364,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Overview</h1>
+<h1 class="title">[WIP] Tutorial: Working with population microdata</h1>
 </div>
 
 
@@ -350,168 +379,26 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>Raw survey microdata is transformed into analysis-ready inputs by defining the estimand, coding the indicator from the survey variables, aligning it with the estimation geography, and choosing a compatible survey weight.</p>
-<p>The data preparation pipeline can be summarised as follows:</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../assets/dataprep.png" class="img-fluid figure-img"></p>
-<figcaption class="figure-caption">Preparation pipeline for analysis-ready inputs</figcaption>
-</figure>
-</div>
-<section id="define-the-estimands" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="define-the-estimands"><span class="header-section-number">1</span> Define the Estimands</h2>
-<p>The <strong>estimand</strong> determines how survey microdata inputs are prepared and how to choose the most appropriate estimation approach downstream.</p>
-<p>E.g.,</p>
-<ol type="1">
-<li>Share of adults who use the train weekly by MSOA</li>
-<li>Mean leisure travel distance among retirees by Ward</li>
-</ol>
-<p>The composition of a well-formed estimand is:</p>
-<blockquote class="blockquote">
-<p>Estimate the <strong>measure</strong> of <strong>what outcome</strong>, among <strong>which population</strong>, across <strong>which geography</strong>.</p>
-</blockquote>
-<p>WE will take a closer look at each of these components and the implications on the methodology.</p>
-<section id="estimation-geography" class="level3" data-number="1.1">
-<h3 data-number="1.1" class="anchored" data-anchor-id="estimation-geography"><span class="header-section-number">1.1</span> Estimation geography</h3>
-<p>In SAE, the groups or areas being estimated are often called <strong>domains</strong>. In the spatial context such as urban and transport research, they are better understood as <strong>estimation areas</strong> instead. An estimation area is one unit in the chosen <strong>estimation geography</strong>. In the UK, they can be one Local Authority, Ward, LSOA, or MSOA.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../assets/maps_geography_types.png" class="img-fluid figure-img"></p>
-<figcaption class="figure-caption">Census Geography hierarchy going from Country to LA to MSOA to LSOA to OA (<a href="https://ukdataservice.ac.uk/learning-hub/census/other-information/census-boundary-data/">Source</a>)</figcaption>
-</figure>
-</div>
-<p>The chosen estimation geography must match the level of spatial detail available in the survey data. For example, if respondents are identified only by Local Authority, then Local Authority is the finest geography that can be used for small-area estimation. SAE methods are not intended to “upsample” survey data to a more granular spatial resolution.</p>
+<p>This workbook shows how to implement unit-level estimation when the population data are available as <strong>individual or household records</strong>.</p>
+<section id="background" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="background"><span class="header-section-number">1</span> Background</h2>
+<p>…</p>
 </section>
-<section id="measure-outcome" class="level3" data-number="1.2">
-<h3 data-number="1.2" class="anchored" data-anchor-id="measure-outcome"><span class="header-section-number">1.2</span> Measure &amp; Outcome</h3>
-<p>Based on the estimands, identify or create the survey indicator that represents the outcome and how they should be aggregated for each estimation area, by using resources such as the survey data user guide, survey questionnaire, response codes, and routing rules to guide indicator construction. Some indicators are direct recodes of one survey question; others need to combine several variables. The same raw survey variable can support different estimands.</p>
-<p>The most common types of <strong>outcome indicator</strong> are:</p>
-<table class="table">
-<colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Indicator type</th>
-<th>What to define</th>
-<th>Example</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Binary</td>
-<td>What is <code>1</code>, <code>0</code>, missing, and out of scope. Also suitable for categorical variables</td>
-<td><strong>Estimand:</strong> Share of adults who use the train weekly<br><strong>Indicator:</strong> Uses train weekly: yes/no</td>
-</tr>
-<tr class="even">
-<td>Continuous</td>
-<td>The numeric value and unit</td>
-<td><strong>Estimand:</strong> Mean leisure travel distance among retirees <br><strong>Indicator:</strong> Leisure travel distance in miles</td>
-</tr>
-</tbody>
-</table>
-<p>The most common choices of <strong>measure</strong>, i.e., how the outcome indicators are aggregated, are:</p>
-<ul>
-<li>share (e.g., % of EV among car owners)</li>
-<li>mean (e.g., average trip duration)</li>
-<li>rate in population (e.g., accidents per 1,000)</li>
-<li>count/total (uncommon)</li>
-</ul>
-</section>
-</section>
-<section id="weights-and-domain-sizes" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="weights-and-domain-sizes"><span class="header-section-number">2</span> Weights and domain sizes</h2>
-<p>Survey weights connect the sample back to the population to ensure the survey sample can best represent real-world proportions. The survey user guide is the go-to resource to understand which weight variables are available, what they adjust for, and most importantly, which survey modules/questions they apply to. In general, weight variables provided by surveys have already been derived from one or more adjustments, such as:</p>
-<ol type="1">
-<li><strong>Selection adjustment</strong>: accounts for unequal probabilities of selection.</li>
-<li><strong>Non-response adjustment</strong>: compensates for differences between respondents and non-respondents.</li>
-<li><strong>Calibration adjustment</strong>: aligns the weighted sample with known population totals, such as age, sex, region, Local Authority, tenure, or household structure.</li>
-<li><strong>Subsample adjustment</strong>: accounts for cases where only part of the sample was asked a module or completed a diary.</li>
-</ol>
-<p>For SAE, there is no one-size-fits-all approach to survey weight selection for the estimand. The weight used must match the estimand unit, target population, and survey design. Moreover, it is important to distinguish the <strong>scale</strong> of the weight variable:</p>
-<ul>
-<li><strong>Analysis weights</strong> <span class="math inline">\(w^{A}\)</span> make means or proportions representative of the target population, and they generally sum to the sample size. These weights are most common for estimating <code>share</code> or <code>mean</code>.
-<ul>
-<li>E.g., if a sampling unit has an analysis weight of 0.5, it is over-represented in the sample relative to the population, so its contribution is ‘down-weighted’.</li>
-</ul></li>
-<li><strong>Grossing weights</strong> <span class="math inline">\(w^{G}\)</span> are essentially upscaled-<span class="math inline">\(w^{A}\)</span> so that they sum to a known population total within the relevant estimation areas. They are usually required if the estimand measure is <code>count</code>, or <code>rate</code>.
-<ul>
-<li>E.g., if a sampling unit has a grossing weight of 50, it means this one sampled row represents about 50 people in the population.</li>
-</ul></li>
-</ul>
-<p>In SAE, <strong>domain size</strong> <span class="math inline">\(N_d\)</span> defines the size of the target population in each estimation area, or domain. For example, if the estimation geography is Local Authority and the target population is adults aged 16+, then <span class="math inline">\(N_d\)</span> is the number of adults aged 16+ in each Local Authority. Domain sizes are usually obtained from Census data, population estimates, administrative data, or other regional statistics. The correct domain size must match both the target population and the estimation geography used in the estimand.</p>
-<p>They can be used to scale analysis weights into grossing weights in order to support estimands that depend on the actual number of people, households, or units in an area. For example:</p>
-<ul>
-<li>If estimating the <strong>number of households who struggle with transport costs by Ward</strong>, <span class="math inline">\(N_d\)</span> would be the total household count in each ward. It is used to scale sample-based weights and estimates into a population-level ones.</li>
-<li>If estimating a <strong>claimant rate per 1,000 working-age residents by MSOA</strong>, <span class="math inline">\(N_d\)</span> would be the working-age population in each MSOA, used as the denominator.</li>
-</ul>
-<p>For <code>share</code> or <code>mean</code> estimands, SAE is possible even when domain sizes are unknown, however with certain nuances in interpretation.</p>
-<div class="callout callout-style-default callout-tip callout-titled">
+<section id="practical-tutorial" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="practical-tutorial"><span class="header-section-number">2</span> Practical Tutorial</h2>
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Tip
+Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>If analysis weights are provided and the relevant domain sizes are known, they can be rescaled into <strong>grossing weights</strong> for each survey respondent:</p>
-<p><span class="math display">\[
-w^G_{di} = w^A_{di} \times \frac{N_d}{\sum_{i \in d} w^A_{di}}
-\]</span></p>
-<p>where <span class="math inline">\(w^A_{di}\)</span> is the analysis weight for sampled unit <span class="math inline">\(i\)</span> in domain <span class="math inline">\(d\)</span>, <span class="math inline">\(w^G_{di}\)</span> is the corresponding grossing weight, and <span class="math inline">\(N_d\)</span> is that domain’s size.</p>
+<p>Practical tutorial to be added. NEED SYNTHETIC POPULATION + SUMMER:smoothUnit()</p>
 </div>
 </div>
-</section>
-<section id="preparation-summary" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="preparation-summary"><span class="header-section-number">3</span> Preparation Summary</h2>
-<p>Putting everything together, each of the estimands of interest should have a short record as follows that will guide how we prepare input datasets for the SAE workflow. For example, a compact record could be written as:</p>
-<table class="table">
-<colgroup>
-<col style="width: 14%">
-<col style="width: 14%">
-<col style="width: 14%">
-<col style="width: 14%">
-<col style="width: 14%">
-<col style="width: 14%">
-<col style="width: 14%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>#</th>
-<th>Estimand</th>
-<th>Indicator</th>
-<th>Variable coding rule</th>
-<th>Measure</th>
-<th>Estimation geography</th>
-<th>Weight variable</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>1</td>
-<td>Share of adults who use the train weekly across MSOAs</td>
-<td><code>is_freq_train_user</code></td>
-<td>Binary: <code>1</code> if <code>TrainUseFreq = 1</code>; <code>0</code> if adult does not use the train weekly; <code>null</code> for invalid or refused responses</td>
-<td>Share</td>
-<td>MSOA</td>
-<td><code>SampleAdultWeight</code></td>
-</tr>
-<tr class="even">
-<td>2</td>
-<td>Mean leisure travel distance among retirees across Wards</td>
-<td><code>leisure_travel_distance</code></td>
-<td>Continuous: numeric miles from <code>TravelWorkDistance</code>; only retirees with valid leisure travel distance are in scope</td>
-<td>Mean</td>
-<td>Ward</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>The next workbook will demonstrate a worked example using a <strong>simulated National Survey for Wales 2022-2023</strong> respondent microdata.</p>
 
 
 </section>
@@ -766,13 +653,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../index.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">[WIP] An Urban Researcher’s Guide to Small Area Estimation</span>
+      <a href="../pages/unit-level-popcell.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">[WIP] Tutorial: Working with population cells</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../pages/tutorial-dataprep.html" class="pagination-link">
-        <span class="nav-page-text">Example</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../pages/reporting.html" class="pagination-link">
+        <span class="nav-page-text">[WIP] Reporting and Visualisation</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

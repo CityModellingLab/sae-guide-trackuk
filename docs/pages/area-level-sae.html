@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - [WIP] FAQs</title>
+<title>Small Area Estimation for Urban Analytics - Introduction</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,7 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../pages/sae-toolkit.html" rel="prev">
+<link href="../pages/area-level-direct.html" rel="next">
+<link href="../pages/dataprep-auxdata.html" rel="prev">
 <link href="../assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -168,7 +169,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../pages/sae-toolkit.html">Resources</a></li><li class="breadcrumb-item"><a href="../pages/faqs.html">[WIP] FAQs</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Tutorial</li><li class="breadcrumb-item"><a href="../pages/area-level-sae.html">II. Area-Level Estimation</a></li><li class="breadcrumb-item"><a href="../pages/area-level-sae.html">Introduction</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -239,16 +240,16 @@ ul.task-list li input[type="checkbox"] {
   </li>
           <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true">
  <span class="menu-text">II. Area-Level Estimation</span></a>
-          <a class="sidebar-item-toggle text-start collapsed" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="false" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-4" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 ">  
+      <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth2 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/area-level-sae.html" class="sidebar-item-text sidebar-link">
+  <a href="../pages/area-level-sae.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Introduction</span></a>
   </div>
 </li>
@@ -337,7 +338,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/faqs.html" class="sidebar-item-text sidebar-link active">
+  <a href="../pages/faqs.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">[WIP] FAQs</span></a>
   </div>
 </li>
@@ -349,14 +350,20 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#area-level-estimation" id="toc-area-level-estimation" class="nav-link active" data-scroll-target="#area-level-estimation"><span class="header-section-number">1</span> Area-Level Estimation</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">[WIP] FAQs</h1>
+<h1 class="title">Introduction</h1>
 </div>
 
 
@@ -371,9 +378,25 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>Lorem Ipsum</p>
+<section id="area-level-estimation" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="area-level-estimation"><span class="header-section-number">1</span> Area-Level Estimation</h2>
+<p>In Area-level estimation, the survey microdata are used to first calculate one estimate per area, together with a measure of sampling uncertainty, before fitting a model that borrows strengths from area-level covariates and the spatial structure to produce more stable estimates.</p>
+<p>Area-level SAE is useful when the survey sample is too thin for reliable direct estimates everywhere, and useful auxiliary data are available as area-level covariates.</p>
+<p>The <strong>area-level estimation workflow</strong> is as follows:</p>
+<ol type="1">
+<li><strong>Calculate direct estimates:</strong> estimate the indicator separately for each area using the survey microdata.</li>
+<li><strong>Assess precision:</strong> check sample sizes, missing-data areas, coefficients of variation, and confidence interval widths.</li>
+<li><strong>Fit an area-level model:</strong> use Fay-Herriot modelling when direct estimates are too noisy or incomplete.</li>
+<li><strong>Report estimates and uncertainty:</strong> compare direct and model-based estimates, then communicate uncertainty clearly.</li>
+</ol>
+<p>These workbooks demonstrate a step-by-step implementation using the <code>survey</code> and <code>SUMMER</code> R packages. <code>SUMMER</code> acts as an <code>INLA</code> wrapper for Bayesian small area estimation.</p>
+<ol type="1">
+<li><strong><a href="../pages/area-level-direct.html">Direct Estimation</a></strong></li>
+<li><strong><a href="../pages/area-level-fh-bayesian.html">Fay-Herriot Estimation</a></strong></li>
+</ol>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -625,11 +648,14 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../pages/sae-toolkit.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">SAE Toolkit Lite</span>
+      <a href="../pages/dataprep-auxdata.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Data Prep for Auxiliary Data</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
+      <a href="../pages/area-level-direct.html" class="pagination-link">
+        <span class="nav-page-text">Tutorial: Direct Estimation</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
   </div>
 </nav>
 </div> <!-- /content -->

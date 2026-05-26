@@ -1,14 +1,14 @@
 ---
-title: "Area-Level Estimation (Fay-Herriot)"
+title: "Tutorial: Fay-Herriot estimation"
 ---
 
 The *Fay-Herriot (FH) model* for area-level estimation improves direct estimates that are too noisy, unstable, or unavailable for some areas by borrowing strength from area-level covariates and the spatial structure.
 
-## Understanding the basic Fay-Herriot model
+## Understanding the Fay-Herriot Model
 
 The Fay-Herriot model is an **area-level small area estimation model**. It combines two sources of information for each estimation area:
 
-1. the **direct survey estimate** for the estimation area, and  
+1. the **direct survey estimate** for the estimation area; and
 2. the **model-based prediction** from covariates.
 
 Their relationship can be written as:
@@ -20,11 +20,11 @@ $$
 where:
 
 - $\hat{\theta}^{DIR}_d$ is the direct survey estimate for area $d$;
-- $x_d^\top \beta$ is the part explained by covariates (i.e., model prediction);
+- $x_d^\top \beta$ is the part explained by covariates;
 - $u_d$ is the area-specific unexplained effect;
 - $e_d$ is the survey sampling error.
 
-The **Fay-Herriot estimate** is then a weighted average between the direct estimate and the model-based prediction:
+The Fay-Herriot estimate is a weighted average between the direct estimate and the model-based prediction:
 
 $$
 \tilde{\theta}^{FH}_d =
@@ -33,31 +33,29 @@ $$
 (1-\gamma_d)x_d^\top\hat{\beta}
 $$
 
-The **shrinkage weight** $\gamma_d =\frac{\sigma_u^2}{\sigma_u^2 + \psi_d}$ controls how much the final estimate relies on the direct survey estimate versus the model-based prediction, using sampling variance $\psi_d$ and between-area unexplained variance $\sigma_u^2$ (i.e., variance of $u_d$).
+The **shrinkage weight $\gamma_d = \frac{\sigma_u^2}{\sigma_u^2 + \psi_d}$** controls how much the final estimate relies on the direct estimate versus the model prediction. It uses the sampling variance $\psi_d$ and the between-area unexplained variance $\sigma_u^2$.
 
-- If $\psi_d$ is small (the direct estimate is precise), $\gamma_d$ is closer to 1 and the FH estimate stays close to the direct estimate;
-- If $\psi_d$ is large (the direct estimate is noisy), $\gamma_d$ is closer to 0 and the FH estimate is pulled more strongly toward the model-based prediction;
-- If $\sigma_u^2$ is large (strong unexplained differences among areas), the FH estimate gives more weight to the direct estimate.
-- If $\sigma_u^2$ is small (weak unexplained differences among areas), the FH estimate is pulled more strongly toward the model-based prediction.
+- If $\psi_d$ is small, the direct estimate is precise, so $\gamma_d$ is closer to 1 and the FH estimate stays close to the direct estimate.
+- If $\psi_d$ is large, the direct estimate is noisy, so $\gamma_d$ is closer to 0 and the FH estimate is pulled more strongly toward the model prediction.
+- If $\sigma_u^2$ is large, there are strong unexplained differences among areas, so the FH estimate gives more weight to the direct estimate.
+- If $\sigma_u^2$ is small, unexplained area differences are weak, so the FH estimate is pulled more strongly toward the model prediction.
 
-Essentially, the Fay-Herriot model evaluates how reliable the direct estimates are. Reliable direct estimates are mostly preserved, while noisy direct estimates borrow more information from the model.
+## Covariates
 
-## Select covariates
+SAE improves precision by **borrowing strength** from auxiliary variables. Covariates can often be found through census data and other population-level aggregate statistics.
 
-SAE improves precision of the estimates by "borrowing strength" from auxiliary variables (i.e., covariates). This is critical for estimation areas with sparse or no survey data. Covariates can often be found via census data and other population-level aggregate statistics. Choose covariates with emphasis on coverage and comparability across estimation areas.
-
-The key attributes of good covariates are:
+Good covariates should have:
 
 - **Coverage:** each covariate should be available for all estimation areas.
-- **Alignment:** match geography, definition, and reference period to the survey indicator.
-- **Relevance:** keep variables with a clear substantive link to the outcome and avoid including many weak predictors.
-- **Predictive:** choose covariates that improve area-level prediction and are easy to explain.
+- **Alignment:** geography, definition, and reference period should match the survey indicator.
+- **Relevance:** variables should have a clear substantive link to the outcome.
+- **Predictive value:** covariates should improve area-level prediction and be easy to explain.
 
-## Spatial structure
+## Spatial Structure
 
-The basic Fay-Herriot model usually assumes that the unexplained area effects $u_d$ are **independent** after accounting for covariates. In urban research, this assumption is often unrealistic. Nearby areas may share infrastructure, socio-demographic profiles, transport conditions, etc. As a result, neighbouring areas may still have **similar unexplained effects** even after covariates have been included.
+The basic Fay-Herriot model usually assumes that unexplained area effects are independent after accounting for covariates. In urban research, this assumption is often unrealistic because nearby areas may share infrastructure, socio-demographic profiles, transport conditions, or other contextual features.
 
-A spatial Fay-Herriot model relaxes this independence assumption by allowing the unexplained area effects to be spatially related. One way to express this is:
+A spatial Fay-Herriot model relaxes this independence assumption by allowing unexplained area effects to be spatially related. One way to express this is:
 
 $$
 u = \rho W u + \eta
@@ -66,39 +64,32 @@ $$
 where:
 
 - $u$ is the vector of unexplained area effects;
-- $W$ is a spatial weights matrix describing which areas are neighbours (based on adjacency, distance, etc.);
+- $W$ is a spatial weights matrix describing which areas are neighbours;
 - $\rho$ controls the strength of spatial dependence;
 - $\eta$ is the remaining non-spatial random variation.
 
-The weight matrix $W$ defines which areas are treated as neighbours. The spatial Fay-Herriot model then estimates whether the unexplained effects in neighbouring areas tend to be similar.
-
-- If neighbouring areas have similar unexplained effects, the model estimates stronger spatial dependence. For noisy areas, the final estimate is shifted toward values suggested by neighbouring areas and the model prediction. This is also called *spatial smoothing*.
-- If neighbouring areas do not have similar unexplained effects, the spatial component has little influence. The model behaves more like a non-spatial Fay-Herriot model.
-
-There are several ways to define the spatial weights matrix $W$. The most common approach is **contiguity-based adjacency**, where two areas are neighbours if their boundaries touch. 
+The most common approach is **contiguity-based adjacency**, where two areas are neighbours if their boundaries touch.
 
 ![Example of spatial weight matrix by adjacency](../assets/spatial_weights_example.png)
 
 :::{.callout-warning}
-The spatial weights matrix is another modelling assumption. It should be checked carefully, especially for islands, coastal areas, or fragmented geographies, because isolated areas or unusual neighbour links can strongly affect spatial smoothing.
+The spatial weights matrix is a modelling assumption. It should be checked carefully, especially for islands, coastal areas, or fragmented geographies, because isolated areas or unusual neighbour links can strongly affect spatial smoothing.
 :::
 
-## Bayesian vs. Frequentist approach in SAE
+## Bayesian Area-Level SAE
 
-In small-area estimation, there are two statistical approaches to treating unknown quantities such as $\beta$, $\sigma_u^2$, and $\gamma_d$, specifically how they are estimated and how uncertainty is interpreted.
+In small-area estimation, Bayesian and frequentist approaches differ in how unknown quantities such as $\beta$, $\sigma_u^2$, and $\gamma_d$ are estimated and how uncertainty is interpreted.
 
-- In the **frequentist** approach, unknown quantities such as $\beta$, $\sigma_u^2$, and $u_d$ are estimated as fixed unknowns. Typical outputs are one point estimate per area, uncertainty measures such as RMSE, and confidence intervals.
-- In the **Bayesian** approach, these unknown quantities are instead treated as uncertain and assigned prior distributions. Typical outputs are posterior means, credible intervals, and probability summaries.
+- In the **frequentist** approach, unknown quantities are estimated as fixed unknowns. Typical outputs are point estimates, RMSEs, and confidence intervals.
+- In the **Bayesian** approach, unknown quantities are assigned prior distributions and updated using the observed data. Typical outputs are posterior means, credible intervals, and probability summaries.
 
 ![The difference in uncertainty treatment between Bayesian and Frequentist approaches](../assets/bayesian-frequentist.png)
 
-In practice, the Bayesian approach is preferred since reporting uncertainty as probability distributions facilitates communication in policy settings and is more useful for decision-making.
+In this workbook, we focus on the Bayesian approach because posterior uncertainty is often easier to communicate in policy settings and more useful for decision-making.
 
 ## Practical tutorial
 
-In this workbook, we fit Bayesian area-level FH models for the **mean commute distance among commuters by MSOA** estimand using the indicator `commute_distance`. 
-
-We first recreate the direct estimates and their sampling variances, then pass those area-level inputs into `SUMMER::smoothArea()` with MSOA-level covariates.
+In this workbook, we fit Bayesian area-level FH models for the **mean commute distance among commuters by MSOA** estimand using the indicator `commute_distance`using the `SUMMER` R package.
 
 ```{r}
 library(dplyr)
@@ -160,107 +151,19 @@ survey_indicator_commute <- read_csv(
   )
 ```
 
-### Select and aggregate covariates
+### Load Area-Level Covariates
 
-For `commute_distance`, useful area-level covariates should capture urban-rural structure, commuting mode, car access, housing form, and the local employment mix. [The Census 2021](https://www.nomisweb.co.uk/sources/census_2021_bulk) gives us several candidate covariates at MSOA level.
-
-| Covariate | Census table | Why it may explain commute distance |
-|---|---|---|
-| `cov_pop_density` | TS006 | Dense urban areas tend to have shorter trips and more nearby jobs/services. |
-| `cov_share_work_home` | TS061 | Areas with more home-working may have a different commuter composition. |
-| `cov_share_hh_withcar` | TS045 | Household car access indicates ability to travel longer distances. |
-| `cov_share_detached` | TS044 | Detached housing is a proxy for lower-density suburban/rural settlement. |
-| `cov_share_higher_managerial` | TS062 | Occupational structure may reflect access to different labour markets. |
-
-:::{.callout-note}
-We do not use Census commute-distance table `TS058` as a covariate because it is reserved later as an external validation benchmark for this tutorial.
-:::
+The area-level covariates are prepared in [Tutorial: Data Prep for Auxiliary Data](dataprep-auxdata.qmd).
 
 ```{r}
-# Read a Census 2021 aggregate table and keep Welsh areas only
-read_census <- function(topic_code) {
-  file_name <- paste0("census2021-", topic_code, "-msoa.csv")
-  read_csv(file.path(census_path, file_name), show_col_types = FALSE) |>
-    filter(str_starts(`geography code`, "W")) |>
-    rename(domain_id = `geography code`)
-}
+covariate_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/bayesian_area_sae_commute_covariates.csv"
 
-# Population density (TS006)
-msoa_density <- read_census("ts006") |>
-  transmute(
-    domain_id,
-    cov_pop_density = `Population Density: Persons per square kilometre; measures: Value`
-  )
+covariates_commute_summer <- read_csv(
+  covariate_url,
+  show_col_types = FALSE
+)
 
-# Travel to work (TS061)
-msoa_travel <- read_census("ts061") |>
-  transmute(
-    domain_id,
-    commute_total = `Method of travel to workplace: Total: All usual residents aged 16 years and over in employment the week before the census`,
-    cov_share_work_home = if_else(
-      commute_total > 0,
-      `Method of travel to workplace: Work mainly at or from home` / commute_total,
-      NA_real_
-    )
-  ) |>
-  select(-commute_total)
-
-# Car availability (TS045)
-msoa_cars <- read_census("ts045") |>
-  transmute(
-    domain_id,
-    household_total = `Number of cars or vans: Total: All households`,
-    cov_share_hh_withcar = if_else(
-      household_total > 0,
-      (household_total - `Number of cars or vans: No cars or vans in household`) / household_total,
-      NA_real_
-    )
-  ) |>
-  select(-household_total)
-
-# Housing type (TS044)
-msoa_housing <- read_census("ts044") |>
-  transmute(
-    domain_id,
-    household_total = `Accommodation type: Total: All households`,
-    cov_share_detached = if_else(
-      household_total > 0,
-      `Accommodation type: Detached` / household_total,
-      NA_real_
-    )
-  ) |>
-  select(-household_total)
-
-# Occupation structure (TS062)
-msoa_nssec <- read_census("ts062") |>
-  transmute(
-    domain_id,
-    nssec_total = `National Statistics Socio-economic Classification (NS-SEC): Total: All usual residents aged 16 years and over`,
-    cov_share_higher_managerial = if_else(
-      nssec_total > 0,
-      `National Statistics Socio-economic Classification (NS-SEC): L1, L2 and L3 Higher managerial, administrative and professional occupations` / nssec_total,
-      NA_real_
-    )
-  ) |>
-  select(-nssec_total)
-
-covariates_commute_summer <- msoa_density |>
-  left_join(msoa_travel, by = "domain_id") |>
-  left_join(msoa_cars, by = "domain_id") |>
-  left_join(msoa_housing, by = "domain_id") |>
-  left_join(msoa_nssec, by = "domain_id")
-```
-Finally, we rescale the covariates to prepare them as inputs for the FH model.
-```{r}
-covariates_commute_summer <- covariates_commute_summer |>
-  transmute(
-    domain_id,
-    cov_pop_density = as.numeric(scale(cov_pop_density)),
-    cov_share_work_home = as.numeric(scale(cov_share_work_home)),
-    cov_share_hh_withcar = as.numeric(scale(cov_share_hh_withcar)),
-    cov_share_detached = as.numeric(scale(cov_share_detached)),
-    cov_share_higher_managerial = as.numeric(scale(cov_share_higher_managerial))
-  )
+head(covariates_commute_summer)
 ```
 
 ### Direct Estimates
@@ -649,10 +552,5 @@ estimate_summary <- commute_comparison |>
 write_csv(
   estimate_summary,
   file.path("..","data", "bayesian_area_sae_commute_estimates.csv")
-)
-
-write_csv(
-  covariates_commute_summer,
-  file.path("..", "data", "bayesian_area_sae_commute_covariates.csv")
 )
 ```

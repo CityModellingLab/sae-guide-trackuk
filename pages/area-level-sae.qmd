@@ -1,0 +1,20 @@
+---
+title: "Introduction"
+---
+## Area-Level Estimation
+
+In Area-level estimation, the survey microdata are used to first calculate one estimate per area, together with a measure of sampling uncertainty, before fitting a model that borrows strengths from area-level covariates and the spatial structure to produce more stable estimates.
+
+Area-level SAE is useful when the survey sample is too thin for reliable direct estimates everywhere, and useful auxiliary data are available as area-level covariates.
+
+The **area-level estimation workflow** is as follows:
+
+1. **Calculate direct estimates:** estimate the indicator separately for each area using the survey microdata.
+2. **Assess precision:** check sample sizes, missing-data areas, coefficients of variation, and confidence interval widths.
+3. **Fit an area-level model:** use Fay-Herriot modelling when direct estimates are too noisy or incomplete.
+4. **Report estimates and uncertainty:** compare direct and model-based estimates, then communicate uncertainty clearly.
+
+These workbooks demonstrate a step-by-step implementation using the `survey` and `SUMMER` R packages. `SUMMER` acts as an `INLA` wrapper for Bayesian small area estimation.
+
+1. **[Direct Estimation](area-level-direct.qmd)**
+2. **[Fay-Herriot Estimation](area-level-fh-bayesian.qmd)**
