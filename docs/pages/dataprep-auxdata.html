@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Data Prep for Auxiliary Data</title>
+<title>Small Area Estimation for Urban Analytics - [WIP] Data Prep for Auxiliary Data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -203,7 +203,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Tutorial</li><li class="breadcrumb-item"><a href="../pages/dataprep-microdata.html">I. Data Preparation</a></li><li class="breadcrumb-item"><a href="../pages/dataprep-auxdata.html">Data Prep for Auxiliary Data</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item">Tutorial</li><li class="breadcrumb-item"><a href="../pages/dataprep-microdata.html">I. Data Preparation</a></li><li class="breadcrumb-item"><a href="../pages/dataprep-auxdata.html">[WIP] Data Prep for Auxiliary Data</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -267,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="../pages/dataprep-auxdata.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Data Prep for Auxiliary Data</span></a>
+ <span class="menu-text">[WIP] Data Prep for Auxiliary Data</span></a>
   </div>
 </li>
       </ul>
@@ -391,7 +391,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#load-census-and-boundary-data" id="toc-load-census-and-boundary-data" class="nav-link active" data-scroll-target="#load-census-and-boundary-data"><span class="header-section-number">1</span> Load Census and Boundary Data</a></li>
   <li><a href="#area-level-covariates" id="toc-area-level-covariates" class="nav-link" data-scroll-target="#area-level-covariates"><span class="header-section-number">2</span> Area-Level Covariates</a></li>
   <li><a href="#synthetic-population-cells" id="toc-synthetic-population-cells" class="nav-link" data-scroll-target="#synthetic-population-cells"><span class="header-section-number">3</span> Synthetic Population Cells</a></li>
-  <li><a href="#synthetic-population" id="toc-synthetic-population" class="nav-link" data-scroll-target="#synthetic-population"><span class="header-section-number">4</span> Synthetic Population</a></li>
+  <li><a href="#synthetic-population-unit" id="toc-synthetic-population-unit" class="nav-link" data-scroll-target="#synthetic-population-unit"><span class="header-section-number">4</span> Synthetic Population Unit</a></li>
   </ul>
 </nav>
     </div>
@@ -400,7 +400,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data Prep for Auxiliary Data</h1>
+<h1 class="title">[WIP] Data Prep for Auxiliary Data</h1>
 </div>
 
 
@@ -415,16 +415,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>Auxiliary data are the non-survey inputs that let small-area models borrow strength and project survey relationships into the full population. In this tutorial, we prepare three reusable auxiliary inputs:</p>
+<p>Auxiliary data are the non-survey inputs that let small-area models borrow strength and project survey indicators into the full population. In this tutorial, we prepare three reusable auxiliary inputs:</p>
 <ul>
 <li>area-level covariates for Fay-Herriot models;</li>
-<li>population cells for multilevel regression and poststratification;</li>
-<li>a lightweight synthetic population for unit-level prediction examples.</li>
+<li>synthetic population cells for MRP;</li>
+<li>synthetic population for unit-level prediction.</li>
 </ul>
-<p>The same discipline used for survey microdata also applies here: the geography, target population, reference period, and variable definitions must align with the estimand.</p>
+<p>[draft]</p>
 <section id="load-census-and-boundary-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="load-census-and-boundary-data"><span class="header-section-number">1</span> Load Census and Boundary Data</h2>
-<p>The tutorial uses bundled Census 2021 aggregate tables and MSOA boundaries. The Census files are stored as topic tables, so we define one helper for reading a table and keeping Welsh MSOAs only.</p>
+<p>The tutorial uses bundled Census 2021 aggregate tables and MSOA boundaries.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -834,8 +834,8 @@ Note
 </div>
 </div>
 </section>
-<section id="synthetic-population" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="synthetic-population"><span class="header-section-number">4</span> Synthetic Population</h2>
+<section id="synthetic-population-unit" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="synthetic-population-unit"><span class="header-section-number">4</span> Synthetic Population Unit</h2>
 <p>Some unit-level models need one row per target population unit rather than one row per cell. A synthetic population expands the cell table into person-like records that preserve the cell counts and carry the same covariates used by the unit-level model.</p>
 <p>[wip]</p>
 

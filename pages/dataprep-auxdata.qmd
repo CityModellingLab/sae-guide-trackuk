@@ -1,18 +1,18 @@
 ---
-title: "Data Prep for Auxiliary Data"
+title: "[WIP] Data Prep for Auxiliary Data"
 ---
 
-Auxiliary data are the non-survey inputs that let small-area models borrow strength and project survey relationships into the full population. In this tutorial, we prepare three reusable auxiliary inputs:
+Auxiliary data are the non-survey inputs that let small-area models borrow strength and project survey indicators into the full population. In this tutorial, we prepare three reusable auxiliary inputs:
 
 - area-level covariates for Fay-Herriot models;
-- population cells for multilevel regression and poststratification;
-- a lightweight synthetic population for unit-level prediction examples.
+- synthetic population cells for MRP;
+- synthetic population for unit-level prediction.
 
-The same discipline used for survey microdata also applies here: the geography, target population, reference period, and variable definitions must align with the estimand.
+[draft]
 
 ## Load Census and Boundary Data
 
-The tutorial uses bundled Census 2021 aggregate tables and MSOA boundaries. The Census files are stored as topic tables, so we define one helper for reading a table and keeping Welsh MSOAs only.
+The tutorial uses bundled Census 2021 aggregate tables and MSOA boundaries. 
 
 ```{r}
 library(dplyr)
@@ -227,7 +227,7 @@ population_cells <- age_cells |>
 head(population_cells)
 ```
 
-## Synthetic Population
+## Synthetic Population Unit
 
 Some unit-level models need one row per target population unit rather than one row per cell. A synthetic population expands the cell table into person-like records that preserve the cell counts and carry the same covariates used by the unit-level model.
 
