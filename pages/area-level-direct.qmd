@@ -41,7 +41,7 @@ In this workbook, we calculate direct estimates for **three example estimands** 
 - share of recent bus riders who are dissatisfied with bus services, and
 - number of frequent walkers per 1,000 residents.
 
-For each one, we create the direct estimate, calculate its sampling variance, and inspect whether the area-level estimates are stable enough to report. The examples use the `survey` package which can deal with survey microdata that come with weights and strata.
+The examples use the `survey` package which can deal with survey microdata that come with weights and strata.
 
 ```{r}
 # Load libraries
@@ -179,7 +179,7 @@ msoa_domains |>
   )
 ```
 
-The direct estimates are relatively stable: most MSOAs have at least some usable commuter observations. Even so, the confidence intervals remain fairly wide in practical terms, so the direct estimates should still be treated as noisy area-level summaries rather than precise local values.
+The direct estimates are relatively stable: most MSOAs have at least some usable commuter observations. Even so, the confidence intervals remain fairly wide in practical terms, so the direct estimates should still be treated as noisy area-level summaries.
 
 ### Dissatisfied bus users among recent adult bus riders by MSOA
 
@@ -283,32 +283,31 @@ msoa_domains |>
   )
 ```
 
-The direct estimates have reasonable geographic coverage, but they remain imprecise because the estimand is restricted to adults who rode a bus in the last 12 months. This smaller eligible group reduces the effective sample size within many MSOAs, which is reflected in the CI-width map and summary diagnostics. The direct estimates are useful for diagnosing the pattern of evidence, but model-based estimation is likely to produce more stable local estimates.
+The direct estimates have reasonable geographic coverage, but they remain imprecise because the estimand is restricted to adults who rode a bus in the last 12 months. This smaller eligible group reduces the effective sample size within many MSOAs, which is reflected in the CI-width map and summary diagnostics. Model-based estimation is likely to produce more stable local estimates.
 
 ### Frequent walkers per 1,000 residents by MSOA
 
 `freq_walker` is a binary survey indicator for whether a respondent walks for transport daily. The direct estimate for each area is therefore to be calculated as a weighted total of this indicator (i.e., total number of frequent walkers in the MSOA), divided by a domain size (i.e., total population by MSOA), and multiple by 1,000.
 
-For a standard Horvitz-Thompson rate estimator, we would usually need grossing weights and known domain sizes.
+For a standard **Horvitz-Thompson rate estimator**, we would usually need grossing weights $w^G$ and known domain sizes $N_d$.
 
-Here, we can use a simpler equivalent approach. `freq_walker` uses `SampleTravelWeight`, an analysis weight designed for estimating total population proportions. If a grossing weight is just this analysis weight rescaled to sum to the domain population $N_d$:
 $$
-w^G_{di} = w^A_{di} \times \frac{N_d}{\sum_{i \in d} w^A_{di}}
+\hat{\theta}_d^{DIR}=\frac{\sum_iw^G_{di}y_{di}}{N_d}
 $$
 
-then the weighted total divided by the domain size is equal to the analysis-weighted mean:
+ Here, we can use a simpler equivalent approach. `freq_walker` uses `SampleTravelWeight`, an analysis weight designed for estimating total population proportions. If a grossing weight is just this analysis weight rescaled so that they sum to the domain population, or $w^G_{di} = w^A_{di} \times \frac{N_d}{\sum_{i \in d} w^A_{di}}$, then the weighted total divided by the domain size is equal to the analysis-weighted mean:
 $$
+\hat{\theta}_d^{DIR}
+=
 \frac{\sum_i w^G_{di}y_{di}}{N_d}
 =
 \frac{\sum_i w^A_{di}y_{di}}{\sum_i w^A_{di}}.
 $$
 
-So in this tutorial, we estimate the weighted mean for `freq_walker`, then multiply by 1,000 to report frequent walkers per 1,000 residents.
-
 :::{.callout-warning}
-This shortcut only works when the analysis weight and the domain size refer to the same target population. If they do not, the weighted mean is no longer equivalent to the weighted total divided by the required domain size.
+This approach only works when the analysis weight $w^A$ and domain size $N_d$ refer to the same target population; here, that is the total population by MSOA.
 
-For example, when the weight represents the total population but the estimand needs an adult-population denominator.
+If they do not, for example when adult-population domain sizes are needed, use the survey-provided adult-population grossing weights $w^G$ and the corresponding adult population by MSOA as the domain sizes $N_d$.
 :::
 
 #### Direct Estimation

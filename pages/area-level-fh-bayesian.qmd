@@ -133,6 +133,13 @@ msoa_domains <- msoa_boundaries |>
   st_drop_geometry() |>
   select(domain_id) |>
   arrange(domain_id)
+
+read_census <- function(topic_code) {
+  file_name <- paste0("census2021-", topic_code, "-msoa.csv")
+  read_csv(file.path(census_path, file_name), show_col_types = FALSE) |>
+    filter(str_starts(`geography code`, "W")) |>
+    rename(domain_id = `geography code`)
+}
 ```
 ### Load Indicator
 
@@ -149,21 +156,107 @@ survey_indicator_commute <- read_csv(
     !is.na(domain_id),
     !is.na(strata)
   )
+
+head(survey_indicator_commute)
 ```
 
-### Load Area-Level Covariates
+### Prepare Area-Level Covariates
 
-The area-level covariates are prepared in [Tutorial: Data Prep for Auxiliary Data](dataprep-auxdata.qmd).
+For the commute-distance model, the covariates should cover all MSOAs, use the same `domain_id` as the direct estimates, and plausibly relate to travel behaviour, labour-market access, or settlement structure.
+
+| Covariate | Census table | Why it may be useful |
+|---|---|---|
+| `cov_pop_density` | TS006 | Captures broad urban-rural structure and access to nearby services. |
+| `cov_share_work_home` | TS061 | Captures differences in local working patterns. |
+| `cov_share_hh_withcar` | TS045 | Marks mobility and settlement type. |
+| `cov_share_detached` | TS044 | Proxies lower-density suburban or rural settlement. |
+| `cov_share_higher_managerial` | TS062 | Captures socio-economic composition. |
+
+:::{.callout-note}
+The Census commute-distance table `TS058` directly measures a closely related outcome, so it is not used as a model covariate. It is reserved later as an external validation benchmark.
+:::
 
 ```{r}
-covariate_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/bayesian_area_sae_commute_covariates.csv"
+msoa_density <- read_census("ts006") |>
+  transmute(
+    domain_id,
+    cov_pop_density = `Population Density: Persons per square kilometre; measures: Value`
+  )
 
-covariates_commute_summer <- read_csv(
-  covariate_url,
-  show_col_types = FALSE
-)
+msoa_travel <- read_census("ts061") |>
+  transmute(
+    domain_id,
+    travel_total = `Method of travel to workplace: Total: All usual residents aged 16 years and over in employment the week before the census`,
+    cov_share_work_home = if_else(
+      travel_total > 0,
+      `Method of travel to workplace: Work mainly at or from home` / travel_total,
+      NA_real_
+    )
+  ) |>
+  select(-travel_total)
+
+msoa_cars <- read_census("ts045") |>
+  transmute(
+    domain_id,
+    household_total = `Number of cars or vans: Total: All households`,
+    cov_share_hh_withcar = if_else(
+      household_total > 0,
+      (household_total - `Number of cars or vans: No cars or vans in household`) / household_total,
+      NA_real_
+    )
+  ) |>
+  select(-household_total)
+
+msoa_housing <- read_census("ts044") |>
+  transmute(
+    domain_id,
+    household_total = `Accommodation type: Total: All households`,
+    cov_share_detached = if_else(
+      household_total > 0,
+      `Accommodation type: Detached` / household_total,
+      NA_real_
+    )
+  ) |>
+  select(-household_total)
+
+msoa_nssec <- read_census("ts062") |>
+  transmute(
+    domain_id,
+    nssec_total = `National Statistics Socio-economic Classification (NS-SEC): Total: All usual residents aged 16 years and over`,
+    cov_share_higher_managerial = if_else(
+      nssec_total > 0,
+      `National Statistics Socio-economic Classification (NS-SEC): L1, L2 and L3 Higher managerial, administrative and professional occupations` / nssec_total,
+      NA_real_
+    )
+  ) |>
+  select(-nssec_total)
+
+area_covariates_commute <- msoa_domains |>
+  left_join(msoa_density, by = "domain_id") |>
+  left_join(msoa_travel, by = "domain_id") |>
+  left_join(msoa_cars, by = "domain_id") |>
+  left_join(msoa_housing, by = "domain_id") |>
+  left_join(msoa_nssec, by = "domain_id")
+
+covariates_commute_summer <- area_covariates_commute |>
+  transmute(
+    domain_id,
+    cov_pop_density = as.numeric(scale(cov_pop_density)),
+    cov_share_work_home = as.numeric(scale(cov_share_work_home)),
+    cov_share_hh_withcar = as.numeric(scale(cov_share_hh_withcar)),
+    cov_share_detached = as.numeric(scale(cov_share_detached)),
+    cov_share_higher_managerial = as.numeric(scale(cov_share_higher_managerial))
+  )
 
 head(covariates_commute_summer)
+```
+
+```{r}
+#| echo: false
+write_csv(
+  covariates_commute_summer,
+  file.path("..", "data", "bayesian_area_sae_commute_covariates.csv")
+)
 ```
 
 ### Direct Estimates
@@ -324,7 +417,7 @@ commute_comparison |>
 
 The non-spatial FH model borrows strength from covariates and the overall distribution of MSOAs, but it does not use the fact that MSOAs are geographically connected. For transport outcomes, this independence assumption may be unrealistic. We therefore fit a spatial FH model as a sensitivity extension. It asks whether allowing neighbouring MSOAs to have similar unexplained area effects changes the estimates or their uncertainty.
 
-First, we create a spatial weights matrix using queen contiguity, where two MSOAs are neighbours if they share either a boundary segment or a point.
+First, we create a spatial weights matrix using **Queen contiguity**, where two MSOAs are neighbours if they share either a boundary segment or a point.
 
 ```{r}
 msoa_boundaries_ordered <- msoa_boundaries |>
@@ -369,7 +462,7 @@ spatial_fh_est_commute <- spatial_fh_commute_fit$bym2.model.est |>
 head(spatial_fh_est_commute)
 ```
 
-We can now compare the FH estimates before and after spatial information to see whether adding adjacency changes the estimates or uncertainty enough to matter.
+We can now compare the FH estimates before and after considering spatial information to see whether adding adjacency changes the estimates or uncertainty enough to matter.
 
 ```{r}
 commute_comparison <- commute_comparison |>
@@ -393,6 +486,8 @@ ggplot(fh_spatial_compare_map) +
 ```
 
 In this example, the spatial model does not cause a major shift. This suggests that most of the improvement over direct estimation comes from covariates and general FH shrinkage, while the added adjacency structure has limited additional influence for this estimand.
+
+[ADD MORE COMPARISON]
 
 ### Validation
 
@@ -461,12 +556,13 @@ ggplot(validation_commute, aes(x = benchmark_commute_distance, y = estimate)) +
   theme_minimal()
 ```
 
-Compared with the direct estimates, the FH estimates align much more closely with the benchmark. However, the FH estimates still show clusters of underestimation and overestimation, with many MSOAs sitting below or above the parity line. By mapping the difference, we see a spatial pattern in these 'errors':
+Compared with the direct estimates, the FH estimates align much more closely with the benchmark, which is a positive sign the model-based estimation method works as intended.
+
+However, the FH estimates still show clusters of underestimation and overestimation, with many MSOAs sitting below or above the parity line. By mapping the difference, we see a spatial pattern in these 'errors':
 
 - Rural long-distance commuting is underpredicted
 - Urban commute distance is overpredicted
 - There may be omitted covariates that capture more than spatial proximity.
-
 
 ```{r}
 validation_map <- msoa_boundaries |>
@@ -490,9 +586,11 @@ ggplot(validation_map) +
   theme_void()
 ```
 
-This suggests that the current FH model does not fully capture the urban-rural structure of commute distance. Candidate covariates could include rural-urban classification, employment accessibility, local job density, or distance to major employment centres. Covariate selection therefore needs to happen as a separate parallel workflow before fitting the final FH model. This process is iterative and should also reflect domain knowledge about the outcome and the geography.
+The discrepancies may partly reflect how the tutorial microdata were created. Because survey variables were shuffled within each Local Authority and MSOAs were assigned synthetically, the MSOA-level direct and FH estimates may not be fully tied to real combinations of survey responses, and therefore **differ from the real-world benchmarks**.
 
-That said, when visualised together on a graph, the benchmark values seem to fall within the 95% FH credible intervals for many areas, lending confidence in the fitted model's uncertainty intervals.
+They may also indicate that the current FH model and covariates **do not fully capture the urban-rural structure of commute distance**. Covariate selection is iterative and should be guided by both model diagnostics and domain knowledge. Useful additions could include rural-urban classification, local job density, or distance to major employment centres.
+
+Still, as seen below, the benchmark values fall within the 95% FH credible intervals for many MSOAs, which provides some reassurance that the model uncertainty is reasonable.
 
 ```{r}
 validation_ranked <- commute_comparison |>

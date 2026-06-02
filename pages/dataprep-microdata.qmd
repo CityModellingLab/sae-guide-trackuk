@@ -1,5 +1,5 @@
 ---
-title: "Data Prep for Microdata"
+title: "Microdata Preparation"
 ---
 
 Raw survey microdata is transformed into analysis-ready inputs by defining the estimand, coding the indicator from the survey variables, aligning it with the estimation geography, and choosing compatible survey weights.
@@ -8,17 +8,21 @@ The data preparation pipeline can be summarised as follows:
 
 ![Preparation pipeline for analysis-ready inputs](../assets/dataprep.png)
 
-## Understanding the Tutorial Dataset
+## Understanding the Survey Dataset
 
-The tutorial uses a simulated dataset based on the [*National Survey for Wales 2022-23*](https://datacatalogue.ukdataservice.ac.uk/studies/study/9144#details), a cross-sectional survey conducted annually to provide a snapshot of the Welsh population. The original survey covers topics including health, education, climate change, visits to the outdoors, public service satisfaction, material deprivation, internet access, and the Welsh language.
+The tutorial uses **a synthetic dataset** based on the [*National Survey for Wales 2022-23*](https://datacatalogue.ukdataservice.ac.uk/studies/study/9144#details), a cross-sectional survey conducted annually to provide a snapshot of the Welsh population. The original survey covers topics including health, education, climate change, visits to the outdoors, public service satisfaction, material deprivation, internet access, and the Welsh language.
 
-:::{.callout-note}
-In the original NSW dataset, obtained via UK Data Service, the Local Authority (LA) is the sole spatial identifier and the survey's sampling stratification variable. To both ensure data privacy and create a more granular spatial identifier for tutorial purposes, the example simulated dataset was created using:
+In the original NSW dataset, the Local Authority (LA) is the sole spatial identifier and the survey's sampling stratification variable. To ensure data privacy and create higher-resolution spatial survey data for tutorial purposes, the synthetic dataset was created using:
 
-- **Stratified randomisation:** survey responses were first split by Local Authority and their variables were randomised column-wise to preserve totals by Local Authority.
-- **Randomised upsampling:** survey responses were assigned a random MSOA that intersects with their recorded Local Authority to simulate a higher-resolution dataset for tutorial purposes.
+- **Stratified randomisation:** survey responses were first grouped by Local Authority and their variables were shuffled column-wise to preserve totals by Local Authority.
+- **Randomised upsampling:** survey responses were assigned a random MSOA that falls within the recorded Local Authority.
 
 ![](../assets/la_msoa_n.png)
+
+:::{.callout-warning}
+Because the tutorial microdata were synthesised by shuffling survey variables and randomly assigning MSOAs within each Local Authority, **the rows may no longer represent real combinations of responses.**
+
+Small-area estimates from this tutorial should therefore be treated as illustrative, not as real findings about Wales.
 :::
 
 ## Define the Estimands
@@ -178,6 +182,55 @@ survey_weights <- nsw_raw |>
 head(survey_weights)
 ```
 
+### Prepare Unit-Level Predictors
+
+Unit-level models need predictor variables in the survey data that can also be represented in the population data. For the tutorial estimands, we keep five categorical predictors that are plausible for commute distance, bus satisfaction, and walking frequency.
+
+| Predictor | Why it may be useful |
+|---|---|
+| `age_group` | Travel behaviour varies strongly over the life course. |
+| `sex` | Travel patterns and service experiences can differ by sex. |
+| `car_access` | Car availability affects commuting, bus use, and walking. |
+| `economic_status` | Employment status is directly linked to commuting and daily travel routines. |
+| `qualification_level` | Education can proxy socio-economic differences in work, travel, and service use. |
+
+```{r}
+survey_unit_predictors <- nsw_raw |>
+  transmute(
+    unit_id,
+    age_group = case_when(
+      Age >= 16 & Age <= 24 ~ "age_16_24",
+      Age >= 25 & Age <= 44 ~ "age_25_44",
+      Age >= 45 & Age <= 64 ~ "age_45_64",
+      Age >= 65 ~ "age_65_plus",
+      TRUE ~ NA_character_
+    ),
+    sex = case_when(
+      Sex == 1 ~ "sex_male",
+      Sex == 2 ~ "sex_female",
+      TRUE ~ NA_character_
+    ),
+    car_access = case_when(
+      CarUse == 1 ~ "car_access",
+      CarUse == 2 ~ "no_car_access",
+      TRUE ~ NA_character_
+    ),
+    economic_status = case_when(
+      DvEcoStat3 == 1 ~ "econ_employed",
+      DvEcoStat3 == 2 ~ "econ_unemployed",
+      DvEcoStat3 == 3 ~ "econ_inactive",
+      TRUE ~ NA_character_
+    ),
+    qualification_level = case_when(
+      HighEd == 1 ~ "higher_education",
+      HighEd == 2 ~ "no_higher_education",
+      TRUE ~ NA_character_
+    )
+  )
+
+head(survey_unit_predictors)
+```
+
 ### Check Missingness
 
 For each indicator, check whether there are areas with no usable observations or very few usable observations.
@@ -185,7 +238,8 @@ For each indicator, check whether there are areas with no usable observations or
 ```{r}
 survey_inputs <- survey_spatial_ids |>
   left_join(survey_indicators, by = "unit_id") |>
-  left_join(survey_weights, by = "unit_id")
+  left_join(survey_weights, by = "unit_id") |>
+  left_join(survey_unit_predictors, by = "unit_id")
 
 commute_counts <- survey_inputs |>
   filter(!is.na(commute_distance), !is.na(SampleAdultWeight)) |>
@@ -231,6 +285,7 @@ Each indicator microdata table should contain:
 | `strata` | Survey stratification variable |
 | `indicator` | Coded outcome variable |
 | `weight` | Survey weight matched to the estimand |
+| unit-level covariates | Categorical predictors used by unit-level models, when needed |
 
 ```{r}
 survey_indicator_commute <- survey_inputs |>
@@ -239,7 +294,12 @@ survey_indicator_commute <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = commute_distance,
-    weight = SampleAdultWeight
+    weight = SampleAdultWeight,
+    age_group,
+    sex,
+    car_access,
+    economic_status,
+    qualification_level
   )
 
 survey_indicator_bus <- survey_inputs |>
@@ -248,7 +308,12 @@ survey_indicator_bus <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = bus_nosat,
-    weight = SampleAdultWeight
+    weight = SampleAdultWeight,
+    age_group,
+    sex,
+    car_access,
+    economic_status,
+    qualification_level
   )
 
 survey_indicator_walk <- survey_inputs |>
@@ -257,7 +322,12 @@ survey_indicator_walk <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = freq_walker,
-    weight = SampleTravelWeight
+    weight = SampleTravelWeight,
+    age_group,
+    sex,
+    car_access,
+    economic_status,
+    qualification_level
   )
 
 head(survey_indicator_commute)
@@ -292,8 +362,14 @@ clean_data_files <- file.path(
   )
 )
 
+clean_data_zip <- file.path(output_dir, "tutorial-clean-data.zip")
+
+if (file.exists(clean_data_zip)) {
+  file.remove(clean_data_zip)
+}
+
 zip(
-  zipfile = file.path(output_dir, "tutorial-clean-data.zip"),
+  zipfile = clean_data_zip,
   files = clean_data_files,
   flags = "-j"
 )
