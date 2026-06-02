@@ -1,16 +1,531 @@
 ---
-title: "[WIP] Tutorial: Working with population cells"
+title: "[WIP] Tutorial: Estimation with population cells (MRP)"
 ---
 
-This workbook shows how to implement unit-level estimation when the population data are available as **cross-tabulated population cells**.
+Multilevel Regression and Poststratification (MRP) is a unit-level SAE workflow for cases where the population auxiliary data are available as cross-tabulated cells. The model is fitted to survey microdata, using predictors that are also represented in the population cells. Predictions are then made for each population cell and aggregated to the target geography using the cell counts.
 
-## Background
+For this tutorial, the estimand is the **mean commute distance among commuters by MSOA**, via the survey indicator `commute_distance`.
 
+## Population Cells
+
+The bundled [UK Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) are aggregate MSOA tables downloaded from Nomis. They provide separate marginal tables for variables that are useful for commute modelling:
+
+| Predictor | Source table | Use in this workbook |
+|---|---|---|
+| `age_group` | TS007A age by five-year age bands | Unit-level categorical predictor |
+| `sex` | TS008 sex | Unit-level categorical predictor |
+| `car_access` | TS045 car or van availability | Unit-level categorical predictor, using household car availability as a proxy |
+| commuter population total | TS061 method of travel to work | Population total for commuters, excluding people working mainly at or from home |
+| `cov_pop_density` | TS006 population density | Area-level predictor in the MRP model |
+
+:::{.callout-warning}
+The population cells created here are synthetic. The Census tables used here do not provide the observed joint distribution of age, sex, and car access among commuters by MSOA.
+
+The code therefore combines marginal tables under simplifying assumptions. This is useful for showing the file shape and MRP workflow, but it is not a substitute for observed cross-tabulated population counts, administrative registers, or a carefully constructed synthetic population.
+:::
+
+The commute-distance benchmark table, TS058, is not used as a model predictor because it directly measures a closely related outcome. It is reserved for validation.
+
+```{r}
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(INLA)
+
+clean_zip <- file.path("..", "data", "tutorial-clean-data.zip")
+unzip(clean_zip, exdir = tempdir())
+base_path <- file.path(tempdir())
+
+census_zip <- file.path("..", "data", "tutorial-census-data.zip")
+unzip(census_zip, exdir = tempdir())
+census_path <- file.path(tempdir())
+
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
+unzip(boundary_zip, exdir = tempdir())
+
+msoa_boundaries <- st_read(
+  file.path(tempdir(), "boundaries", "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(domain_id = MSOA21CD) |>
+  filter(str_starts(domain_id, "W"))
+
+msoa_domains <- msoa_boundaries |>
+  st_drop_geometry() |>
+  select(domain_id) |>
+  arrange(domain_id)
+
+read_census <- function(topic_code) {
+  file_name <- paste0("census2021-", topic_code, "-msoa.csv")
+  read_csv(file.path(census_path, file_name), show_col_types = FALSE) |>
+    filter(str_starts(`geography code`, "W")) |>
+    rename(domain_id = `geography code`)
+}
+```
+
+### Create Synthetic Population Cells
+
+The target population is commuters. We approximate the MSOA commuter total from TS061 as residents in employment minus residents who work mainly at or from home. This total is then allocated across age, sex, and car-access categories using the available marginal distributions.
+
+```{r}
+age_margins <- read_census("ts007a") |>
+  transmute(
+    domain_id,
+    age_16_24 =
+      `Age: Aged 15 to 19 years` +
+      `Age: Aged 20 to 24 years`,
+    age_25_44 =
+      `Age: Aged 25 to 29 years` +
+      `Age: Aged 30 to 34 years` +
+      `Age: Aged 35 to 39 years` +
+      `Age: Aged 40 to 44 years`,
+    age_45_64 =
+      `Age: Aged 45 to 49 years` +
+      `Age: Aged 50 to 54 years` +
+      `Age: Aged 55 to 59 years` +
+      `Age: Aged 60 to 64 years`,
+    age_65_plus =
+      `Age: Aged 65 to 69 years` +
+      `Age: Aged 70 to 74 years` +
+      `Age: Aged 75 to 79 years` +
+      `Age: Aged 80 to 84 years` +
+      `Age: Aged 85 years and over`
+  ) |>
+  pivot_longer(
+    cols = starts_with("age_"),
+    names_to = "age_group",
+    values_to = "age_count"
+  ) |>
+  group_by(domain_id) |>
+  mutate(age_prop = age_count / sum(age_count, na.rm = TRUE)) |>
+  ungroup() |>
+  select(domain_id, age_group, age_prop)
+
+sex_margins <- read_census("ts008") |>
+  transmute(
+    domain_id,
+    sex_female = `Sex: Female; measures: Value`,
+    sex_male = `Sex: Male; measures: Value`
+  ) |>
+  pivot_longer(
+    cols = starts_with("sex_"),
+    names_to = "sex",
+    values_to = "sex_count"
+  ) |>
+  group_by(domain_id) |>
+  mutate(sex_prop = sex_count / sum(sex_count, na.rm = TRUE)) |>
+  ungroup() |>
+  select(domain_id, sex, sex_prop)
+
+car_margins <- read_census("ts045") |>
+  transmute(
+    domain_id,
+    no_car_access = `Number of cars or vans: No cars or vans in household`,
+    car_access =
+      `Number of cars or vans: 1 car or van in household` +
+      `Number of cars or vans: 2 cars or vans in household` +
+      `Number of cars or vans: 3 or more cars or vans in household`
+  ) |>
+  pivot_longer(
+    cols = c(no_car_access, car_access),
+    names_to = "car_access",
+    values_to = "car_count"
+  ) |>
+  group_by(domain_id) |>
+  mutate(car_prop = car_count / sum(car_count, na.rm = TRUE)) |>
+  ungroup() |>
+  select(domain_id, car_access, car_prop)
+
+domain_sizes <- read_census("ts061") |>
+  transmute(
+    domain_id,
+    domain_size =
+      `Method of travel to workplace: Total: All usual residents aged 16 years and over in employment the week before the census`,
+    work_from_home =
+      `Method of travel to workplace: Work mainly at or from home`,
+    commuter_total = pmax(domain_size - work_from_home, 0)
+  ) |>
+  select(domain_id, domain_size, work_from_home, commuter_total)
+
+population_cells <- age_margins |>
+  inner_join(sex_margins, by = "domain_id") |>
+  inner_join(car_margins, by = "domain_id") |>
+  left_join(domain_sizes, by = "domain_id") |>
+  mutate(
+    pop_count = commuter_total * age_prop * sex_prop * car_prop,
+    cell_id = paste(domain_id, age_group, sex, car_access, sep = "_")
+  ) |>
+  select(cell_id, domain_id, age_group, sex, car_access, pop_count) |>
+  filter(pop_count > 0)
+
+head(population_cells)
+```
+
+```{r}
+#| echo: false
+output_dir <- file.path("..", "data")
+dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+write_csv(
+  domain_sizes,
+  file.path(output_dir, "domain_sizes_msoa.csv")
+)
+
+write_csv(
+  population_cells,
+  file.path(output_dir, "population_cells_commute_age_sex_car.csv")
+)
+```
+
+## Survey Microdata
+
+The microdata preparation workbook exports `ind_weight_commute_distance.csv` with the outcome, weight, estimation area, and the same categorical predictors used in the population cells.
+
+```{r}
+survey_indicator_commute <- read_csv(
+  file.path(base_path, "ind_weight_commute_distance.csv"),
+  show_col_types = FALSE
+)
+
+required_predictors <- c("age_group", "sex", "car_access")
+
+if (!all(required_predictors %in% names(survey_indicator_commute))) {
+  stop("Run the Microdata Preparation workbook first so the commute indicator file includes unit-level predictors.")
+}
+
+survey_mrp <- survey_indicator_commute |>
+  filter(
+    !is.na(indicator),
+    !is.na(weight),
+    !is.na(domain_id),
+    !is.na(age_group),
+    !is.na(sex),
+    !is.na(car_access)
+  )
+
+head(survey_mrp)
+```
+
+The population cells and the survey file must use the same category labels.
+
+```{r}
+survey_mrp |>
+  count(age_group, sex, car_access, sort = TRUE) |>
+  head()
+```
+
+## Fit the MRP Model
+
+This example uses a Gaussian outcome model because `commute_distance` is continuous. The model includes random effects for the unit-level categorical predictors and an MSOA random effect. It also includes population density as a scaled area-level covariate.
+
+```{r}
+area_covariates <- read_census("ts006") |>
+  transmute(
+    domain_id,
+    cov_pop_density = `Population Density: Persons per square kilometre; measures: Value`
+  ) |>
+  mutate(cov_pop_density = as.numeric(scale(cov_pop_density)))
+
+age_levels <- c("age_16_24", "age_25_44", "age_45_64", "age_65_plus")
+sex_levels <- c("sex_female", "sex_male")
+car_levels <- c("no_car_access", "car_access")
+domain_levels <- msoa_domains$domain_id
+
+add_model_ids <- function(data) {
+  data |>
+    mutate(
+      age_id = match(age_group, age_levels),
+      sex_id = match(sex, sex_levels),
+      car_access_id = match(car_access, car_levels),
+      domain_re_id = match(domain_id, domain_levels)
+    )
+}
+
+survey_model <- survey_mrp |>
+  left_join(area_covariates, by = "domain_id") |>
+  transmute(
+    row_type = "survey",
+    indicator,
+    domain_id,
+    age_group,
+    sex,
+    car_access,
+    cov_pop_density,
+    pop_count = NA_real_
+  ) |>
+  add_model_ids() |>
+  filter(
+    !is.na(age_id),
+    !is.na(sex_id),
+    !is.na(car_access_id),
+    !is.na(domain_re_id),
+    !is.na(cov_pop_density)
+  )
+
+poststrat_model <- population_cells |>
+  left_join(area_covariates, by = "domain_id") |>
+  transmute(
+    row_type = "poststrat",
+    indicator = NA_real_,
+    domain_id,
+    age_group,
+    sex,
+    car_access,
+    cov_pop_density,
+    pop_count
+  ) |>
+  add_model_ids() |>
+  filter(
+    !is.na(age_id),
+    !is.na(sex_id),
+    !is.na(car_access_id),
+    !is.na(domain_re_id),
+    !is.na(cov_pop_density),
+    pop_count > 0
+  )
+
+mrp_model_data <- bind_rows(survey_model, poststrat_model) |>
+  mutate(model_row = row_number())
+
+mrp_formula <- indicator ~ 1 +
+  cov_pop_density +
+  f(age_id, model = "iid") +
+  f(sex_id, model = "iid") +
+  f(car_access_id, model = "iid") +
+  f(domain_re_id, model = "iid")
+
+mrp_fit <- INLA::inla(
+  formula = mrp_formula,
+  family = "gaussian",
+  data = mrp_model_data,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
+  verbose = FALSE
+)
+```
+
+The survey weights are not passed directly into this basic INLA outcome model. They are still useful for direct estimates and diagnostics, while poststratification uses the population cell counts to align the model predictions with the target population. A production analysis should decide explicitly whether and how to incorporate survey design features into the unit-level model.
+
+## Poststratify to MSOA
+
+For each posterior draw, the fitted value for every population cell is weighted by `pop_count` and averaged within MSOA.
+
+```{r}
+poststrat_rows <- mrp_model_data |>
+  filter(row_type == "poststrat") |>
+  select(model_row, domain_id, pop_count)
+
+posterior_samples <- INLA::inla.posterior.sample(
+  n = 1000,
+  result = mrp_fit
+)
+
+predictor_names <- paste0("Predictor:", poststrat_rows$model_row)
+
+cell_prediction_draws <- vapply(
+  posterior_samples,
+  function(sample) {
+    as.numeric(sample$latent[predictor_names, 1])
+  },
+  numeric(nrow(poststrat_rows))
+)
+
+domain_index <- split(seq_len(nrow(poststrat_rows)), poststrat_rows$domain_id)
+
+mrp_draws_by_domain <- lapply(names(domain_index), function(area) {
+  row_ids <- domain_index[[area]]
+  weights <- poststrat_rows$pop_count[row_ids] / sum(poststrat_rows$pop_count[row_ids])
+  area_draws <- colSums(cell_prediction_draws[row_ids, , drop = FALSE] * weights)
+
+  tibble(
+    domain_id = area,
+    mrp_mean = mean(area_draws),
+    mrp_lower = as.numeric(quantile(area_draws, 0.025)),
+    mrp_upper = as.numeric(quantile(area_draws, 0.975)),
+    mrp_ci_width = mrp_upper - mrp_lower
+  )
+}) |>
+  bind_rows()
+
+head(mrp_draws_by_domain)
+```
+
+```{r}
+#| echo: false
+write_csv(
+  mrp_draws_by_domain,
+  file.path("..", "data", "mrp_commute_estimates.csv")
+)
+```
+
+```{r}
+mrp_map <- msoa_boundaries |>
+  left_join(mrp_draws_by_domain, by = "domain_id")
+
+ggplot(mrp_map) +
+  geom_sf(aes(fill = mrp_mean), colour = "white", linewidth = 0.05) +
+  scale_fill_distiller(palette = "Blues", direction = 1, na.value = "grey85") +
+  labs(
+    title = "MRP estimate of mean commute distance by MSOA",
+    fill = "Miles"
+  ) +
+  theme_void()
+```
+
+## Compare with Direct Estimates
+
+Direct estimates provide a useful diagnostic reference. They are noisy for small domains, but they show the pattern in the observed survey data before model-based smoothing and poststratification.
+
+```{r}
+direct_commute <- survey_mrp |>
+  group_by(domain_id) |>
+  summarise(
+    direct = weighted.mean(indicator, weight, na.rm = TRUE),
+    n = n(),
+    .groups = "drop"
+  )
+
+commute_comparison <- msoa_domains |>
+  left_join(direct_commute, by = "domain_id") |>
+  left_join(mrp_draws_by_domain, by = "domain_id")
+
+ranked_commute <- commute_comparison |>
+  filter(!is.na(direct), !is.na(mrp_mean)) |>
+  arrange(direct, domain_id) |>
+  mutate(direct_estimate_rank = row_number())
+
+ggplot(ranked_commute, aes(x = direct_estimate_rank)) +
+  geom_ribbon(aes(ymin = mrp_lower, ymax = mrp_upper), fill = "#54A24B", alpha = 0.16) +
+  geom_line(aes(y = direct, colour = "Direct"), linewidth = 0.45) +
+  geom_line(aes(y = mrp_mean, colour = "MRP"), linewidth = 0.45) +
+  scale_colour_manual(values = c(
+    "Direct" = "blue",
+    "MRP" = "#54A24B"
+  )) +
+  labs(
+    title = "Direct vs. MRP estimates",
+    x = "MSOAs with direct estimates, ranked by direct estimate",
+    y = "Mean commute distance (miles)",
+    colour = NULL
+  ) +
+  theme_minimal()
+```
+
+## Spatial Structure
 ...
 
-## Practical Tutorial
+## Validation
 
-:::{.callout-note}
-Practical tutorial to be added.
-NEED CROSSTABULATED DATA + MRP CODE IN INLA
-:::
+UK Census 2021 TS058 provides an external benchmark for distance travelled to work. The table is binned and reported in kilometres, so we approximate the mean using category midpoints and convert to miles.
+
+```{r}
+benchmark_commute_distance <- read_census("ts058") |>
+  transmute(
+    domain_id,
+    benchmark_commute_distance =
+      (
+        `Distance travelled to work: Less than 2km` * 1 +
+          `Distance travelled to work: 2km to less than 5km` * 3.5 +
+          `Distance travelled to work: 5km to less than 10km` * 7.5 +
+          `Distance travelled to work: 10km to less than 20km` * 15 +
+          `Distance travelled to work: 20km to less than 30km` * 25 +
+          `Distance travelled to work: 30km to less than 40km` * 35 +
+          `Distance travelled to work: 40km to less than 60km` * 50 +
+          `Distance travelled to work: 60km and over` * 75
+      ) /
+      (
+        `Distance travelled to work: Less than 2km` +
+          `Distance travelled to work: 2km to less than 5km` +
+          `Distance travelled to work: 5km to less than 10km` +
+          `Distance travelled to work: 10km to less than 20km` +
+          `Distance travelled to work: 20km to less than 30km` +
+          `Distance travelled to work: 30km to less than 40km` +
+          `Distance travelled to work: 40km to less than 60km` +
+          `Distance travelled to work: 60km and over`
+      ) * 0.621371
+  )
+```
+
+```{r}
+validation_commute <- commute_comparison |>
+  left_join(benchmark_commute_distance, by = "domain_id") |>
+  select(benchmark_commute_distance, direct, mrp_mean) |>
+  pivot_longer(
+    cols = -benchmark_commute_distance,
+    names_to = "method",
+    values_to = "estimate"
+  ) |>
+  mutate(
+    method = recode(
+      method,
+      direct = "Direct",
+      mrp_mean = "MRP"
+    )
+  )
+
+ggplot(validation_commute, aes(x = benchmark_commute_distance, y = estimate)) +
+  geom_point(alpha = 0.5) +
+  geom_abline(slope = 1, intercept = 0) +
+  facet_wrap(~method) +
+  labs(
+    title = "MRP estimates vs. Benchmark",
+    x = "Benchmark mean commute distance (miles)",
+    y = "Estimated mean commute distance (miles)"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+validation_map <- msoa_boundaries |>
+  left_join(commute_comparison, by = "domain_id") |>
+  left_join(benchmark_commute_distance, by = "domain_id") |>
+  mutate(mrp_minus_benchmark = mrp_mean - benchmark_commute_distance)
+
+ggplot(validation_map) +
+  geom_sf(aes(fill = mrp_minus_benchmark), colour = "white", linewidth = 0.05) +
+  scale_fill_gradient2(
+    low = "blue",
+    mid = "white",
+    high = "red",
+    midpoint = 0,
+    na.value = "grey85"
+  ) +
+  labs(
+    title = "MRP estimate minus benchmark",
+    fill = "Miles"
+  ) +
+  theme_void()
+```
+
+```{r}
+validation_ranked <- commute_comparison |>
+  left_join(benchmark_commute_distance, by = "domain_id") |>
+  filter(!is.na(benchmark_commute_distance), !is.na(mrp_mean)) |>
+  arrange(benchmark_commute_distance, domain_id) |>
+  mutate(benchmark_rank = row_number())
+
+ggplot(validation_ranked, aes(x = benchmark_rank)) +
+  geom_ribbon(
+    aes(ymin = mrp_lower, ymax = mrp_upper),
+    fill = "#54A24B",
+    alpha = 0.16
+  ) +
+  geom_line(aes(y = mrp_mean, colour = "MRP"), linewidth = 0.45) +
+  geom_line(aes(y = benchmark_commute_distance, colour = "Benchmark"), linewidth = 0.45) +
+  scale_colour_manual(values = c(
+    "MRP" = "#54A24B",
+    "Benchmark" = "blue"
+  )) +
+  labs(
+    title = "Mean commute distance: MRP estimates vs. benchmark",
+    x = "MSOAs, ranked by benchmark",
+    y = "Mean commute distance (miles)",
+    colour = NULL
+  ) +
+  theme_minimal()
+```
+
+The validation plots should be read as diagnostics, not as proof that the model is correct. Persistent overprediction or underprediction against the benchmark suggests that the model is missing important predictors, the synthetic cells are too crude, or the survey and Census definitions are not fully aligned.
