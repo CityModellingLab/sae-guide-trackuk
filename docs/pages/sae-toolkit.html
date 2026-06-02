@@ -117,12 +117,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="dropdown-text">1. Overview</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/unit-level-popcell.html" rel="" target="">
- <span class="dropdown-text">2. MRP with Population Cells</span></a>
+    <a class="dropdown-item" href="../pages/unit-level-multiregress.html" rel="" target="">
+ <span class="dropdown-text">2. Multilevel Regression</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/unit-level-popunit.html" rel="" target="">
- <span class="dropdown-text">3. Bayesian Microdata Prediction</span></a>
+    <a class="dropdown-item" href="../pages/unit-level-poststrat.html" rel="" target="">
+ <span class="dropdown-text">3. Poststratification</span></a>
   </li>  
         <li class="dropdown-header">IV. Extended Topics</li>
         <li>
@@ -274,14 +274,14 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-popcell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tutorial: MRP with population cells</span></a>
+  <a href="../pages/unit-level-multiregress.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Tutorial: Multilevel regression</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-popunit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">[WIP] Tutorial: Working with population microdata</span></a>
+  <a href="../pages/unit-level-poststrat.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Tutorial: Poststratification</span></a>
   </div>
 </li>
       </ul>
@@ -386,7 +386,7 @@ ul.task-list li input[type="checkbox"] {
 <li>a <strong>domain-size file</strong>, with one row per estimation area</li>
 <li>a <strong>covariate file</strong>, when fitting an area-level model</li>
 <li><strong>boundary geometry</strong> to map results or derive spatial structure, if relevant</li>
-<li>(optional) <strong>population unit file</strong> when fitting unit-level SAE</li>
+<li>(optional) <strong>population cell file</strong> when fitting MRP</li>
 </ul>
 <section id="survey-indicator-file" class="level3" data-number="1.1">
 <h3 data-number="1.1" class="anchored" data-anchor-id="survey-indicator-file"><span class="header-section-number">1.1</span> Survey indicator file:</h3>
@@ -502,7 +502,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="files-for-unit-level-estimation" class="level3" data-number="1.5">
 <h3 data-number="1.5" class="anchored" data-anchor-id="files-for-unit-level-estimation"><span class="header-section-number">1.5</span> Files for unit-level estimation</h3>
-<p>Unit-level SAE needs two harmonised files:</p>
+<p>MRP needs two harmonised files:</p>
 <ul>
 <li>The <code>survey_unit_data</code> file besides <code>indicator</code> also needs covariates used to fit the model</li>
 </ul>
@@ -545,7 +545,7 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 <ul>
-<li>The <code>population_unit_data</code> file provides the prediction population (real or synthetic microdata), with one row per population unit, household, or population cell. The covariates must match those in <code>survey_unit_data</code>.</li>
+<li>The <code>population_cell_data</code> file provides the prediction population as cross-tabulated cells. The covariates must match those in <code>survey_unit_data</code>.</li>
 </ul>
 <table class="table">
 <colgroup>
@@ -560,20 +560,20 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>unit_id</code></td>
-<td>Population person, household, or synthetic unit ID.</td>
-</tr>
-<tr class="even">
 <td><code>domain_id</code></td>
 <td>Estimation area code used to aggregate predictions.</td>
 </tr>
+<tr class="even">
+<td><code>cell_id</code></td>
+<td>Unique population-cell ID.</td>
+</tr>
 <tr class="odd">
 <td><code>covariate_*</code></td>
-<td>Matching individual or household covariate also used in <code>survey_unit_data</code>.</td>
+<td>Matching covariate category also used in <code>survey_unit_data</code>.</td>
 </tr>
 <tr class="even">
-<td><code>pop_weight</code></td>
-<td>Population count represented by the row (optional, in case population cells are used)</td>
+<td><code>pop_count</code></td>
+<td>Population count represented by the cell.</td>
 </tr>
 </tbody>
 </table>
@@ -642,7 +642,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td><a href="../scripts/unit_level_sae.R">unit_level_sae.R</a></td>
-<td>Fit Bayesian unit-level model using survey microdata and population or synthetic-population covariates.</td>
+<td>Fit a basic MRP workflow with INLA using survey microdata and population cells.</td>
 </tr>
 <tr class="even">
 <td><a href="../scripts/diagnostics.R">diagnostics.R</a></td>

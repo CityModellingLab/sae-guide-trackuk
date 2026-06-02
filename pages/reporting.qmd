@@ -42,9 +42,7 @@ library(stringr)
 library(sf)
 
 # Load boundaries for mapping
-boundary_zip <- tempfile(fileext = ".zip")
-boundary_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-boundaries.zip"
-download.file(boundary_url, boundary_zip, mode = "wb")
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
 unzip(boundary_zip, exdir = tempdir())
 
 msoa_boundaries <- st_read(
@@ -55,14 +53,13 @@ msoa_boundaries <- st_read(
   filter(str_starts(domain_id, "W"))
 
 # Load exported estimates
-estimate_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/bayesian_area_sae_commute_estimates.csv"
+estimate_path <- file.path("..", "data", "commute_estimates_fh_bayesian.csv")
 
 commute_estimates <- read_csv(
-  estimate_url,
+  estimate_path,
   show_col_types = FALSE
 )
 
 commute_map_data <- msoa_boundaries |>
   left_join(commute_estimates, by = "domain_id")
 ```
-

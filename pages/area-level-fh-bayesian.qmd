@@ -98,28 +98,16 @@ library(stringr)
 library(tidyr)
 library(sf)
 library(ggplot2)
-library(survey)
 library(SUMMER)
 library(spdep)
 
-# Load analysis-ready data into a temp folder
-zip_tmp <- tempfile(fileext = ".zip")
-url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-clean-data.zip"
-download.file(url, zip_tmp, mode = "wb")
-unzip(zip_tmp, exdir = tempdir())
-base_path <- file.path(tempdir())
-
 # Load Census files into a temp folder
-census_zip_tmp <- tempfile(fileext = ".zip")
-census_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-census-data.zip"
-download.file(census_url, census_zip_tmp, mode = "wb")
+census_zip_tmp <- file.path("..", "data", "tutorial-census-data.zip")
 unzip(census_zip_tmp, exdir = tempdir())
 census_path <- file.path(tempdir())
 
 # Load shapefiles for plotting
-boundary_zip <- tempfile(fileext = ".zip")
-boundary_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-boundaries.zip"
-download.file(boundary_url, boundary_zip, mode = "wb")
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
 unzip(boundary_zip, exdir = tempdir())
 
 msoa_boundaries <- st_read(
@@ -141,23 +129,33 @@ read_census <- function(topic_code) {
     rename(domain_id = `geography code`)
 }
 ```
-### Load Indicator
 
-Load the `commute_distance` indicator file. This indicator is continuous and is defined among respondents with a valid commute distance.
+### Load Direct Estimates
+
+The previous workbook exports the direct estimates for mean commute distance by MSOA. The Bayesian Fay-Herriot model uses the direct estimate and its sampling variance as the response and known observation-level uncertainty.
 
 ```{r}
-survey_indicator_commute <- read_csv(
-  file.path(base_path, "ind_weight_commute_distance.csv"),
+direct_estimate_path <- file.path("..", "data", "commute_estimates_direct.csv")
+
+direct_est_commute <- read_csv(
+  direct_estimate_path,
   show_col_types = FALSE
 ) |>
+  transmute(
+    domain_id,
+    direct = direct_estimate,
+    variance,
+    direct_lower = direct_ci_lower,
+    direct_upper = direct_ci_upper,
+    direct_ci_width
+  ) |>
   filter(
-    !is.na(indicator),
-    !is.na(weight),
-    !is.na(domain_id),
-    !is.na(strata)
+    !is.na(direct),
+    !is.na(variance),
+    variance > 0
   )
 
-head(survey_indicator_commute)
+head(direct_est_commute)
 ```
 
 ### Prepare Area-Level Covariates
@@ -255,44 +253,10 @@ head(covariates_commute_summer)
 #| echo: false
 write_csv(
   covariates_commute_summer,
-  file.path("..", "data", "bayesian_area_sae_commute_covariates.csv")
+  file.path("..", "data", "aux_area_covar_commute.csv")
 )
 ```
 
-### Direct Estimates
-
-The direct estimate is recreated here so the Bayesian FH model receives the direct estimate and its sampling variance in the format expected by `smoothArea()`.
-
-```{r}
-design_commute <- survey::svydesign(
-  ids = ~1,
-  strata = ~strata,
-  weights = ~weight,
-  data = survey_indicator_commute
-)
-
-commute_mean <- survey::svyby(
-  formula = ~indicator,
-  by = ~domain_id,
-  design = design_commute,
-  FUN = survey::svymean,
-  vartype = "se",
-  na.rm = TRUE
-) |>
-  tibble::as_tibble()
-
-direct_est_commute <- commute_mean |>
-  transmute(
-    domain_id,
-    direct = indicator,
-    variance = se^2,
-    direct_lower = direct - 1.96 * sqrt(variance),
-    direct_upper = direct + 1.96 * sqrt(variance),
-    direct_ci_width = direct_upper - direct_lower
-  )
-
-head(direct_est_commute)
-```
 ### Fit Fay-Herriot Model
 
 With all the components ready, we can now proceed to fitting a Fay-Herriot model on our estimates. For `smoothArea()`, we need to standardise the direct estimates. After fitting, the FH estimates are transformed back to the original reporting scale, and we can also extract the posterior variance, and 95% credible interval for each MSOA.
@@ -649,6 +613,6 @@ estimate_summary <- commute_comparison |>
 
 write_csv(
   estimate_summary,
-  file.path("..","data", "bayesian_area_sae_commute_estimates.csv")
+  file.path("..","data", "commute_estimates_fh_bayesian.csv")
 )
 ```

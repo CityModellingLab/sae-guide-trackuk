@@ -12,7 +12,7 @@ A SAE workflow usually needs:
 - a **domain-size file**, with one row per estimation area
 - a **covariate file**, when fitting an area-level model
 - **boundary geometry** to map results or derive spatial structure, if relevant
-- (optional) **population unit file** when fitting unit-level SAE
+- (optional) **population cell file** when fitting MRP
 
 ### Survey indicator file:
 
@@ -56,7 +56,7 @@ Covariates are area-level predictors available for every estimation area. They s
 
 ### Files for unit-level estimation
 
-Unit-level SAE needs two harmonised files: 
+MRP needs two harmonised files:
 
 - The `survey_unit_data` file besides `indicator` also needs covariates used to fit the model
 
@@ -69,14 +69,14 @@ Unit-level SAE needs two harmonised files:
 | `stratum`     | (optional) survey stratum.                              |
 | `covariate_*` | Individual or household covariate. |
 
-- The `population_unit_data` file provides the prediction population (real or synthetic microdata), with one row per population unit, household, or population cell. The covariates must match those in `survey_unit_data`.
+- The `population_cell_data` file provides the prediction population as cross-tabulated cells. The covariates must match those in `survey_unit_data`.
 
 | Column        | Meaning |
 |---------------|---------|
-| `unit_id`     | Population person, household, or synthetic unit ID. |
 | `domain_id`   | Estimation area code used to aggregate predictions. |
-| `covariate_*` | Matching individual or household covariate also used in `survey_unit_data`. |
-| `pop_weight`  | Population count represented by the row (optional, in case population cells are used) |
+| `cell_id`     | Unique population-cell ID. |
+| `covariate_*` | Matching covariate category also used in `survey_unit_data`. |
+| `pop_count`   | Population count represented by the cell. |
 
 ### Recommended output schema
 
@@ -99,5 +99,5 @@ Reusable scripts can be adapted once the input files follow the schema above.
 |---|---|
 | [direct_estimates.R](../scripts/direct_estimates.R) | Calculate direct estimates by estimation area, sampling variances, and confidence intervals. |
 | [area_level_sae.R](../scripts/area_level_sae.R) | Fit Bayesian area-level model with covariates and spatial structure derived from boundary geometry, if relevant. |
-| [unit_level_sae.R](../scripts/unit_level_sae.R) | Fit Bayesian unit-level model using survey microdata and population or synthetic-population covariates. |
+| [unit_level_sae.R](../scripts/unit_level_sae.R) | Fit a basic MRP workflow with INLA using survey microdata and population cells. |
 | [diagnostics.R](../scripts/diagnostics.R) | Create comparison tables and plots for checking estimates, uncertainty, and model outputs. |

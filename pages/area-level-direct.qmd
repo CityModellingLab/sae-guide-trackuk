@@ -35,7 +35,9 @@ Use direct estimates and sampling variances to decide whether direct reporting i
 
 ## Practical tutorial
 
-In this workbook, we calculate direct estimates for **three example estimands** at MSOA level:
+In this workbook, the main worked example is **mean commute distance among commuters by MSOA**. This is the direct estimate used by the Bayesian Fay-Herriot workbook that follows.
+
+Two additional examples are included at the end to show how direct estimation changes for other measures:
 
 - mean commute distance among commuters,
 - share of recent bus riders who are dissatisfied with bus services, and
@@ -53,17 +55,11 @@ library(sf)
 library(ggplot2)
 library(patchwork)
 
-# Load analysis-ready data into a temp folder
-zip_tmp <- tempfile(fileext = ".zip")
-url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-clean-data.zip"
-download.file(url, zip_tmp, mode = "wb")
-unzip(zip_tmp, exdir = tempdir())
+clean_zip <- file.path("..", "data", "tutorial-clean-data.zip")
+unzip(clean_zip, exdir = tempdir())
 base_path <- file.path(tempdir())
 
-# Load shapefiles for plotting
-boundary_zip <- tempfile(fileext = ".zip")
-boundary_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-boundaries.zip"
-download.file(boundary_url, boundary_zip, mode = "wb")
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
 unzip(boundary_zip, exdir = tempdir())
 
 msoa_boundaries <- st_read(
@@ -78,10 +74,11 @@ msoa_domains <- msoa_boundaries |>
   select(domain_id)
 ```
 
-### Mean commute distance among commuters by MSOA
+### Main Example: Mean Commute Distance
+
 The indicator `commute_distance` is continuous, so the direct estimate is simply the weighted mean commute distance among available commuter respondents.
 
-#### Direct Estimation
+#### Load the Indicator
 
 ```{r}
 #| code-fold: false
@@ -95,8 +92,21 @@ survey_indicator_commute <- read_csv(
     !is.na(weight),
     !is.na(domain_id),
     !is.na(strata)
+  ) |>
+  dplyr::select(
+    unit_id,
+    domain_id,
+    strata,
+    indicator,
+    weight
   )
 
+head(survey_indicator_commute)
+```
+
+#### Estimate the Weighted Mean
+
+```{r}
 # Set up the survey design
 design_commute <- survey::svydesign(
   ids = ~1,
@@ -129,7 +139,8 @@ dir_est_commute <- commute_mean |>
 
 head(dir_est_commute)
 ```
-#### Evaluation
+
+#### Evaluate the Estimate
 
 ```{r}
 commute_map_data <- msoa_boundaries |>
@@ -181,11 +192,37 @@ msoa_domains |>
 
 The direct estimates are relatively stable: most MSOAs have at least some usable commuter observations. Even so, the confidence intervals remain fairly wide in practical terms, so the direct estimates should still be treated as noisy area-level summaries.
 
-### Dissatisfied bus users among recent adult bus riders by MSOA
+```{r}
+#| echo: false
+commute_direct_export <- msoa_domains |>
+  left_join(commute_sample_n, by = "domain_id") |>
+  left_join(dir_est_commute, by = "domain_id") |>
+  mutate(n = replace_na(n, 0)) |>
+  transmute(
+    domain_id,
+    direct_estimate = direct,
+    variance,
+    direct_ci_lower = direct - 1.96 * sqrt(variance),
+    direct_ci_upper = direct + 1.96 * sqrt(variance),
+    direct_ci_width = ci_width,
+    n
+  )
+
+write_csv(
+  commute_direct_export,
+  file.path("..", "data", "commute_estimates_direct.csv")
+)
+```
+
+### Additional Examples
+
+The next two examples use the same broad workflow but different measures. They are included to show how the estimand affects the direct estimator and the resulting uncertainty.
+
+#### Dissatisfied Bus Users
 
 The indicator `bus_nosat` is binary. It is defined only among adults who rode a bus in the last 12 months: `1` means dissatisfied, `0` means not dissatisfied, and non-riders are left as nulls. The direct estimate is the weighted proportion among available recent bus riders.
 
-#### Direct Estimation
+##### Direct Estimation
 
 ```{r}
 #| code-fold: false
@@ -233,7 +270,7 @@ dir_est_bus <- bus_mean |>
 
 head(dir_est_bus)
 ```
-#### Evaluation
+##### Evaluation
 ```{r}
 bus_map_data <- msoa_boundaries |>
   left_join(
@@ -285,7 +322,7 @@ msoa_domains |>
 
 The direct estimates have reasonable geographic coverage, but they remain imprecise because the estimand is restricted to adults who rode a bus in the last 12 months. This smaller eligible group reduces the effective sample size within many MSOAs, which is reflected in the CI-width map and summary diagnostics. Model-based estimation is likely to produce more stable local estimates.
 
-### Frequent walkers per 1,000 residents by MSOA
+#### Frequent Walkers per 1,000 Residents
 
 `freq_walker` is a binary survey indicator for whether a respondent walks for transport daily. The direct estimate for each area is therefore to be calculated as a weighted total of this indicator (i.e., total number of frequent walkers in the MSOA), divided by a domain size (i.e., total population by MSOA), and multiple by 1,000.
 
@@ -310,7 +347,7 @@ This approach only works when the analysis weight $w^A$ and domain size $N_d$ re
 If they do not, for example when adult-population domain sizes are needed, use the survey-provided adult-population grossing weights $w^G$ and the corresponding adult population by MSOA as the domain sizes $N_d$.
 :::
 
-#### Direct Estimation
+##### Direct Estimation
 
 ```{r}
 #| code-fold: false
@@ -359,7 +396,7 @@ dir_est_walk <- walk_mean |>
 head(dir_est_walk)
 ```
 
-#### Evaluation
+##### Evaluation
 
 ```{r}
 # Plot estimate and CI width

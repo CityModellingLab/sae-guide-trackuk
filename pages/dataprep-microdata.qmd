@@ -115,11 +115,7 @@ library(readr)
 library(stringr)
 library(ggplot2)
 
-# Download the simulated survey microdata into a temp file
-survey_file <- file.path(tempdir(), "nsw_2223_msoa_la.csv")
-survey_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/nsw_2223_msoa_la.csv"
-download.file(survey_url, survey_file, mode = "wb")
-
+survey_file <- file.path("..", "data", "nsw_2223_msoa_la.csv")
 ```
 
 ### Load Survey Data
@@ -182,55 +178,6 @@ survey_weights <- nsw_raw |>
 head(survey_weights)
 ```
 
-### Prepare Unit-Level Predictors
-
-Unit-level models need predictor variables in the survey data that can also be represented in the population data. For the tutorial estimands, we keep five categorical predictors that are plausible for commute distance, bus satisfaction, and walking frequency.
-
-| Predictor | Why it may be useful |
-|---|---|
-| `age_group` | Travel behaviour varies strongly over the life course. |
-| `sex` | Travel patterns and service experiences can differ by sex. |
-| `car_access` | Car availability affects commuting, bus use, and walking. |
-| `economic_status` | Employment status is directly linked to commuting and daily travel routines. |
-| `qualification_level` | Education can proxy socio-economic differences in work, travel, and service use. |
-
-```{r}
-survey_unit_predictors <- nsw_raw |>
-  transmute(
-    unit_id,
-    age_group = case_when(
-      Age >= 16 & Age <= 24 ~ "age_16_24",
-      Age >= 25 & Age <= 44 ~ "age_25_44",
-      Age >= 45 & Age <= 64 ~ "age_45_64",
-      Age >= 65 ~ "age_65_plus",
-      TRUE ~ NA_character_
-    ),
-    sex = case_when(
-      Sex == 1 ~ "sex_male",
-      Sex == 2 ~ "sex_female",
-      TRUE ~ NA_character_
-    ),
-    car_access = case_when(
-      CarUse == 1 ~ "car_access",
-      CarUse == 2 ~ "no_car_access",
-      TRUE ~ NA_character_
-    ),
-    economic_status = case_when(
-      DvEcoStat3 == 1 ~ "econ_employed",
-      DvEcoStat3 == 2 ~ "econ_unemployed",
-      DvEcoStat3 == 3 ~ "econ_inactive",
-      TRUE ~ NA_character_
-    ),
-    qualification_level = case_when(
-      HighEd == 1 ~ "higher_education",
-      HighEd == 2 ~ "no_higher_education",
-      TRUE ~ NA_character_
-    )
-  )
-
-head(survey_unit_predictors)
-```
-
 ### Check Missingness
 
 For each indicator, check whether there are areas with no usable observations or very few usable observations.
@@ -238,8 +185,7 @@ For each indicator, check whether there are areas with no usable observations or
 ```{r}
 survey_inputs <- survey_spatial_ids |>
   left_join(survey_indicators, by = "unit_id") |>
-  left_join(survey_weights, by = "unit_id") |>
-  left_join(survey_unit_predictors, by = "unit_id")
+  left_join(survey_weights, by = "unit_id")
 
 commute_counts <- survey_inputs |>
   filter(!is.na(commute_distance), !is.na(SampleAdultWeight)) |>
@@ -285,7 +231,6 @@ Each indicator microdata table should contain:
 | `strata` | Survey stratification variable |
 | `indicator` | Coded outcome variable |
 | `weight` | Survey weight matched to the estimand |
-| unit-level covariates | Categorical predictors used by unit-level models, when needed |
 
 ```{r}
 survey_indicator_commute <- survey_inputs |>
@@ -294,12 +239,7 @@ survey_indicator_commute <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = commute_distance,
-    weight = SampleAdultWeight,
-    age_group,
-    sex,
-    car_access,
-    economic_status,
-    qualification_level
+    weight = SampleAdultWeight
   )
 
 survey_indicator_bus <- survey_inputs |>
@@ -308,12 +248,7 @@ survey_indicator_bus <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = bus_nosat,
-    weight = SampleAdultWeight,
-    age_group,
-    sex,
-    car_access,
-    economic_status,
-    qualification_level
+    weight = SampleAdultWeight
   )
 
 survey_indicator_walk <- survey_inputs |>
@@ -322,12 +257,7 @@ survey_indicator_walk <- survey_inputs |>
     domain_id = msoa_code,
     strata = la_code,
     indicator = freq_walker,
-    weight = SampleTravelWeight,
-    age_group,
-    sex,
-    car_access,
-    economic_status,
-    qualification_level
+    weight = SampleTravelWeight
   )
 
 head(survey_indicator_commute)

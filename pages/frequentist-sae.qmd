@@ -33,17 +33,11 @@ library(ggplot2)
 library(survey)
 library(sae)
 
-# Load analysis-ready survey indicator files
-zip_tmp <- tempfile(fileext = ".zip")
-clean_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-clean-data.zip"
-download.file(clean_url, zip_tmp, mode = "wb")
-unzip(zip_tmp, exdir = tempdir())
+clean_zip <- file.path("..", "data", "tutorial-clean-data.zip")
+unzip(clean_zip, exdir = tempdir())
 base_path <- file.path(tempdir())
 
-# Load boundaries for mapping
-boundary_zip <- tempfile(fileext = ".zip")
-boundary_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/tutorial-boundaries.zip"
-download.file(boundary_url, boundary_zip, mode = "wb")
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
 unzip(boundary_zip, exdir = tempdir())
 
 msoa_boundaries <- st_read(
@@ -54,18 +48,18 @@ msoa_boundaries <- st_read(
   filter(str_starts(domain_id, "W"))
 
 # Load Bayesian area-level estimates exported from the previous workbook
-bayesian_est_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/bayesian_area_sae_commute_estimates.csv"
+bayesian_est_path <- file.path("..", "data", "commute_estimates_fh_bayesian.csv")
 
 bayesian_area_estimates <- read_csv(
-  bayesian_est_url,
+  bayesian_est_path,
   show_col_types = FALSE
 )
 
 # Load the standardised covariates used in the Bayesian FH model
-covariate_url <- "https://raw.githubusercontent.com/shaunhoang/tutorial-site/main/data/bayesian_area_sae_commute_covariates.csv"
+covariate_path <- file.path("..", "data", "aux_area_covar_commute.csv")
 
 commute_covariates <- read_csv(
-  covariate_url,
+  covariate_path,
   show_col_types = FALSE
 )
 ```
@@ -82,6 +76,13 @@ survey_indicator_commute <- read_csv(
     !is.na(weight),
     !is.na(domain_id),
     !is.na(strata)
+  ) |>
+  dplyr::select(
+    unit_id,
+    domain_id,
+    strata,
+    indicator,
+    weight
   )
 
 design_commute <- survey::svydesign(

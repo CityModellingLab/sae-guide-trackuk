@@ -30,7 +30,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../pages/unit-level-popcell.html" rel="next">
+<link href="../pages/unit-level-multiregress.html" rel="next">
 <link href="../pages/area-level-fh-bayesian.html" rel="prev">
 <link href="../assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js"></script>
@@ -119,12 +119,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="dropdown-text">1. Overview</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/unit-level-popcell.html" rel="" target="">
- <span class="dropdown-text">2. Estimation with Population Cells</span></a>
+    <a class="dropdown-item" href="../pages/unit-level-multiregress.html" rel="" target="">
+ <span class="dropdown-text">2. Multilevel Regression</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../pages/unit-level-popunit.html" rel="" target="">
- <span class="dropdown-text">3. Estimation with Population Microdata</span></a>
+    <a class="dropdown-item" href="../pages/unit-level-poststrat.html" rel="" target="">
+ <span class="dropdown-text">3. Poststratification</span></a>
   </li>  
         <li class="dropdown-header">IV. Extended Topics</li>
         <li>
@@ -276,14 +276,14 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-popcell.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Tutorial: Estimation with population cells (MRP)</span></a>
+  <a href="../pages/unit-level-multiregress.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Tutorial: Multilevel regression</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-popunit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">[WIP] Tutorial: Estimation with population microdata</span></a>
+  <a href="../pages/unit-level-poststrat.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">[WIP] Tutorial: Poststratification</span></a>
   </div>
 </li>
       </ul>
@@ -347,7 +347,7 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#from-area-level-to-unit-level" id="toc-from-area-level-to-unit-level" class="nav-link active" data-scroll-target="#from-area-level-to-unit-level"><span class="header-section-number">1</span> From Area-Level to Unit-Level</a></li>
-  <li><a href="#unit-level-estimation-methodologies" id="toc-unit-level-estimation-methodologies" class="nav-link" data-scroll-target="#unit-level-estimation-methodologies"><span class="header-section-number">2</span> Unit-Level Estimation Methodologies</a></li>
+  <li><a href="#unit-level-estimation-workflow" id="toc-unit-level-estimation-workflow" class="nav-link" data-scroll-target="#unit-level-estimation-workflow"><span class="header-section-number">2</span> Unit-Level Estimation Workflow</a></li>
   </ul>
 </nav>
     </div>
@@ -405,16 +405,16 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </section>
-<section id="unit-level-estimation-methodologies" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="unit-level-estimation-methodologies"><span class="header-section-number">2</span> Unit-Level Estimation Methodologies</h2>
-<p>Unit-level estimation usually has two steps:</p>
+<section id="unit-level-estimation-workflow" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="unit-level-estimation-workflow"><span class="header-section-number">2</span> Unit-Level Estimation Workflow</h2>
+<p>Unit-level estimation usually has two linked steps:</p>
 <ol type="1">
-<li><p><strong>Unit-level modelling:</strong> Fit a model to the survey microdata. The model learns how individual traits, household traits, area covariates, and geographic random effects predict the outcome. A simple continuous-outcome version can be written as: <span class="math display">\[
+<li><p><strong>Multilevel regression:</strong> Fit a model to the survey microdata. The model learns how individual traits, household traits, area covariates, and geographic random effects predict the outcome. A simple continuous-outcome version can be written as: <span class="math display">\[
 y_{di} = x_{di}^{\top}\beta + u_d + e_{di},
 \]</span> where <span class="math inline">\(y_{di}\)</span> is the outcome for unit <span class="math inline">\(i\)</span> in area <span class="math inline">\(d\)</span>, <span class="math inline">\(x_{di}\)</span> contains unit-level predictors, and <span class="math inline">\(u_d\)</span> is an area effect.</p></li>
-<li><p><strong>Population projection:</strong> Apply the fitted model to a population dataset, then aggregate predictions to the small-area geography.</p></li>
+<li><p><strong>Poststratification:</strong> Apply the fitted model to population cells, then aggregate the cell predictions to the small-area geography using the cell counts.</p></li>
 </ol>
-<p>The shape of the population data available for the projection step, determines the methodology used:</p>
+<p>For this tutorial, the population auxiliary data are represented as cross-tabulated cells. This is the standard MRP setup and is usually more realistic than assuming a complete one-row-per-person population dataset is available.</p>
 <table class="table">
 <colgroup>
 <col style="width: 33%">
@@ -423,28 +423,28 @@ y_{di} = x_{di}^{\top}\beta + u_d + e_{di},
 </colgroup>
 <thead>
 <tr class="header">
-<th>Type</th>
+<th>Input</th>
 <th>Example</th>
-<th>What is particular about it</th>
+<th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><strong>Population cells:</strong> Cross-tabulated counts for combinations of categorical variables</td>
-<td><code>cell = #ABCDE</code>,<br><code>sex = female</code>, <br><code>age_group = 18-24</code>, <br><code>population_count = 400</code></td>
-<td>Compact and often available from census tables. This unit-level estimation approach is often called Multilevel Regression and Poststratification (MRP).</td>
+<td>Survey microdata</td>
+<td>one row per survey respondent with <code>commute_distance</code>, MSOA, weights, and predictors</td>
+<td>Fits the multilevel regression model</td>
 </tr>
 <tr class="even">
-<td><strong>Population microdata:</strong> One row per person or household</td>
-<td><code>person_id = 100237</code>,<br><code>age = 42</code>, <br><code>income = 27500</code>, <br><code>household_size = 3</code>, <br><code>car_access = no</code>,<br><code>msoa_code = W0600001</code></td>
-<td>Allows richer continuous predictors; supports prediction for every population unit; requires detailed population records or a synthetic population.</td>
+<td>Population cells</td>
+<td>one row per MSOA-by-predictor cell with <code>pop_count</code></td>
+<td>Provides the poststratification weights</td>
 </tr>
 </tbody>
 </table>
-<p>These workbooks demonstrate both unit-level approaches using Bayesian statistics in R: <code>INLA</code> directly for categorical cells, and its <code>SUMMER</code> wrapper for continuous microdata.</p>
+<p>These workbooks demonstrate MRP using Bayesian statistics in R with <code>INLA</code>.</p>
 <ol type="1">
-<li><strong><a href="../pages/unit-level-popcell.html">Multilevel Regression and Poststratification with Population Cells</a></strong></li>
-<li><strong><a href="../pages/unit-level-popunit.html">Unit-level Microdata Prediction</a></strong></li>
+<li><strong><a href="../pages/unit-level-multiregress.html">Multilevel regression</a></strong></li>
+<li><strong><a href="../pages/unit-level-poststrat.html">Poststratification</a></strong></li>
 </ol>
 
 
@@ -705,8 +705,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../pages/unit-level-popcell.html" class="pagination-link">
-        <span class="nav-page-text">Tutorial: Estimation with population cells (MRP)</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../pages/unit-level-multiregress.html" class="pagination-link">
+        <span class="nav-page-text">[WIP] Tutorial: Multilevel regression</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

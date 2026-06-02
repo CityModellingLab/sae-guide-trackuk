@@ -1,0 +1,366 @@
+---
+title: "[WIP] Tutorial: Multilevel regression"
+---
+
+This workbook fits the multilevel regression part of MRP for the commute-distance estimand. The model is fitted to survey microdata and uses predictors that are also available in the population-cell file used for poststratification.
+
+The next workbook uses this fitted model to poststratify predictions to MSOA.
+
+```{r}
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(INLA)
+
+clean_zip <- file.path("..", "data", "tutorial-clean-data.zip")
+unzip(clean_zip, exdir = tempdir())
+base_path <- file.path(tempdir())
+
+survey_file <- file.path("..", "data", "nsw_2223_msoa_la.csv")
+
+census_zip <- file.path("..", "data", "tutorial-census-data.zip")
+unzip(census_zip, exdir = tempdir())
+census_path <- file.path(tempdir())
+
+boundary_zip <- file.path("..", "data", "tutorial-boundaries.zip")
+unzip(boundary_zip, exdir = tempdir())
+
+msoa_boundaries <- st_read(
+  file.path(tempdir(), "boundaries", "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(domain_id = MSOA21CD) |>
+  filter(str_starts(domain_id, "W"))
+
+msoa_domains <- msoa_boundaries |>
+  st_drop_geometry() |>
+  select(domain_id) |>
+  arrange(domain_id)
+
+read_census <- function(topic_code) {
+  file_name <- paste0("census2021-", topic_code, "-msoa.csv")
+  read_csv(file.path(census_path, file_name), show_col_types = FALSE) |>
+    filter(str_starts(`geography code`, "W")) |>
+    rename(domain_id = `geography code`)
+}
+```
+
+## Inputs
+
+The model needs three harmonised inputs:
+
+| Input | Role |
+|---|---|
+| Survey indicator file | Provides `commute_distance`, survey weights, and MSOA |
+| Survey predictor variables | Provide individual-level predictors that can also be represented in the population cells |
+| Population cells | Provide the prediction rows used later for poststratification |
+
+The population-cell file is treated as the auxiliary data available for MRP. It contains MSOA-by-predictor cells and a `pop_count` for each cell. The survey predictors must use the same categories as this file.
+
+```{r}
+population_cells_path <- file.path("..", "data", "aux_population_cells_commute.csv")
+
+population_cells <- read_csv(
+  population_cells_path,
+  show_col_types = FALSE
+)
+
+head(population_cells)
+```
+
+## Prepare Survey Predictors
+
+The survey data preparation workbook creates the commute-distance indicator and keeps the survey weight and MSOA. For MRP, we also need predictor variables from the survey records that can be matched to the population cells.
+
+For commute distance, this tutorial uses four categorical predictors:
+
+| Predictor | Why it is useful for commute distance |
+|---|---|
+| `age_group` | Commute patterns vary over the life course. |
+| `sex` | Travel patterns can differ by sex. |
+| `car_access` | Car availability is directly related to commute options and distance. |
+| `econ_status` | Employment status identifies whether commuting is relevant and helps align with commuter population cells. |
+
+```{r}
+nsw_raw <- read_csv(
+  survey_file,
+  show_col_types = FALSE
+) |>
+  rename(unit_id = CaseNo)
+
+survey_unit_predictors <- nsw_raw |>
+  transmute(
+    unit_id,
+    age_group = case_when(
+      Age >= 16 & Age <= 24 ~ "age_16_24",
+      Age >= 25 & Age <= 44 ~ "age_25_44",
+      Age >= 45 & Age <= 64 ~ "age_45_64",
+      Age >= 65 ~ "age_65_plus",
+      TRUE ~ NA_character_
+    ),
+    sex = case_when(
+      Sex == 1 ~ "sex_male",
+      Sex == 2 ~ "sex_female",
+      TRUE ~ NA_character_
+    ),
+    car_access = case_when(
+      CarUse == 1 ~ "hascar",
+      CarUse == 2 ~ "nocar",
+      TRUE ~ NA_character_
+    ),
+    econ_status = case_when(
+      DvEcoStat3 == 1 ~ "employed",
+      DvEcoStat3 %in% c(2, 3) ~ "notemployed",
+      TRUE ~ NA_character_
+    )
+  )
+
+head(survey_unit_predictors)
+```
+
+The survey predictor categories should match the population-cell categories.
+
+```{r}
+population_cells |>
+  summarise(
+    age_groups = list(sort(unique(age_group))),
+    sex_groups = list(sort(unique(sex))),
+    car_access_groups = list(sort(unique(car_access))),
+    econ_status_groups = list(sort(unique(econ_status)))
+  )
+```
+
+## Survey Model File
+
+The survey indicator file was created in the survey data preparation workbook. Join it to the predictor file before fitting the multilevel regression model.
+
+```{r}
+survey_indicator_commute <- read_csv(
+  file.path(base_path, "ind_weight_commute_distance.csv"),
+  show_col_types = FALSE
+)
+
+survey_mrp <- survey_indicator_commute |>
+  left_join(survey_unit_predictors, by = "unit_id") |>
+  filter(
+    !is.na(indicator),
+    !is.na(weight),
+    !is.na(domain_id),
+    !is.na(age_group),
+    !is.na(sex),
+    !is.na(car_access),
+    !is.na(econ_status)
+  ) |>
+  select(
+    unit_id,
+    domain_id,
+    strata,
+    indicator,
+    weight,
+    age_group,
+    sex,
+    car_access,
+    econ_status
+  )
+
+head(survey_mrp)
+```
+
+The survey file and population-cell file must use the same labels for the poststratification predictors.
+
+```{r}
+survey_mrp |>
+  count(age_group, sex, car_access, econ_status, sort = TRUE) |>
+  head()
+```
+
+## Model Data
+
+The model uses four unit-level categorical predictors and one area-level predictor:
+
+| Predictor | Role |
+|---|---|
+| `age_group` | Unit-level categorical predictor |
+| `sex` | Unit-level categorical predictor |
+| `car_access` | Unit-level categorical predictor |
+| `econ_status` | Unit-level categorical predictor |
+| `cov_pop_density` | Area-level predictor |
+
+```{r}
+area_covariates <- read_census("ts006") |>
+  transmute(
+    domain_id,
+    cov_pop_density = `Population Density: Persons per square kilometre; measures: Value`
+  ) |>
+  mutate(cov_pop_density = as.numeric(scale(cov_pop_density)))
+
+model_levels <- list(
+  age_group = c("age_16_24", "age_25_44", "age_45_64", "age_65_plus"),
+  sex = c("sex_female", "sex_male"),
+  car_access = c("nocar", "hascar"),
+  econ_status = c("employed", "notemployed"),
+  domain_id = msoa_domains$domain_id
+)
+
+add_model_ids <- function(data) {
+  data |>
+    mutate(
+      age_id = match(age_group, model_levels$age_group),
+      sex_id = match(sex, model_levels$sex),
+      car_access_id = match(car_access, model_levels$car_access),
+      econ_status_id = match(econ_status, model_levels$econ_status),
+      domain_re_id = match(domain_id, model_levels$domain_id)
+    )
+}
+
+survey_model <- survey_mrp |>
+  left_join(area_covariates, by = "domain_id") |>
+  transmute(
+    row_type = "survey",
+    indicator,
+    domain_id,
+    age_group,
+    sex,
+    car_access,
+    econ_status,
+    cov_pop_density,
+    pop_count = NA_real_
+  ) |>
+  add_model_ids() |>
+  filter(
+    !is.na(age_id),
+    !is.na(sex_id),
+    !is.na(car_access_id),
+    !is.na(econ_status_id),
+    !is.na(domain_re_id),
+    !is.na(cov_pop_density)
+  )
+
+poststrat_model <- population_cells |>
+  left_join(area_covariates, by = "domain_id") |>
+  transmute(
+    row_type = "poststrat",
+    indicator = NA_real_,
+    domain_id,
+    age_group,
+    sex,
+    car_access,
+    econ_status,
+    cov_pop_density,
+    pop_count
+  ) |>
+  add_model_ids() |>
+  filter(
+    !is.na(age_id),
+    !is.na(sex_id),
+    !is.na(car_access_id),
+    !is.na(econ_status_id),
+    !is.na(domain_re_id),
+    !is.na(cov_pop_density),
+    pop_count > 0
+  )
+
+mrp_model_data <- bind_rows(survey_model, poststrat_model) |>
+  mutate(model_row = row_number())
+```
+
+The population-cell rows have missing outcomes. They are included so INLA computes posterior predictions for the same cells that will be poststratified in the next workbook.
+
+## Fit the Model
+
+This example uses a Gaussian outcome model because `commute_distance` is continuous. The model includes random effects for the unit-level categorical predictors and an MSOA random effect.
+
+```{r}
+mrp_formula <- indicator ~ 1 +
+  cov_pop_density +
+  f(age_id, model = "iid") +
+  f(sex_id, model = "iid") +
+  f(car_access_id, model = "iid") +
+  f(econ_status_id, model = "iid") +
+  f(domain_re_id, model = "iid")
+
+mrp_fit <- INLA::inla(
+  formula = mrp_formula,
+  family = "gaussian",
+  data = mrp_model_data,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(dic = TRUE, waic = TRUE, config = TRUE),
+  verbose = FALSE
+)
+
+mrp_fit$summary.fixed
+```
+
+```{r}
+mrp_fit$summary.hyperpar
+```
+
+The survey weights are not passed directly into this basic INLA outcome model. They remain useful for direct estimates and diagnostics, while poststratification uses the population cell counts to align predictions with the target population.
+
+```{r}
+survey_fitted <- mrp_model_data |>
+  filter(row_type == "survey") |>
+  mutate(fitted_mean = mrp_fit$summary.fitted.values$mean[model_row])
+
+ggplot(survey_fitted, aes(x = indicator, y = fitted_mean)) +
+  geom_point(alpha = 0.35) +
+  geom_abline(slope = 1, intercept = 0) +
+  labs(
+    title = "Observed and fitted commute distance",
+    x = "Observed commute distance (miles)",
+    y = "Fitted mean (miles)"
+  ) +
+  theme_minimal()
+```
+
+## Spatial Structure
+
+The model above includes an MSOA random effect with `model = "iid"`. This lets each MSOA have its own unexplained shift after accounting for the unit-level predictors and population density, but it does not assume that nearby MSOAs are similar.
+
+For commute distance, spatial structure may be useful because neighbouring areas can share labour markets, transport networks, urban form, and access to employment centres. A spatial MRP model would replace or augment the independent MSOA random effect with a spatially structured effect.
+
+In INLA, this usually requires two extra ingredients:
+
+| Ingredient | Purpose |
+|---|---|
+| MSOA adjacency graph | Defines which areas are neighbours |
+| Spatial random-effect model | Borrows strength across neighbouring areas, commonly with `besag`, `bym`, or `bym2` |
+
+The non-spatial model uses:
+
+```{r}
+#| eval: false
+f(domain_re_id, model = "iid")
+```
+
+A spatial version would use an adjacency graph and a spatial effect, for example:
+
+```{r}
+#| eval: false
+mrp_spatial_formula <- indicator ~ 1 +
+  cov_pop_density +
+  f(age_id, model = "iid") +
+  f(sex_id, model = "iid") +
+  f(car_access_id, model = "iid") +
+  f(econ_status_id, model = "iid") +
+  f(domain_re_id, model = "bym2", graph = msoa_graph)
+```
+
+This tutorial keeps the fitted MRP model non-spatial so the regression and poststratification steps are easier to inspect.
+
+```{r}
+#| echo: false
+mrp_artifact <- list(
+  fit = mrp_fit,
+  model_data = mrp_model_data,
+  model_levels = model_levels
+)
+
+saveRDS(
+  mrp_artifact,
+  file.path("..", "data", "mrp_commute_inla_fit.rds")
+)
+```
