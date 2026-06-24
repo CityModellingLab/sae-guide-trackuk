@@ -1,8 +1,6 @@
 project:
   type: website
   output-dir: docs
-  resources:
-    - "scripts/"
   render:
     - "index.qmd"
     - "pages/*.qmd"
@@ -19,34 +17,18 @@ website:
         href: index.qmd
       - text: "Tutorial"
         menu:
-          - text: "I. Survey Data Preparation"
-          - text: "Microdata Preparation"
+          - text: "Survey microdata prep"
             href: pages/dataprep-microdata.qmd
-          - text: "II. Area-Level Estimation"
-          - text: "1. Overview"
-            href: pages/area-level-sae.qmd
-          - text: "2. Direct Estimation"
-            href: pages/area-level-direct.qmd
-          - text: "3. Bayesian Fay-Herriot"
-            href: pages/area-level-fh-bayesian.qmd
-          - text: "III. Unit-Level Estimation"
-          - text: "1. Overview"
-            href: pages/unit-level-sae.qmd
-          - text: "2. Multilevel Regression"
-            href: pages/unit-level-multiregress.qmd
-          - text: "3. Poststratification"
-            href: pages/unit-level-poststrat.qmd
-          - text: "IV. Extended Topics"
-          - text: "1. Reporting and visualisation"
-            href: pages/reporting.qmd
-          - text: "2. Frequentist approaches to SAE"
-            href: pages/frequentist-sae.qmd
+          - text: "Direct estimation"
+            href: pages/direct-estimation.qmd
+          - text: "Area-level estimation (Fay--Herriot)"
+            href: pages/fh-bayesian.qmd
+          - text: "Unit-level estimation"
+            href: pages/unit-level-bayesian.qmd
+          - text: "MRP"
+            href: pages/mrp-bayesian.qmd
       - text: "Resources"
-        menu:
-          - text: "SAE Toolkit"
-            href: pages/sae-toolkit.qmd
-          - text: "FAQs"
-            href: pages/faqs.qmd
+        href: pages/resources.qmd
       - text: "About"
         href: pages/about.qmd
 
@@ -60,28 +42,17 @@ website:
           - index.qmd
       - section: "Tutorial"
         contents:
-          - section: "I. Survey Data Preparation"
-            contents:
-              - pages/dataprep-microdata.qmd
-          - section: "II. Area-Level Estimation"
-            contents:
-              - pages/area-level-sae.qmd
-              - pages/area-level-direct.qmd
-              - pages/area-level-fh-bayesian.qmd
-          - section: "III. Unit-Level Estimation"
-            contents:
-              - pages/unit-level-sae.qmd
-              - pages/unit-level-multiregress.qmd
-              - pages/unit-level-poststrat.qmd
-          - section: "IV. Extended Topics"
-            contents:
-              - pages/reporting.qmd
-              - pages/frequentist-sae.qmd
-
-      - section: "Resources"
-        contents:
-          - pages/sae-toolkit.qmd
-          - pages/faqs.qmd
+          - text: "Survey microdata prep"
+            href: pages/dataprep-microdata.qmd
+          - text: "Direct estimation"
+            href: pages/direct-estimation.qmd
+          - text: "Area-level estimation"
+            href: pages/fh-bayesian.qmd
+          - text: "Unit-level estimation"
+            href: pages/unit-level-bayesian.qmd
+          - text: "MRP"
+            href: pages/mrp-bayesian.qmd
+          
 
 format:
   html:

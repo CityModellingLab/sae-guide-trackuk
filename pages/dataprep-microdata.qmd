@@ -1,308 +1,113 @@
 ---
-title: "Microdata Preparation"
+title: "Survey Data Preparation"
 ---
 
-Raw survey microdata is transformed into analysis-ready inputs by defining the estimand, coding the indicator from the survey variables, aligning it with the estimation geography, and choosing compatible survey weights.
+This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready data products used by the estimation workflows that follow.
 
-The data preparation pipeline can be summarised as follows:
+## National Survey for Wales
+
+The tutorial uses a synthetic teaching dataset based on the **National Survey for Wales (NSW)**. The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language.
+
+For this tutorial, the cleaned microdata combine three survey periods: 2020-2021, 2022-2023, and 2024-2025 into one harmonised survey microdata.
+
+## Synthetic spatial disaggregation
+
+Since the survey responses are geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent's Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. 
+
+This design has two purposes:
+
+- **Higher spatial resolution for tutorial purposes.** The tutorial can demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
+- **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so the tutorial avoids presenting fine-grained respondent locations.
+
+![](assets\la_msoa_n.png)
+
+:::{.callout-warning}
+Estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.
+:::
 
 ![Preparation pipeline for analysis-ready inputs](../assets/dataprep.png)
 
-## Understanding the Survey Dataset
+## Defining the Estimand
 
-The tutorial uses **a synthetic dataset** based on the [*National Survey for Wales 2022-23*](https://datacatalogue.ukdataservice.ac.uk/studies/study/9144#details), a cross-sectional survey conducted annually to provide a snapshot of the Welsh population. The original survey covers topics including health, education, climate change, visits to the outdoors, public service satisfaction, material deprivation, internet access, and the Welsh language.
+The estimand determines what the survey indicator means, what population it refers to, and which model inputs are valid downstream.
 
-In the original NSW dataset, the Local Authority (LA) is the sole spatial identifier and the survey's sampling stratification variable. To ensure data privacy and create higher-resolution spatial survey data for tutorial purposes, the synthetic dataset was created using:
+A well-formed estimand answers:
 
-- **Stratified randomisation:** survey responses were first grouped by Local Authority and their variables were shuffled column-wise to preserve totals by Local Authority.
-- **Randomised upsampling:** survey responses were assigned a random MSOA that falls within the recorded Local Authority.
+> Estimate the **measure** of **what outcome**, among **which population**, across **which geography and time period**.
 
-![](../assets/la_msoa_n.png)
+For the main tutorial, we use one estimand:
 
-:::{.callout-warning}
-Because the tutorial microdata were synthesised by shuffling survey variables and randomly assigning MSOAs within each Local Authority, **the rows may no longer represent real combinations of responses.**
+| Component | Tutorial choice |
+|---|---|
+| Measure | Share |
+| Outcome | Walks for transport daily |
+| Target population | Adults |
+| Geography | MSOAs in Wales |
+| Time | Survey year |
 
-Small-area estimates from this tutorial should therefore be treated as illustrative, not as real findings about Wales.
-:::
+In words:
 
-## Define the Estimands
+> Estimate the **share** of **adults who walk for transport daily**, by **MSOA-year**.
 
-The **estimand** determines how survey microdata inputs are prepared and how to choose the most appropriate estimation approach downstream.
+## Preparing the Indicator
 
-The composition of a well-formed estimand is:
+The walking indicator is coded from `AtFrqWlk10`, the active-travel frequency question for walking. The cleaned indicator file keeps one row per respondent-year for the walking estimand.
 
-> Estimate the **measure** of **what outcome**, among **which population**, across **which geography**.
+| Field | Definition |
+|---|---|
+| Indicator name | `freq_walker` |
+| Raw survey variable | `AtFrqWlk10` |
+| Positive case | `AtFrqWlk10 == 1` |
+| Negative case | Valid non-daily responses |
+| Missing/out of scope | Missing, invalid, no matched analysis weight, or not asked |
+| Measure | Share |
+| Target population | Adults |
 
-Examples include:
+Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding weight variable selection rule is as follows:
+- Use `SampleTravelWeight` in survey periods where the active-travel weight exists, 
+- Use `SampleAdultWeight` in survey periods where the above is absent. 
+The matched analysis weight is stored as `weight` variable. 
 
-1. Share of adults who use the train weekly by MSOA.
-2. Mean leisure travel distance among retirees by ward.
+The current cleaned data give the following usable observations for the walking estimand:
 
-### Estimation Geography
+| Year | Usable walking observations | MSOAs with usable observations |
+|---:|---:|---:|
+| 2021 | 3,450 | 408 |
+| 2023 | 1,999 | 406 |
+| 2025 | 5,893 | 408 |
 
-In SAE, the groups or areas being estimated are often called **domains**. In spatial applications, they are better understood as **estimation areas**. An estimation area is one unit in the chosen **estimation geography**, such as a Local Authority, ward, LSOA, or MSOA.
+The data have gaps at the area-year level. That is expected in a small-area tutorial: direct estimates describe the observed sample, while SAE is used to borrow strength for sparse or unsampled domains.
 
-![Census Geography hierarchy going from Country to LA to MSOA to LSOA to OA ([Source](https://ukdataservice.ac.uk/learning-hub/census/other-information/census-boundary-data/))](../assets/maps_geography_types.png)
+## Preparing auxiliary data
+### Area Predictors
 
-The chosen estimation geography must match the level of spatial detail available in the survey data. If respondents are identified only by Local Authority, then Local Authority is the finest geography that can be used for small-area estimation. SAE methods are not intended to upsample survey data to a more granular spatial resolution.
+Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
 
-### Measure and Outcome
+These variables are chosen because daily walking is likely to vary with density, car access, commuting mode, housing form, and the socioeconomic and student composition of each area.
 
-Based on the estimand, identify or create the survey indicator that represents the outcome. Some indicators are direct recodes of one survey question; others need to combine several variables. The same raw survey variable can support different estimands.
+| Covariate family | Variables |
+|---|---|
+| Density and urban form | Population density |
+| Transport context | No-car households, working from home |
+| Occupation | Full-time students and routine/semi-routine occupations |
 
-| Indicator type | What to define | Example |
-|---|---|---|
-| Binary | What is `1`, `0`, missing, and out of scope | Share of adults who use the train weekly |
-| Continuous | The numeric value and unit | Mean leisure travel distance in miles |
+### Poststratification Table
 
-The most common choices of **measure**, i.e. how outcome indicators are aggregated, are:
+A population poststratification table is needed to apply the fitted unit-level model to the target population. Because the estimand is the share of adults who walk for transport daily, the tutorial uses an MSOA-by-year-by-age-by-sex population table.
 
-- share;
-- mean;
-- rate in population;
-- count or total.
+The clean file is `data/clean/poststrat_age_sex_msoa_year.csv`. It is built from ONS MSOA quinary age-by-sex population estimates and keeps the survey years used in this tutorial: 2021, 2023, and 2025. The supplied population files currently run to mid-2024, so the 2025 survey wave uses the latest available mid-2024 population as its denominator.
 
-## Weights and Domain Sizes
+The youngest available ONS age band is `15 to 19`. This is used as the closest available population cell for the 16+ walking estimand.
 
-Survey weights connect the sample back to the population. The survey user guide is the go-to resource for understanding which weight variables are available, what they adjust for, and which survey modules or questions they apply to.
+For MRP, the variables that define poststratification cells must be available in both the survey and the population table, with compatible categories. In this tutorial, age band and sex define the poststratification cells because both are available in the cleaned survey microdata and in the ONS MSOA population estimates.
 
-For SAE, the weight used must match the estimand unit, target population, and survey design. It is also important to distinguish the **scale** of the weight variable:
-
-- **Analysis weights** $w^{A}$ make means or proportions representative of the target population. These weights are most common for estimating shares or means.
-  - An analysis weight of 0.5 means this obs counts as half a person in the weighted average.
-- **Grossing weights** $w^{G}$ are scaled so that they sum to a known population total within the relevant estimation areas. They are usually required for counts or rates.
-  - A grossing weight of 50 means this obs represents about 50 people in the population.
-
-In SAE, **domain size** $N_d$ defines the size of the target population in each estimation area. For example, if the estimation geography is MSOA and the target population is adults aged 16+, then $N_d$ is the number of adults aged 16+ in each MSOA.
-
-:::{.callout-tip}
-If analysis weights are provided and the relevant domain sizes are known, they can be rescaled into **grossing weights** for each survey respondent:
-
-$$
-w^G_{di} = w^A_{di} \times \frac{N_d}{\sum_{i \in d} w^A_{di}}
-$$
-
-where $w^A_{di}$ is the analysis weight for sampled unit $i$ in domain $d$, $w^G_{di}$ is the corresponding grossing weight, and $N_d$ is that domain's size.
-:::
-
-## Practical Tutorial
-
-For this tutorial, we follow the process of performing area-level SAE for these **three estimands at MSOA level** using the simulated NSW data:
-
-- mean commute distance among commuters,
-- share of recent bus riders who are dissatisfied with bus services, and
-- number of frequent walkers per 1,000 residents.
-
-These estimands were formulated to ensure clarity with regards to the how, what, who, and where necessary for the workflow.
-
-| Est. # | Measure | Outcome | Target population | Estimation geography |
-|---|---|---|---|---|
-| 1 | Mean | Commute distance | Commuters | MSOAs in Wales |
-| 2 | Share | Dissatisfaction with bus services | Adults who rode a bus in the last 12 months | MSOAs in Wales |
-| 3 | Rate | Walking as main transport daily per 1,000 residents | All residents | MSOAs in Wales |
-
-They in turn determine how we construct the indicators from the survey microdata and what weight variables we need for each.
-
-| Est. # | Indicator | Coding rule | Measure | Estimation geography | Weight variable |
-|---|---|---|---|---|---|
-| 1 | `commute_distance` | [`TravWkDist`] Numeric commute distance in miles; non-commuters are coded `NA` | Mean | MSOA | `SampleAdultWeight`, analysis weight |
-| 2 | `bus_nosat` | [`BusOverSat`, `Bus12M`] Binary: `1` if rode a bus in the last 12 months and is fairly or very dissatisfied; `0` if rode a bus in the last 12 months and is not dissatisfied; `NA` otherwise | Share | MSOA | `SampleAdultWeight`, analysis weight |
-| 3 | `freq_walker` | [`AtFrqWlk10`] Binary: `1` if walking for transport daily | Rate per 1,000 | MSOA | `SampleTravelWeight`, analysis weight |
-
-```{r}
-library(dplyr)
-library(readr)
-library(stringr)
-library(ggplot2)
-
-survey_file <- file.path("..", "data", "nsw_2223_msoa_la.csv")
-```
-
-### Load Survey Data
-
-Load the survey dataset and identify the unique respondent identifier. The simulated survey microdata provides two spatial identifiers: Local Authority and MSOA of residence. The three estimands are estimated at MSOA level, while Local Authority remains useful as the survey stratification variable.
-
-```{r}
-nsw_raw <- read_csv(
-  survey_file,
-  show_col_types = FALSE
-) |>
-  rename(unit_id = CaseNo)
-
-survey_spatial_ids <- nsw_raw |>
-  select(unit_id, la_code, msoa_code)
-
-head(survey_spatial_ids)
-```
-
-### Construct Indicators
-
-Construct `commute_distance`, `bus_nosat`, and `freq_walker` from the survey variables based on the coding rules set out above.
-
-```{r}
-survey_indicators <- nsw_raw |>
-  transmute(
-    unit_id,
-    commute_distance = as.numeric(TravWkDist),
-    bus_nosat = case_when(
-      Bus12M != 1 ~ NA_real_,
-      BusOverSat %in% c(4, 5) ~ 1,
-      !is.na(BusOverSat) ~ 0,
-      TRUE ~ NA_real_
-    ),
-    freq_walker = case_when(
-      is.na(AtFrqWlk10) ~ NA_real_,
-      AtFrqWlk10 %in% 1 ~ 1,
-      TRUE ~ 0
-    )
-  )
-
-head(survey_indicators)
-```
-
-### Select Weight Variables
-
-Select the weight variables relevant to the estimands:
-
-- `SampleAdultWeight` is the analysis weight for the main adult survey questionnaire.
-- `SampleTravelWeight` is the analysis weight for the active-travel module.
-
-```{r}
-survey_weights <- nsw_raw |>
-  transmute(
-    unit_id,
-    SampleAdultWeight,
-    SampleTravelWeight
-  )
-
-head(survey_weights)
-```
-
-### Check Missingness
-
-For each indicator, check whether there are areas with no usable observations or very few usable observations.
-
-```{r}
-survey_inputs <- survey_spatial_ids |>
-  left_join(survey_indicators, by = "unit_id") |>
-  left_join(survey_weights, by = "unit_id")
-
-commute_counts <- survey_inputs |>
-  filter(!is.na(commute_distance), !is.na(SampleAdultWeight)) |>
-  count(domain_id = msoa_code, name = "non_missing") |>
-  mutate(indicator = "commute_distance")
-
-bus_counts <- survey_inputs |>
-  filter(!is.na(bus_nosat), !is.na(SampleAdultWeight)) |>
-  count(domain_id = msoa_code, name = "non_missing") |>
-  mutate(indicator = "bus_nosat")
-
-walker_counts <- survey_inputs |>
-  filter(!is.na(freq_walker), !is.na(SampleTravelWeight)) |>
-  count(domain_id = msoa_code, name = "non_missing") |>
-  mutate(indicator = "freq_walker")
-
-indicator_area_counts <- bind_rows(
-  commute_counts,
-  bus_counts,
-  walker_counts
-)
-
-ggplot(indicator_area_counts, aes(x = non_missing)) +
-  geom_histogram(binwidth = 5, boundary = 0, fill = "#4C78A8", colour = "white") +
-  facet_wrap(~ indicator, scales = "free_y") +
-  labs(
-    x = "Usable observations per MSOA",
-    y = "Number of MSOAs"
-  ) +
-  theme_minimal()
-```
-
-The active-travel question used to construct `freq_walker` was asked to a subsample, so this estimand has more low-sample areas and will likely benefit most from model-based estimation.
-
-### Export Inputs
-
-Each indicator microdata table should contain:
+Other useful predictors can still enter the unit-level model as area-level predictors. For example, population density and no-car households are joined by MSOA. They help explain spatial differences in walking, but they do not need to define additional poststratification cells. We avoid using survey-only individual predictors, such as car access, unless a matching population table is available for the same joint cells.
 
 | Column | Meaning |
 |---|---|
-| `unit_id` | Survey respondent identifier |
-| `domain_id` | Estimation area ID |
-| `strata` | Survey stratification variable |
-| `indicator` | Coded outcome variable |
-| `weight` | Survey weight matched to the estimand |
-
-```{r}
-survey_indicator_commute <- survey_inputs |>
-  transmute(
-    unit_id,
-    domain_id = msoa_code,
-    strata = la_code,
-    indicator = commute_distance,
-    weight = SampleAdultWeight
-  )
-
-survey_indicator_bus <- survey_inputs |>
-  transmute(
-    unit_id,
-    domain_id = msoa_code,
-    strata = la_code,
-    indicator = bus_nosat,
-    weight = SampleAdultWeight
-  )
-
-survey_indicator_walk <- survey_inputs |>
-  transmute(
-    unit_id,
-    domain_id = msoa_code,
-    strata = la_code,
-    indicator = freq_walker,
-    weight = SampleTravelWeight
-  )
-
-head(survey_indicator_commute)
-```
-
-```{r}
-#| echo: false
-output_dir <- file.path("..", "data")
-dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-
-write_csv(
-  survey_indicator_commute,
-  file.path(output_dir, "ind_weight_commute_distance.csv")
-)
-
-write_csv(
-  survey_indicator_bus,
-  file.path(output_dir, "ind_weight_bus_nosat.csv")
-)
-
-write_csv(
-  survey_indicator_walk,
-  file.path(output_dir, "ind_weight_freq_walker.csv")
-)
-
-clean_data_files <- file.path(
-  output_dir,
-  c(
-    "ind_weight_commute_distance.csv",
-    "ind_weight_bus_nosat.csv",
-    "ind_weight_freq_walker.csv"
-  )
-)
-
-clean_data_zip <- file.path(output_dir, "tutorial-clean-data.zip")
-
-if (file.exists(clean_data_zip)) {
-  file.remove(clean_data_zip)
-}
-
-zip(
-  zipfile = clean_data_zip,
-  files = clean_data_files,
-  flags = "-j"
-)
-
-file.remove(clean_data_files)
-```
+| `domain_id` | MSOA estimation area |
+| `wave_year` | Tutorial survey year |
+| `source_population_year` | Mid-year population estimate used for that survey year |
+| `age_band` | Quinary age band used in the unit-level model |
+| `sex` | Sex category used in the unit-level model |
+| `pop_count` | Number of adults in the cell |

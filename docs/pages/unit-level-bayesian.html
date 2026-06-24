@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Survey Data Preparation</title>
+<title>Small Area Estimation for Urban Analytics - Unit-Level Bayesian Modelling</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../">
-<link href="../pages/direct-estimation.html" rel="next">
-<link href="../index.html" rel="prev">
+<link href="../pages/mrp-bayesian.html" rel="next">
+<link href="../pages/fh-bayesian.html" rel="prev">
 <link href="../assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="../site_libs/quarto-html/quarto.js"></script>
 <script src="../site_libs/quarto-html/popper.min.js"></script>
@@ -134,7 +134,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../pages/dataprep-microdata.html">Tutorial</a></li><li class="breadcrumb-item"><a href="../pages/dataprep-microdata.html">Survey microdata prep</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../pages/dataprep-microdata.html">Tutorial</a></li><li class="breadcrumb-item"><a href="../pages/unit-level-bayesian.html">Unit-level estimation</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -182,7 +182,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/dataprep-microdata.html" class="sidebar-item-text sidebar-link active">
+  <a href="../pages/dataprep-microdata.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Survey microdata prep</span></a>
   </div>
 </li>
@@ -200,7 +200,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../pages/unit-level-bayesian.html" class="sidebar-item-text sidebar-link">
+  <a href="../pages/unit-level-bayesian.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Unit-level estimation</span></a>
   </div>
 </li>
@@ -218,28 +218,14 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#national-survey-for-wales" id="toc-national-survey-for-wales" class="nav-link active" data-scroll-target="#national-survey-for-wales"><span class="header-section-number">1</span> National Survey for Wales</a></li>
-  <li><a href="#synthetic-spatial-disaggregation" id="toc-synthetic-spatial-disaggregation" class="nav-link" data-scroll-target="#synthetic-spatial-disaggregation"><span class="header-section-number">2</span> Synthetic spatial disaggregation</a></li>
-  <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">3</span> Defining the Estimand</a></li>
-  <li><a href="#preparing-the-indicator" id="toc-preparing-the-indicator" class="nav-link" data-scroll-target="#preparing-the-indicator"><span class="header-section-number">4</span> Preparing the Indicator</a></li>
-  <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">5</span> Preparing auxiliary data</a>
-  <ul class="collapse">
-  <li><a href="#area-predictors" id="toc-area-predictors" class="nav-link" data-scroll-target="#area-predictors"><span class="header-section-number">5.1</span> Area Predictors</a></li>
-  <li><a href="#poststratification-table" id="toc-poststratification-table" class="nav-link" data-scroll-target="#poststratification-table"><span class="header-section-number">5.2</span> Poststratification Table</a></li>
-  </ul></li>
-  </ul>
-</nav>
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Survey Data Preparation</h1>
+<h1 class="title">Unit-Level Bayesian Modelling</h1>
 </div>
 
 
@@ -254,237 +240,8 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready data products used by the estimation workflows that follow.</p>
-<section id="national-survey-for-wales" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="national-survey-for-wales"><span class="header-section-number">1</span> National Survey for Wales</h2>
-<p>The tutorial uses a synthetic teaching dataset based on the <strong>National Survey for Wales (NSW)</strong>. The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language.</p>
-<p>For this tutorial, the cleaned microdata combine three survey periods: 2020-2021, 2022-2023, and 2024-2025 into one harmonised survey microdata.</p>
-</section>
-<section id="synthetic-spatial-disaggregation" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="synthetic-spatial-disaggregation"><span class="header-section-number">2</span> Synthetic spatial disaggregation</h2>
-<p>Since the survey responses are geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent’s Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation.</p>
-<p>This design has two purposes:</p>
-<ul>
-<li><strong>Higher spatial resolution for tutorial purposes.</strong> The tutorial can demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.</li>
-<li><strong>Privacy and disclosure protection.</strong> The assigned MSOA is not the respondent’s true MSOA, so the tutorial avoids presenting fine-grained respondent locations.</li>
-</ul>
-<p><img src="assets\la_msoa_n.png" class="img-fluid"></p>
-<div class="callout callout-style-default callout-warning callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Warning
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.</p>
-</div>
-</div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../assets/dataprep.png" class="img-fluid figure-img"></p>
-<figcaption class="figure-caption">Preparation pipeline for analysis-ready inputs</figcaption>
-</figure>
-</div>
-</section>
-<section id="defining-the-estimand" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="defining-the-estimand"><span class="header-section-number">3</span> Defining the Estimand</h2>
-<p>The estimand determines what the survey indicator means, what population it refers to, and which model inputs are valid downstream.</p>
-<p>A well-formed estimand answers:</p>
-<blockquote class="blockquote">
-<p>Estimate the <strong>measure</strong> of <strong>what outcome</strong>, among <strong>which population</strong>, across <strong>which geography and time period</strong>.</p>
-</blockquote>
-<p>For the main tutorial, we use one estimand:</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Component</th>
-<th>Tutorial choice</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Measure</td>
-<td>Share</td>
-</tr>
-<tr class="even">
-<td>Outcome</td>
-<td>Walks for transport daily</td>
-</tr>
-<tr class="odd">
-<td>Target population</td>
-<td>Adults</td>
-</tr>
-<tr class="even">
-<td>Geography</td>
-<td>MSOAs in Wales</td>
-</tr>
-<tr class="odd">
-<td>Time</td>
-<td>Survey year</td>
-</tr>
-</tbody>
-</table>
-<p>In words:</p>
-<blockquote class="blockquote">
-<p>Estimate the <strong>share</strong> of <strong>adults who walk for transport daily</strong>, by <strong>MSOA-year</strong>.</p>
-</blockquote>
-</section>
-<section id="preparing-the-indicator" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="preparing-the-indicator"><span class="header-section-number">4</span> Preparing the Indicator</h2>
-<p>The walking indicator is coded from <code>AtFrqWlk10</code>, the active-travel frequency question for walking. The cleaned indicator file keeps one row per respondent-year for the walking estimand.</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Field</th>
-<th>Definition</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Indicator name</td>
-<td><code>freq_walker</code></td>
-</tr>
-<tr class="even">
-<td>Raw survey variable</td>
-<td><code>AtFrqWlk10</code></td>
-</tr>
-<tr class="odd">
-<td>Positive case</td>
-<td><code>AtFrqWlk10 == 1</code></td>
-</tr>
-<tr class="even">
-<td>Negative case</td>
-<td>Valid non-daily responses</td>
-</tr>
-<tr class="odd">
-<td>Missing/out of scope</td>
-<td>Missing, invalid, no matched analysis weight, or not asked</td>
-</tr>
-<tr class="even">
-<td>Measure</td>
-<td>Share</td>
-</tr>
-<tr class="odd">
-<td>Target population</td>
-<td>Adults</td>
-</tr>
-</tbody>
-</table>
-<p>Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding weight variable selection rule is as follows: - Use <code>SampleTravelWeight</code> in survey periods where the active-travel weight exists, - Use <code>SampleAdultWeight</code> in survey periods where the above is absent. The matched analysis weight is stored as <code>weight</code> variable.</p>
-<p>The current cleaned data give the following usable observations for the walking estimand:</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th style="text-align: right;">Year</th>
-<th style="text-align: right;">Usable walking observations</th>
-<th style="text-align: right;">MSOAs with usable observations</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">2021</td>
-<td style="text-align: right;">3,450</td>
-<td style="text-align: right;">408</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">2023</td>
-<td style="text-align: right;">1,999</td>
-<td style="text-align: right;">406</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">2025</td>
-<td style="text-align: right;">5,893</td>
-<td style="text-align: right;">408</td>
-</tr>
-</tbody>
-</table>
-<p>The data have gaps at the area-year level. That is expected in a small-area tutorial: direct estimates describe the observed sample, while SAE is used to borrow strength for sparse or unsampled domains.</p>
-</section>
-<section id="preparing-auxiliary-data" class="level2" data-number="5">
-<h2 data-number="5" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">5</span> Preparing auxiliary data</h2>
-<section id="area-predictors" class="level3" data-number="5.1">
-<h3 data-number="5.1" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">5.1</span> Area Predictors</h3>
-<p>Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>cov_*</code> variables for modelling.</p>
-<p>These variables are chosen because daily walking is likely to vary with density, car access, commuting mode, housing form, and the socioeconomic and student composition of each area.</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Covariate family</th>
-<th>Variables</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Density and urban form</td>
-<td>Population density</td>
-</tr>
-<tr class="even">
-<td>Transport context</td>
-<td>No-car households, working from home</td>
-</tr>
-<tr class="odd">
-<td>Occupation</td>
-<td>Full-time students and routine/semi-routine occupations</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="poststratification-table" class="level3" data-number="5.2">
-<h3 data-number="5.2" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">5.2</span> Poststratification Table</h3>
-<p>A population poststratification table is needed to apply the fitted unit-level model to the target population. Because the estimand is the share of adults who walk for transport daily, the tutorial uses an MSOA-by-year-by-age-by-sex population table.</p>
-<p>The clean file is <code>data/clean/poststrat_age_sex_msoa_year.csv</code>. It is built from ONS MSOA quinary age-by-sex population estimates and keeps the survey years used in this tutorial: 2021, 2023, and 2025. The supplied population files currently run to mid-2024, so the 2025 survey wave uses the latest available mid-2024 population as its denominator.</p>
-<p>The youngest available ONS age band is <code>15 to 19</code>. This is used as the closest available population cell for the 16+ walking estimand.</p>
-<p>For MRP, the variables that define poststratification cells must be available in both the survey and the population table, with compatible categories. In this tutorial, age band and sex define the poststratification cells because both are available in the cleaned survey microdata and in the ONS MSOA population estimates.</p>
-<p>Other useful predictors can still enter the unit-level model as area-level predictors. For example, population density and no-car households are joined by MSOA. They help explain spatial differences in walking, but they do not need to define additional poststratification cells. We avoid using survey-only individual predictors, such as car access, unless a matching population table is available for the same joint cells.</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>domain_id</code></td>
-<td>MSOA estimation area</td>
-</tr>
-<tr class="even">
-<td><code>wave_year</code></td>
-<td>Tutorial survey year</td>
-</tr>
-<tr class="odd">
-<td><code>source_population_year</code></td>
-<td>Mid-year population estimate used for that survey year</td>
-</tr>
-<tr class="even">
-<td><code>age_band</code></td>
-<td>Quinary age band used in the unit-level model</td>
-</tr>
-<tr class="odd">
-<td><code>sex</code></td>
-<td>Sex category used in the unit-level model</td>
-</tr>
-<tr class="even">
-<td><code>pop_count</code></td>
-<td>Number of adults in the cell</td>
-</tr>
-</tbody>
-</table>
 
 
-</section>
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -736,13 +493,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../index.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Spatio-Temporal Bayesian Small Area Estimation for Urban Analytics</span>
+      <a href="../pages/fh-bayesian.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Area-level estimation</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../pages/direct-estimation.html" class="pagination-link">
-        <span class="nav-page-text">Direct estimation</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../pages/mrp-bayesian.html" class="pagination-link">
+        <span class="nav-page-text">MRP</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

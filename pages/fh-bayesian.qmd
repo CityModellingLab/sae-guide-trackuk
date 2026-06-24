@@ -1,0 +1,680 @@
+---
+title: "Area-Level Estimation"
+subtitle: "Bayesian Fay-Herriot models with area predictors, year effects, and spatial structure"
+---
+
+Area-level SAE starts from the direct estimates created in the previous workbook. The Fay--Herriot model lets direct estimates for each MSOA--year borrow strength from predictors and spatial and temporal structures to stabilise noisy estimates of **share of adults who walk for transport daily, by MSOA-year**. The goal is to see what changes as we add more auxiliary information to the model
+
+
+```{r}
+#| label: setup-area-level
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(patchwork)
+library(spdep)
+library(INLA)
+
+base_path <- file.path("..", "data")
+clean_path <- file.path(base_path, "clean")
+
+share_label <- scales::label_percent(accuracy = 1)
+pp_label <- scales::label_number(accuracy = 1, scale = 100, suffix = " pp")
+
+msoa_boundaries <- st_read(
+  file.path(base_path, "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(domain_id = all_of("MSOA21CD")) |>
+  filter(str_starts(.data$domain_id, "W")) |>
+  arrange(.data$domain_id)
+```
+## Prepare data for modelling
+
+First we imported the direct estimates computed in the previous step, together with their sampling variances for all MSOA--year combinations.  We will also load the prepared dataset of normalised area predictors for daily walking, from which the models will borrow strengths from to stabilise the estimates.
+
+```{r}
+#| label: load-area-inputs
+direct_walk <- read_csv(
+  file.path(base_path, "freq_walker_estimates_direct.csv"),
+  show_col_types = FALSE
+)
+
+area_covariates <- read_csv(
+  file.path(clean_path, "area_covariates_daily_walking.csv"),
+  show_col_types = FALSE
+) |>
+  rename(domain_id = all_of("msoa_code")) |>
+  select(
+    all_of(c(
+      "domain_id",
+      "cov_population_density",
+      "cov_share_no_car_households",
+      "cov_share_work_from_home",
+      "cov_share_students",
+      "cov_share_routine_semiroutine"
+    ))
+  )
+
+model_data_raw <- direct_walk |>
+  left_join(area_covariates, by = "domain_id")
+
+head(model_data_raw)
+```
+
+Before fitting the models, we create a consistent numeric index for each MSOA and survey year. These indices are used by INLA to attach random effects to the correct area and period. 
+
+```{r}
+#| label: define-model-index
+#| code-fold: false
+
+area_levels <- sort(unique(model_data_raw[["domain_id"]]))
+year_levels <- sort(unique(model_data_raw[["wave_year"]]))
+
+area_index <- tibble::tibble(
+  domain_id = area_levels,
+  area_id = seq_along(area_levels)
+)
+
+year_index <- tibble::tibble(
+  wave_year = year_levels,
+  year_id = seq_along(year_levels)
+)
+```
+
+Model M4 includes a spatial random effect, so we also need an adjacency graph `.adj` as INLA input. We use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point. The boundary file is sorted using `area_index` so that the graph order matches the area IDs used in the modelling data.
+
+![Queen contiguity](../assets/spatial_weights_example.png)
+
+```{r}
+#| label: build-spatial-graph
+#| code-fold: false
+
+msoa_boundaries_sorted <- msoa_boundaries |>
+  dplyr::inner_join(area_index, by = "domain_id") |>
+  dplyr::arrange(.data$area_id)
+
+msoa_neighbours <- spdep::poly2nb(
+  msoa_boundaries_sorted,
+  queen = TRUE,
+  row.names = msoa_boundaries_sorted$domain_id
+)
+
+spatial_graph_file <- tempfile(fileext = ".adj")
+
+spdep::nb2INLA(
+  file = spatial_graph_file,
+  nb = msoa_neighbours
+)
+```
+
+We then assemble the modelling data. The models use two area-level random-effect structures, so we create separate INLA index variables:
+
+- `area_iid_id` indexes the unstructured, independent area effect.
+- `area_spatial_id` indexes the structured spatial area effect, which uses the   adjacency graph.
+
+The sampling variance also needs careful handling before fitting the FH models. Because the outcome is binary (`1` for walking daily, `0` otherwise), small MSOA-year samples can produce direct estimates with very low, zero, or missing variance. If untreated, those would be treated as overly precise. To avoid this, we apply a minimum sampling-variance floor. For MSOA-year unit without a direct estimate, we assign a large variance value of `1`, signalling high uncertainty.
+
+```{r}
+#| label: prepare-model-data
+#| code-fold: false
+
+sampling_variance_floor <- quantile(
+  model_data_raw$variance[model_data_raw$variance > 0],
+  probs = 0.05,
+  na.rm = TRUE,
+  names = FALSE
+)
+
+model_data <- model_data_raw |>
+  left_join(area_index, by = "domain_id") |>
+  left_join(year_index, by = "wave_year") |>
+  mutate(
+    area_iid_id = area_id,
+    area_spatial_id = area_id,
+    sampling_variance = case_when(
+      # No direct estimate: treat as maximum uncertainty.
+      is.na(direct_estimate) ~ 1,
+      # Missing or tiny variances get the same lower bound.
+      is.na(variance) ~ sampling_variance_floor,
+      TRUE ~ pmax(variance, sampling_variance_floor)
+    )
+  ) |>
+  arrange(wave_year, area_id)
+
+head(model_data)
+```
+
+## Fit Models
+
+Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to INLA as known observation-level uncertainty, so cells with noisy direct estimates receive less weight.
+
+We will fit five cumulative models:
+
+| Model | Name | Specifications |
+|---|---|---|
+| M0 | Baseline | Intercept plus independent MSOA random effect |
+| M1 | +Temporal | M0 plus year (random walk) |
+| M2 | +Core predictors | M1 plus population density and no-car households |
+| M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
+| M4 | +Spatial | M3 plus spatial structure (among MSOA adjacency) |
+
+First, we define the model specifications and fit each one to the direct estimates. 
+
+```{r}
+#| label: fit-fh-models
+#| code-fold: false
+
+m0_formula <- direct_estimate ~
+  1 +
+  f(area_iid_id, model = "iid")
+
+m1_formula <- direct_estimate ~
+  1 +
+  f(area_iid_id, model = "iid") +
+  f(year_id, model = "rw1", constr = TRUE)
+
+m2_formula <- direct_estimate ~
+  cov_population_density +
+  cov_share_no_car_households +
+  f(area_iid_id, model = "iid") +
+  f(year_id, model = "rw1", constr = TRUE)
+
+m3_formula <- direct_estimate ~
+  cov_population_density +
+  cov_share_no_car_households +
+  cov_share_work_from_home +
+  cov_share_students +
+  cov_share_routine_semiroutine +
+  f(area_iid_id, model = "iid") +
+  f(year_id, model = "rw1", constr = TRUE)
+
+m4_formula <- direct_estimate ~
+  cov_population_density +
+  cov_share_no_car_households +
+  cov_share_work_from_home +
+  cov_share_students +
+  cov_share_routine_semiroutine +
+  f(
+    area_spatial_id,
+    model = "bym2",
+    graph = spatial_graph_file,
+    scale.model = TRUE,
+    constr = TRUE
+  ) +
+  f(year_id, model = "rw1", constr = TRUE)
+
+model_formulas <- list(
+  "M0 Baseline" = m0_formula,
+  "M1 +Temporal" = m1_formula,
+  "M2 +Core predictors" = m2_formula,
+  "M3 +All predictors" = m3_formula,
+  "M4 +Spatial" = m4_formula
+)
+```
+Then, we fit the FH models using INLA
+
+```{r}
+#| label: fit-fh-func
+#| code-fold: false
+#|
+fit_fh_model <- function(formula) {
+  INLA::inla(
+    formula = formula,
+    family = "gaussian",
+    data = model_data,
+    scale = 1 / model_data$sampling_variance,
+    control.family = list(
+      hyper = list(
+        prec = list(initial = 0, fixed = TRUE)
+      )
+    ),
+    control.predictor = list(compute = TRUE),
+    control.compute = list(dic = TRUE, waic = TRUE),
+    verbose = FALSE
+  )
+}
+
+model_order <- names(model_formulas)
+fh_fits <- lapply(model_formulas, fit_fh_model)
+```
+
+At this point the result is just a named list of fitted INLA models. We will collate the fitted values into one results table. 
+
+```{r}
+#| label: collate-fh-results
+
+# Main frame to keep from model data
+output_cols <- c(
+  "domain_id",
+  "wave_year",
+  "msoa_name",
+  "direct_estimate",
+  "standard_error",
+  "direct_ci_width",
+  "n"
+)
+
+model_output_frame <- select(model_data, all_of(output_cols))
+
+# Extract fitted values from each model and bind them to the frame
+fh_result_tables <- purrr::map2(
+  fh_fits,
+  names(fh_fits),
+  function(fit, model_name) {
+    fitted_values <- tibble::as_tibble(fit$summary.fitted.values)
+
+    model_results <- bind_cols(model_output_frame, fitted_values)
+
+    transmute(
+      model_results,
+      model = model_name,
+      across(all_of(output_cols)),
+      fh_estimate = .data$mean,
+      fh_ci_width = .data[["0.975quant"]] - .data[["0.025quant"]],
+      has_direct = !is.na(.data$direct_estimate)
+    )
+  }
+)
+
+# Stack model outputs and set display order
+fh_results <- bind_rows(fh_result_tables)
+fh_results <- mutate(
+  fh_results,
+  model = factor(.data$model, levels = model_order)
+)
+
+head(fh_results)
+```
+
+## Compare Models
+
+We first examine what changes when we move from the direct estimates to the **baseline FH model (Model 0)**. Model 0 has no covariates or spatio-temporal structure, but it does add an independent MSOA random effect. Its main role is therefore to stabilise the survey-weighted direct estimates through partial pooling. 
+
+MSOA-years with wide direct-estimate confidence intervals have noisier evidence about the local daily-walking share, so they receive less weight and are pulled more strongly towards the overall pattern. By contrast, MSOA-years with missing, zero, or near-zero direct-estimate variance can show a wider interval. This is because the posterior interval reintroduces uncertainty around the estimated share of adults walking daily where the direct survey evidence is weak.
+
+```{r}
+#| label: model-comparison-data
+#| fig-width: 16
+#| fig-height: 12
+#| out-width: "100%"
+
+fh_wide <- fh_results |>
+  # One row per MSOA-year, with model outputs in separate columns.
+  select(
+    domain_id,
+    wave_year,
+    model,
+    direct_ci_width,
+    fh_estimate,
+    fh_ci_width
+  ) |>
+  pivot_wider(
+    names_from = model,
+    values_from = c(fh_estimate, fh_ci_width),
+    names_sep = "__"
+  )
+
+direct_to_m0 <- fh_wide |>
+  # Positive values mean M0 has a narrower interval than the direct estimate.
+  transmute(
+    domain_id,
+    wave_year,
+    direct_ci_width,
+    ci_width_change = direct_ci_width - .data[["fh_ci_width__M0 Baseline"]]
+  )
+
+ci_width_change_limit <- max(abs(direct_to_m0$ci_width_change), na.rm = TRUE)
+direct_ci_width_limit <- max(direct_to_m0$direct_ci_width, na.rm = TRUE)
+
+direct_to_m0_map_data <- msoa_boundaries |>
+  left_join(direct_to_m0, by = "domain_id")
+
+shrinkage_maps <- ggplot(direct_to_m0_map_data) +
+  geom_sf(aes(fill = .data$ci_width_change), colour = "transparent") +
+  facet_wrap(vars(.data$wave_year), nrow = 1) +
+  scale_fill_gradient2(
+    low = "grey",
+    mid = "white",
+    high = "purple",
+    midpoint = 0,
+    limits = c(-ci_width_change_limit, ci_width_change_limit),
+    labels = pp_label,
+    na.value = "grey85",
+    name = "Change"
+  ) +
+  labs(title = "CI width reduction Direct-to-M0") +
+  theme_void()
+
+direct_ci_width_maps <- ggplot(direct_to_m0_map_data) +
+  geom_sf(aes(fill = .data$direct_ci_width), colour = "transparent") +
+  facet_wrap(vars(.data$wave_year), nrow = 1) +
+  scale_fill_distiller(
+    palette = "Reds",
+    direction = 1,
+    limits = c(0, direct_ci_width_limit),
+    labels = pp_label,
+    na.value = "grey85",
+    name = "Width"
+  ) +
+  labs(title = "CI width (Direct)") +
+  theme_void()
+
+
+direct_to_m0_ranked <- direct_to_m0 |>
+  filter(!is.na(ci_width_change)) |>
+  group_by(wave_year) |>
+  # Rank within each wave by the original direct-estimate CI width.
+  arrange(direct_ci_width, .by_group = TRUE) |>
+  mutate(ciwidth_rank = row_number()) |>
+  ungroup() |>
+  select(
+    wave_year,
+    ciwidth_rank,
+    `CI width change` = ci_width_change,
+    `CI width (direct)` = direct_ci_width
+  ) |>
+  pivot_longer(
+    cols = -c(wave_year, ciwidth_rank),
+    names_to = "measure",
+    values_to = "value"
+  )
+
+direct_to_m0_ranked_plot <- ggplot(
+  direct_to_m0_ranked,
+  aes(
+    x = .data$ciwidth_rank,
+    y = .data$value,
+    colour = .data$measure
+  )
+) +
+  geom_hline(yintercept = 0, colour = "grey60") +
+  geom_line(alpha = 0.8) +
+  facet_wrap(vars(.data$wave_year), nrow = 1) +
+  scale_y_continuous(labels = pp_label) +
+  scale_colour_manual(values = c(
+    "CI width change" = "purple",
+    "CI width (direct)" = "red"
+  )) +
+  labs(
+    title = "",
+    x = "MSOAs sorted by CI width",
+    y = "Percentage points",
+    colour = NULL
+  ) +
+  theme_minimal()
+
+shrinkage_maps / direct_ci_width_maps / direct_to_m0_ranked_plot +
+  plot_layout(heights = c(1, 1, 1))
+```
+
+When **Models 1-4** are compared with **Model 0**, posterior interval widths increase slightly overall. However, the interval-width comparison is not the whole picture. The later models may still improve the analysis by changing where we estimate higher or lower rates of daily walking among adults. 
+
+```{r}
+#| label: model-width-vs-m0
+m0_width_column <- "fh_ci_width__M0 Baseline"
+
+width_vs_m0 <- bind_rows(lapply(
+  model_order[-1],
+  function(model_name) {
+    model_width_column <- paste0("fh_ci_width__", model_name)
+
+    fh_wide |>
+      transmute(
+        model = model_name,
+        domain_id = .data$domain_id,
+        wave_year = .data$wave_year,
+        m0_ci_width = .data[[m0_width_column]],
+        model_ci_width = .data[[model_width_column]],
+        width_change_vs_m0 = .data$model_ci_width - .data$m0_ci_width,
+        width_change_ratio_vs_m0 = .data$width_change_vs_m0 / .data$m0_ci_width
+      )
+  }
+)) |>
+  mutate(model = factor(.data$model, levels = model_order[-1]))
+
+ggplot(
+  width_vs_m0,
+  aes(x = .data$model, y = .data$width_change_ratio_vs_m0)
+) +
+  geom_hline(yintercept = 0, colour = "grey50") +
+  geom_boxplot(outlier.alpha = 0.15, fill = "#9ecae1", colour = "#225ea8") +
+  coord_flip() +
+  scale_y_continuous(labels = scales::label_percent(accuracy = 0.1)) +
+  labs(
+    title = "Interval-width change compared with M0",
+    x = NULL,
+    y = "Relative change from M0"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+#| label: estimate-change-data
+estimate_change_diagnostics <- fh_wide |>
+  select(
+    domain_id,
+    wave_year,
+    starts_with("fh_estimate__")
+  ) |>
+  pivot_longer(
+    cols = starts_with("fh_estimate__"),
+    names_to = "model",
+    values_to = "fh_estimate",
+    names_prefix = "fh_estimate__"
+  ) |>
+  mutate(model = factor(.data$model, levels = model_order)) |>
+  arrange(.data$domain_id, .data$wave_year, .data$model) |>
+  group_by(.data$domain_id, .data$wave_year) |>
+  mutate(
+    previous_model = lag(.data$model),
+    previous_estimate = lag(.data$fh_estimate),
+    next_model = .data$model,
+    next_estimate = .data$fh_estimate,
+    estimate_change = .data$next_estimate - .data$previous_estimate,
+    step = paste0("M", row_number() - 2, " to M", row_number() - 1)
+  ) |>
+  ungroup() |>
+  filter(!is.na(.data$previous_model)) |>
+  mutate(
+    step = factor(
+      .data$step,
+      levels = c("M0 to M1", "M1 to M2", "M2 to M3", "M3 to M4")
+    )
+  )
+
+step_map_data <- msoa_boundaries |>
+  left_join(estimate_change_diagnostics, by = "domain_id")
+
+estimate_change_limit <- estimate_change_diagnostics |>
+  summarise(limit = quantile(abs(.data$estimate_change), 0.95, na.rm = TRUE)) |>
+  pull("limit")
+
+plot_estimate_change_map <- function(map_data, steps, plot_title, change_limit) {
+  plot_data <- map_data |>
+    filter(.data$step %in% steps)
+
+  ggplot(plot_data) +
+    geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
+    facet_grid(rows = vars(.data$step), cols = vars(.data$wave_year)) +
+    scale_fill_gradient2(
+      low = "#2166ac",
+      mid = "white",
+      high = "#b2182b",
+      midpoint = 0,
+      limits = c(-change_limit, change_limit),
+      oob = scales::squish,
+      labels = pp_label,
+      na.value = "grey85",
+      name = "Change"
+    ) +
+    labs(title = plot_title) +
+    theme_void()
+}
+```
+
+Adding temporal structure in Model 1 produces the clearest change from Model 0. 
+
+- **Model 0** has no temporal effect, so each MSOA receives the same fitted area value in every wave as pooled means from all 3. 
+- **Model 1** adds a year random-walk effect, allowing the estimated share of adults walking daily to vary between survey waves more realistically. In these results, since M1 estimated that the rate of daily walking increases chronologically on average, 2021 estimates are shifted downward, and 2025 upward to reflect that increase over time. 
+
+```{r}
+#| label: temporal-change-map
+#| fig-width: 16
+#| fig-height: 4
+#| out-width: "100%"
+plot_estimate_change_map(
+  step_map_data,
+  "M0 to M1",
+  "Effect of adding temporal structure",
+  estimate_change_limit
+)
+```
+
+Next, we add area predictors cumulatively over Models 2 and 3. 
+
+- **Model 2** adds population density and the share of households without access to a car. Substantively, these predictors help distinguish places where daily walking for transport is more plausible from places where car-based travel is more dominant. The resulting changes raise the estimated daily-walking share in several more urban parts of south Wales and lower it in more rural areas, especially parts of the south west and north.
+- **Model 3** then adds predictors related to economic activity and work patterns: full-time students, routine or semi-routine occupations, and working from home. These variables further recalibrate the geography of daily walking. Some southern urban areas continue to move upward, and there are also upward changes in parts of central Wales. Other areas, including pockets in the north and suburban south, move downward once the fuller predictor set is included.
+
+```{r}
+#| label: covariate-change-map
+#| fig-width: 16
+#| fig-height: 8
+#| out-width: "100%"
+plot_estimate_change_map(
+  step_map_data,
+  c("M1 to M2", "M2 to M3"),
+  "Effect of adding area predictors",
+  0.005
+)
+```
+
+Finally, **Model 4** adds spatial structure via an MSOA adjacency matrix. After accounting for the year effect and area predictors, neighbouring MSOAs can still share residual information about daily walking, smoothing local differences of areas with similar unexplained patterns. The resulting changes again emphasise the contrast between parts of the urban south and more rural areas.
+
+```{r}
+#| label: spatial-change-map
+#| fig-width: 16
+#| fig-height: 4
+#| out-width: "100%"
+plot_estimate_change_map(
+  step_map_data,
+  "M3 to M4",
+  "Effect of adding spatial structure",
+  0.005
+)
+```
+
+## Final Model
+
+Model 4 is the most structured model, combining the year random walk, the selected area predictors, and the spatial effect to estimate the share of adults who walk for transport daily in each MSOA-year. The final maps show higher estimated daily-walking shares in several southern Welsh urban areas, with lower values across many more rural and suburban areas.
+
+Even after the direct estimates have been stabilised through the FH model, some MSOA-years still have wide posterior intervals (up to 30 percentage points). The final estimates should therefore be reported alongside their interval widths so that downstream operations can distinguish areas with similar estimated daily-walking rates but very different levels of uncertainty. A common strategy is to codify the resulting uncertainty into quality flags to facilitate filtering.
+
+```{r}
+#| label: final-model-map
+#| fig-width: 16
+#| fig-height: 12
+#| out-width: "100%"
+
+# Keep only the final, most structured model.
+final_model_results <- fh_results |>
+  filter(.data$model == model_order[5])
+
+uncertainty_breaks <- quantile(
+  final_model_results$fh_ci_width,
+  probs = c(0.25, 0.75),
+  na.rm = TRUE,
+  names = FALSE
+)
+
+uncertainty_flag_levels <- c(
+  "Good (Q1)",
+  "OK (Q2-Q3)",
+  "Caution (Q4)"
+)
+
+final_model_results <- final_model_results |>
+  mutate(
+    uncertainty_flag = case_when(
+      .data$fh_ci_width <= uncertainty_breaks[1] ~ uncertainty_flag_levels[1],
+      .data$fh_ci_width <= uncertainty_breaks[2] ~ uncertainty_flag_levels[2],
+      TRUE ~ uncertainty_flag_levels[3]
+    ),
+    uncertainty_flag = factor(
+      .data$uncertainty_flag,
+      levels = uncertainty_flag_levels
+    )
+  )
+
+final_map_data <- msoa_boundaries |>
+  left_join(final_model_results, by = "domain_id")
+
+final_estimate_limits <- range(final_model_results$fh_estimate, na.rm = TRUE)
+final_width_limits <- c(0, max(final_model_results$fh_ci_width, na.rm = TRUE))
+
+# Map posterior means and interval widths
+estimate_maps <- ggplot(final_map_data) +
+  geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
+  facet_wrap(vars(.data$wave_year)) +
+  scale_fill_distiller(
+    palette = "Blues",
+    direction = 1,
+    limits = final_estimate_limits,
+    labels = share_label,
+    na.value = "grey85",
+    name = "Share"
+  ) +
+  labs(title = "Final FH estimate") +
+  theme_void()
+
+uncertainty_maps <- ggplot(final_map_data) +
+  geom_sf(aes(fill = .data$fh_ci_width), colour = "transparent") +
+  facet_wrap(vars(.data$wave_year)) +
+  scale_fill_distiller(
+    palette = "Oranges",
+    direction = 1,
+    limits = final_width_limits,
+    labels = pp_label,
+    na.value = "grey85",
+    name = "Width"
+  ) +
+  labs(title = "Posterior interval width") +
+  theme_void()
+
+uncertainty_flag_maps <- ggplot(final_map_data) +
+  geom_sf(aes(fill = .data$uncertainty_flag), colour = "transparent") +
+  facet_wrap(vars(.data$wave_year)) +
+  scale_fill_manual(
+    values = setNames(
+      c("#1a9850", "#fee08b", "#d73027"),
+      uncertainty_flag_levels
+    ),
+    na.value = "grey85",
+    name = "Flag"
+  ) +
+  labs(title = "Estimate quality flag") +
+  theme_void()
+
+estimate_maps / uncertainty_maps / uncertainty_flag_maps +
+  plot_annotation(
+    title = "Frequent walking: M4 spatio-temporal model with 5 predictors"
+  )
+```
+
+
+```{r}
+#| label: export-fh-results
+#| echo: false
+write_csv(
+  fh_results,
+  file.path(base_path, "freq_walker_estimates_fh_inla.csv")
+)
+
+write_csv(
+  estimate_change_diagnostics,
+  file.path(base_path, "freq_walker_fh_step_diagnostics.csv")
+)
+```
