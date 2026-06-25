@@ -15,7 +15,7 @@ library(sf)
 library(ggplot2)
 library(patchwork)
 
-base_path <- file.path("..", "data")
+base_path <- here::here("data")
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
@@ -90,10 +90,7 @@ direct_walk_estimates <- survey::svyby(
     direct_estimate = .data$indicator,
     standard_error = .data$se
   ) |>
-  mutate(
-    variance = .data$standard_error^2,
-    direct_ci_width = 2 * 1.96 * .data$standard_error
-  )
+  mutate(variance = .data$standard_error^2)
 
 # Calculate sample size per MSOA-year
 direct_walk_counts <- survey_walk |>
@@ -152,14 +149,14 @@ plot_estimate <- function(wave) {
 
 plot_uncertainty <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = .data$direct_ci_width), colour = "transparent") +
+    geom_sf(aes(fill = .data$variance), colour = "transparent") +
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
       na.value = "grey85",
-      limits = c(0, max(direct_walk$direct_ci_width, na.rm = TRUE)),
-      labels = scales::label_number(accuracy = 1, scale = 100, suffix = " pp"),
-      name = "Width"
+      limits = c(0, max(direct_walk$variance, na.rm = TRUE)),
+      labels = scales::label_number(accuracy = 0.001),
+      name = "Variance"
     )
 }
 
@@ -187,7 +184,7 @@ e_23 <- plot_estimate("2023") +
 e_25 <- plot_estimate("2025") + ggtitle("2025")
 
 u_21 <- plot_uncertainty("2021") +
-  ylab("CI width") +
+  ylab("Variance") +
   theme(legend.position = "none")
 u_23 <- plot_uncertainty("2023") + theme(legend.position = "none")
 u_25 <- plot_uncertainty("2025")
@@ -225,9 +222,9 @@ direct_summary_by_wave <- direct_walk |>
       median(.data$direct_estimate, na.rm = TRUE),
       3
     ),
-    `Median CI width` = round(
-      median(.data$direct_ci_width, na.rm = TRUE),
-      3
+    `Median variance` = round(
+      median(.data$variance, na.rm = TRUE),
+      5
     ),
     .groups = "drop"
   ) |>
@@ -241,6 +238,6 @@ Model-based approaches are designed to address these issues. Area-level models c
 ```{r}
 write_csv(
   direct_walk,
-  file.path("..", "data", "freq_walker_estimates_direct.csv")
+  file.path(base_path, "freq_walker_estimates_direct.csv")
 )
 ```
