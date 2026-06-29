@@ -119,23 +119,16 @@ We then assemble the modelling data. The models use two area-level random-effect
 - `area_iid_id` indexes the unstructured, independent area effect.
 - `area_spatial_id` indexes the structured spatial area effect, which uses the   adjacency graph.
 
-Lastly, the sampling variance also needs careful handling before fitting the FH models with INLA, because the extent to which the noisy direct estimates will be stablised depends on their sampling variances. 
+Lastly, the sampling variance also needs careful handling before fitting the FH models with INLA. The extent to which the noisy direct estimates will be stablised depends on their sampling variances.
 
-- Because the outcome is binary (`1` for walking daily, `0` otherwise), small MSOA-year samples can produce direct estimates with very low or zero variance. If untreated, these MSOA-year small areas would be treated by the model as overly precise. To avoid this, we apply a minimum sampling variance floor that is the 5% quantile. 
-- For MSOA-year small areas without a direct estimate and as a result no variance, we assign maximum sampling variance, signalling the high uncertainty. Their estimates will be the model prediction.
+- For MSOA-year small areas without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
+- Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
 
 ```{r}
 #| label: prepare-model-data
 #| code-fold: false
 
-sampling_variance_floor <- quantile(
-  model_data_raw$variance[model_data_raw$variance > 0],
-  probs = 0.05,
-  na.rm = TRUE,
-  names = FALSE
-)
-
-sampling_variance_ceiling <- max(
+max_variance <- max(
   model_data_raw$variance[model_data_raw$variance > 0],
   na.rm = TRUE
 )
@@ -147,14 +140,13 @@ model_data <- model_data_raw |>
     area_iid_id = area_id,
     area_spatial_id = area_id,
     sampling_variance = case_when(
-      # No direct estimate: treat as maximum uncertainty.
-      is.na(direct_estimate) ~ sampling_variance_ceiling,
-      # Missing or tiny variances get the same lower bound.
-      is.na(variance) ~ sampling_variance_floor,
-      TRUE ~ pmax(variance, sampling_variance_floor)
+      is.na(.data$direct_estimate) ~ max_variance,
+      is.na(.data$variance) ~ max_variance,
+      .data$variance <= 1e-8 ~ max_variance,
+      TRUE ~ .data$variance
     )
   ) |>
-  arrange(wave_year, area_id)
+  arrange(.data$wave_year, .data$area_id)
 
 head(model_data)
 ```
@@ -303,13 +295,18 @@ We start by comparing the direct estimates with M0, the baseline Fay-Herriot mod
 ```{r}
 share_label <- scales::label_percent(accuracy = 0.1)
 pp_label <- scales::label_number(accuracy = 0.1, scale = 100, suffix = " pp")
-variance_label <- scales::label_number(accuracy = 0.01)
+variance_label <- scales::label_number(accuracy = 0.0001)
 
 map_text_theme <- theme(
-  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  strip.text = element_text(size = 15, face = "bold"),
-  legend.title = element_text(size = 13),
-  legend.text = element_text(size = 12)
+  plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(
+    size = 12,
+    face = "bold",
+    angle = 90,
+    margin = margin(r = 15)
+  ),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 9)
 )
 
 chart_text_theme <- theme(
@@ -319,11 +316,16 @@ chart_text_theme <- theme(
   axis.text = element_text(size = 12),
   legend.text = element_text(size = 12)
 )
+
+map_annotation_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
 ```
 ```{r}
 #| label: direct-to-m0-comparison
 #| fig-width: 16
-#| fig-height: 10
+#| fig-height: 12
 #| out-width: "100%"
 
 fh_wide <- fh_results |>
@@ -357,39 +359,61 @@ direct_variance_limit <- max(direct_to_m0$direct_variance, na.rm = TRUE)
 direct_to_m0_map_data <- msoa_boundaries |>
   left_join(direct_to_m0, by = "domain_id")
 
-shrinkage_maps <- ggplot(direct_to_m0_map_data) +
-  geom_sf(aes(fill = .data$variance_change), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year), nrow = 1) +
-  scale_fill_gradient2(
-    low = "#2166ac",
-    mid = "white",
-    high = "#b2182b",
-    midpoint = 0,
-    limits = c(-variance_change_limit, variance_change_limit),
-    oob = scales::squish,
-    labels = variance_label,
-    na.value = "grey85",
-    name = "Change"
-  ) +
-  labs(title = "Variance change from direct estimate to baseline FH model (M0)") +
-  theme_void() +
-  map_text_theme
+wave_years <- sort(unique(fh_wide$wave_year))
 
-direct_variance_maps <- ggplot(direct_to_m0_map_data) +
-  geom_sf(aes(fill = .data$direct_variance), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year), nrow = 1) +
-  scale_fill_distiller(
-    palette = "Reds",
-    direction = 1,
-    limits = c(0, direct_variance_limit),
-    labels = variance_label,
-    na.value = "grey85",
-    name = "Variance"
-  ) +
-  labs(title = "Direct-estimate variance (for reference)") +
-  theme_void() +
-  map_text_theme
+plot_m0_variance_change <- function(wave) {
+  direct_to_m0_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$variance_change), colour = "transparent") +
+    scale_fill_gradient2(
+      low = "#2166ac",
+      mid = "white",
+      high = "#b2182b",
+      midpoint = 0,
+      limits = c(-variance_change_limit, variance_change_limit),
+      oob = scales::squish,
+      labels = variance_label,
+      na.value = "grey85",
+      name = "Change"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
 
+plot_direct_variance <- function(wave) {
+  direct_to_m0_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$direct_variance), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "Reds",
+      direction = 1,
+      limits = c(0, direct_variance_limit),
+      labels = variance_label,
+      na.value = "grey85",
+      name = "Variance"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+variance_change_maps <- lapply(wave_years, plot_m0_variance_change)
+direct_variance_maps <- lapply(wave_years, plot_direct_variance)
+
+variance_change_maps[[1]] <- variance_change_maps[[1]] +
+  ylab("Variance change")
+direct_variance_maps[[1]] <- direct_variance_maps[[1]] +
+  ylab("Direct variance")
+
+for (i in seq_len(length(wave_years) - 1)) {
+  variance_change_maps[[i]] <- variance_change_maps[[i]] +
+    theme(legend.position = "none")
+  direct_variance_maps[[i]] <- direct_variance_maps[[i]] +
+    theme(legend.position = "none")
+}
 
 direct_to_m0_ranked <- direct_to_m0 |>
   filter(!is.na(variance_change)) |>
@@ -423,7 +447,7 @@ direct_to_m0_ranked_plot <- ggplot(
   facet_wrap(vars(.data$wave_year), nrow = 1) +
   scale_y_continuous(labels = variance_label) +
   scale_colour_manual(values = c(
-    "Variance change" = "purple",
+    "Variance change (Direct -> M0)" = "purple",
     "Variance (direct)" = "red"
   )) +
   labs(
@@ -435,8 +459,14 @@ direct_to_m0_ranked_plot <- ggplot(
   theme_minimal() +
   chart_text_theme
 
-shrinkage_maps / direct_variance_maps / direct_to_m0_ranked_plot +
-  plot_layout(heights = c(1, 1, 1))
+(wrap_plots(c(variance_change_maps, direct_variance_maps), ncol = 3) /
+  direct_to_m0_ranked_plot) +
+  plot_layout(heights = c(2, 1)) +
+  plot_annotation(
+    title = "Direct estimates compared with baseline FH model (M0)",
+    subtitle = "M0 stabilises noisy direct estimates before adding predictors or spatio-temporal structure",
+    theme = map_annotation_theme
+  )
 ```
 
 Because the Bayesian FH model estimates a posterior distribution, cells with missing direct estimates or zero/missing variance can still receive a model-based estimate, reported as a posterior mean with associated uncertainty. This is a benefit of the Bayesian approach in small area estimation where survey information is sparse or unavailable for several small areas.
@@ -507,23 +537,41 @@ m2_to_m3_estimate_limit <- quantile(
   names = FALSE
 )
 
-ggplot(m2_to_m3_map_data) +
-  geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year), nrow = 1) +
-  scale_fill_gradient2(
-    low = "#2166ac",
-    mid = "white",
-    high = "#b2182b",
-    midpoint = 0,
-    limits = c(-m2_to_m3_estimate_limit, m2_to_m3_estimate_limit),
-    oob = scales::squish,
-    labels = pp_label,
-    na.value = "grey85",
-    name = "Change"
-  ) +
-  labs(title = "Estimate change after adding additional predictors") +
-  theme_void() +
-  map_text_theme
+plot_m2_to_m3_change <- function(wave) {
+  m2_to_m3_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
+    scale_fill_gradient2(
+      low = "#2166ac",
+      mid = "white",
+      high = "#b2182b",
+      midpoint = 0,
+      limits = c(-m2_to_m3_estimate_limit, m2_to_m3_estimate_limit),
+      oob = scales::squish,
+      labels = pp_label,
+      na.value = "grey85",
+      name = "Change"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+m2_to_m3_maps <- lapply(wave_years, plot_m2_to_m3_change)
+m2_to_m3_maps[[1]] <- m2_to_m3_maps[[1]] + ylab("Estimate change")
+
+for (i in seq_len(length(wave_years) - 1)) {
+  m2_to_m3_maps[[i]] <- m2_to_m3_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(m2_to_m3_maps, ncol = 3) +
+  plot_annotation(
+    title = "Estimate change after adding additional predictors",
+    subtitle = "M3 minus M2",
+    theme = map_annotation_theme
+  )
 ```
 ```{r}
 m2_to_m3_drivers <- model_data |>
@@ -561,10 +609,10 @@ The areas whose estimates are raised most by M3 have higher work-from-home and s
 
 The contribution of the temporal and spatial effects on the model prediction can be exmined through two diagnostic outputs by `INLA`:
 
-- `tau` is the inverse of variance of random effects, both spatil and temporal. A higher value means the random effect varies less.
-- `phi` is the share of the BYM2 spatial random-effect variance assigned to the structured spatial component as opposed to the unstructured one. A value of `0.5` means the area random-effect variance is split roughly equally between the structured and unstructured components.
+- `tau` is the precision of the random effect, or the inverse of its variance. A higher `tau` means the random effect varies less.
+- `phi` is the BYM2 mixing parameter: it indicates how much of the area random effect is assigned to the structured spatial component versus the unstructured component. A value of `0.5` means the structured and unstructured components contribute roughly equally to the area random effect.
 
-The **temporal effect's** `tau` is high (`6091.734`), which means the model estimates only small differences between the three survey waves. The effect is still useful to include because it lets the model account for wave-to-wave changes insteading of treating survey responses from all waves as one.
+The **temporal effect** has a high `tau` (`6091.734`), which means the model estimates only small differences between the three survey waves. The effect is still useful to include because it lets the model account for wave-to-wave changes insteading of treating survey responses from all waves as one.
 ```{r}
 #| label: temporal-tau
 
@@ -577,7 +625,7 @@ fh_fits[["M1 +Temporal"]]$summary.hyperpar |>
   )
 ```
 
-The **spatial effect** has a lower `tau` (`102.617`) than the temporal effect, which suggests that there is more residual variation between MSOAs than between survey waves. However, its low `phi` (`0.032`) suggests that only a very small share of that remaining between-area variation follows the provided spatial weights. Most of the remaining area-level variation is unstructured, meaning it does not show a strong pattern of similarity between neighbouring MSOAs. This helps explain why adding the spatial structure to the random area effects does not improve WAIC.
+The **spatial effect** has a lower `tau` (`102.617`) than the temporal effect, which suggests that there is more residual variation between MSOAs than between survey waves. However, its low `phi` (`0.032`) suggests that only a very small share of that remaining between-area variation follows the provided spatial weights. Most of the remaining area-level variation is unstructured, which helps explain why adding the spatial structure to the random area effects does not improve WAIC.
 
 ```{r}
 #| label: spatial-tau-phi
@@ -620,23 +668,41 @@ m3_to_m4_limit <- quantile(
   names = FALSE
 )
 
-ggplot(m3_to_m4_map_data) +
-  geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year), nrow = 1) +
-  scale_fill_gradient2(
-    low = "#2166ac",
-    mid = "white",
-    high = "#b2182b",
-    midpoint = 0,
-    limits = c(-m3_to_m4_limit, m3_to_m4_limit),
-    oob = scales::squish,
-    labels = pp_label,
-    na.value = "grey85",
-    name = "Change"
-  ) +
-  labs(title = "Estimate change after adding spatial smoothing") +
-  theme_void() +
-  map_text_theme
+plot_m3_to_m4_change <- function(wave) {
+  m3_to_m4_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
+    scale_fill_gradient2(
+      low = "#2166ac",
+      mid = "white",
+      high = "#b2182b",
+      midpoint = 0,
+      limits = c(-m3_to_m4_limit, m3_to_m4_limit),
+      oob = scales::squish,
+      labels = pp_label,
+      na.value = "grey85",
+      name = "Change"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+m3_to_m4_maps <- lapply(wave_years, plot_m3_to_m4_change)
+m3_to_m4_maps[[1]] <- m3_to_m4_maps[[1]] + ylab("Estimate change")
+
+for (i in seq_len(length(wave_years) - 1)) {
+  m3_to_m4_maps[[i]] <- m3_to_m4_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(m3_to_m4_maps, ncol = 3) +
+  plot_annotation(
+    title = "Estimate change after adding spatial smoothing",
+    subtitle = "M4 minus M3",
+    theme = map_annotation_theme
+  )
 ```
 
 ### Reporting final estimates and uncertainty
@@ -648,7 +714,7 @@ The final model estimates should be reported with their associated uncertainty. 
 ```{r}
 #| label: final-model-map
 #| fig-width: 16
-#| fig-height: 8
+#| fig-height: 12
 #| out-width: "100%"
 
 # Keep only the final, most structured model.
@@ -658,44 +724,66 @@ final_map_data <- msoa_boundaries |>
   left_join(final_model_results, by = "domain_id")
 final_estimate_limits <- range(final_model_results$fh_estimate, na.rm = TRUE)
 final_variance_limits <- c(0, max(final_model_results$fh_variance, na.rm = TRUE))
+final_wave_years <- sort(unique(final_model_results$wave_year))
 
-# Map posterior means and variance
-estimate_maps <- ggplot(final_map_data) +
-  geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year)) +
-  scale_fill_distiller(
-    palette = "Blues",
-    direction = 1,
-    limits = final_estimate_limits,
-    labels = share_label,
-    na.value = "grey85",
-    name = "Share"
-  ) +
-  labs(title = "Final FH estimate") +
-  theme_void() +
-  map_text_theme
+plot_final_estimate <- function(wave) {
+  final_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
+    scale_fill_viridis_c(
+      option = "magma",
+      limits = final_estimate_limits,
+      labels = share_label,
+      na.value = "grey85",
+      name = "Share"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
 
-uncertainty_maps <- ggplot(final_map_data) +
-  geom_sf(aes(fill = .data$fh_variance), colour = "transparent") +
-  facet_wrap(vars(.data$wave_year)) +
-  scale_fill_distiller(
-    palette = "Oranges",
-    direction = 1,
-    limits = final_variance_limits,
-    labels = variance_label,
-    na.value = "grey85",
-    name = "Variance"
-  ) +
-  labs(title = "Posterior variance") +
-  theme_void() +
-  map_text_theme
+plot_final_variance <- function(wave) {
+  final_map_data |>
+    filter(.data$wave_year == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$fh_variance), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "Oranges",
+      direction = 1,
+      limits = final_variance_limits,
+      labels = variance_label,
+      na.value = "grey85",
+      name = "Variance"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
 
-estimate_maps / uncertainty_maps  +
+estimate_maps <- lapply(final_wave_years, plot_final_estimate)
+uncertainty_maps <- lapply(final_wave_years, plot_final_variance)
+
+estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
+uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("Posterior variance")
+
+for (i in seq_len(length(final_wave_years) - 1)) {
+  estimate_maps[[i]] <- estimate_maps[[i]] +
+    theme(legend.position = "none")
+  uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 3) +
   plot_annotation(
-    title = "Share of adults who walk for transport daily\nSpatio-temporal FH model with 5 predictors (m4)",
-    theme = theme(plot.title = element_text(size = 20, face = "bold", hjust = 0.5))
+    title = "Share of adults who walk for transport daily",
+    subtitle = "Spatio-temporal FH model with five predictors (M4)",
+    theme = map_annotation_theme
   )
 ```
+
+The final maps illustrate why this matters: Even after the direct estimates have been stabilised through the Fay-Herriot model, weaker survey coverage can still leave unusual year-specific patterns in the modelled estimates. 2023 estimates are generally higher than in 2021 and 2025, likely due to that wave's smaller sample size. For transparency, the 2023 estimates should therefore be read alongside their posterior uncertainty and the original sample sizes.
+
 
 ```{r}
 #| label: export-fh-results
@@ -703,6 +791,11 @@ estimate_maps / uncertainty_maps  +
 write_csv(
   fh_results,
   file.path(base_path, "freq_walker_estimates_fh_inla.csv")
+)
+
+write_csv(
+  final_model_results,
+  file.path(base_path, "freq_walker_estimates_final_m4.csv")
 )
 
 local_change_diagnostics <- bind_rows(

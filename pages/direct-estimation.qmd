@@ -116,7 +116,7 @@ Direct estimation provides a useful starting point because they make three limit
 
 - **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and across MSOAs. This means some MSOA-year estimates are based on much less direct evidence than others.
 - **Unstable area estimate over time:** For some MSOAs, direct estimates change sharply between waves. These changes may reflect real behavioural change, but they may also reflect sampling noise.
-- **Zero within-area variance:** For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unreliable variance estimates.
+- **Zero within-area variance:** For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unrealistically low variances.
 
 ```{r}
 #| label: direct-map-diagnostics
@@ -126,6 +126,23 @@ Direct estimation provides a useful starting point because they make three limit
 #| fig-align: "center"
 #| 
 # Plotting functions
+map_text_theme <- theme(
+  plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(
+    size = 12,
+    face = "bold",
+    angle = 90,
+    margin = margin(r = 15)
+  ),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 9)
+)
+
+map_annotation_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
+
 base_map <- function(wave) {
   wave_direct <- direct_walk[direct_walk[["wave_year"]] == wave, ]
 
@@ -134,16 +151,18 @@ base_map <- function(wave) {
 
   ggplot(wave_data) +
     theme_void() +
-    theme(axis.title.y = element_text(angle = 90, margin = margin(r = 15)))
+    map_text_theme
 }
 
 plot_estimate <- function(wave) {
   base_map(wave) +
     geom_sf(aes(fill = .data$direct_estimate), colour = "transparent") +
-    scale_fill_distiller(
-      palette = "Blues", direction = 1, limits = c(0, 1),
+    scale_fill_viridis_c(
+      option = "magma",
+      limits = c(0, 1),
       labels = scales::label_percent(accuracy = 1),
-      na.value = "grey85"
+      na.value = "grey85",
+      name = "Share"
     )
 }
 
@@ -168,7 +187,7 @@ plot_sample <- function(wave) {
       high = "#4f3b10",
       limits = c(0, max(direct_walk$n, na.rm = TRUE)),
       na.value = "grey85",
-      name = ""
+      name = "Sample size"
     )
 }
 
@@ -202,10 +221,12 @@ diagnostic_panel <- wrap_plots(
   ncol = 3, nrow = 3
 ) +
   plot_annotation(
-    title = "Share of adults who walk daily: direct estimates by wave"
+    title = "Share of adults who walk for transport daily",
+    subtitle = "Direct estimates, sampling variance, and usable sample size by wave",
+    theme = map_annotation_theme
   )
 
-diagnostic_panel + theme(plot.title = element_text(hjust = 0.5))
+diagnostic_panel
 ```
 
 
@@ -217,6 +238,7 @@ direct_summary_by_wave <- direct_walk |>
   summarise(
     `Usable observations` = sum(.data$n),
     `MSOAs without direct estimates` = sum(is.na(.data$direct_estimate)),
+    `MSOAs with zero variance` = sum(.data$variance == 0, na.rm = TRUE),
     `Median sample size` = median(.data$n),
     `Median direct estimate` = round(
       median(.data$direct_estimate, na.rm = TRUE),
