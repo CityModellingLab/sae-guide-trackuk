@@ -19,17 +19,13 @@ library(INLA)
 
 base_path <- here::here("data")
 
-share_label <- scales::label_percent(accuracy = 1)
-pp_label <- scales::label_number(accuracy = 1, scale = 100, suffix = " pp")
-variance_label <- scales::label_number(accuracy = 0.0001)
-
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(domain_id = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$domain_id, "W")) |>
-  arrange(.data$domain_id)
+  rename(msoa_code = all_of("MSOA21CD")) |>
+  filter(str_starts(.data$msoa_code, "W")) |>
+  arrange(.data$msoa_code)
 ```
 ## Prepare modelling data
 
@@ -50,20 +46,19 @@ area_covariates <- read_csv(
   file.path(base_path, "clean", "area_covariates_daily_walking.csv"),
   show_col_types = FALSE
 ) |>
-  rename(domain_id = all_of("msoa_code")) |>
   select(
     all_of(c(
-      "domain_id",
+      "msoa_code",
       "cov_population_density",
       "cov_share_no_car_households",
       "cov_share_work_from_home",
       "cov_share_students",
       "cov_share_routine_semiroutine"
     ))
-  )
+)
 
 model_data_raw <- direct_walk |>
-  left_join(area_covariates, by = "domain_id")
+  left_join(area_covariates, by = "msoa_code")
 
 head(model_data_raw)
 ```
@@ -74,11 +69,11 @@ Before fitting the models, we create a consistent numeric index for each MSOA an
 #| label: define-model-index
 #| code-fold: false
 
-area_levels <- sort(unique(model_data_raw[["domain_id"]]))
+area_levels <- sort(unique(model_data_raw[["msoa_code"]]))
 year_levels <- sort(unique(model_data_raw[["wave_year"]]))
 
 area_index <- tibble::tibble(
-  domain_id = area_levels,
+  msoa_code = area_levels,
   area_id = seq_along(area_levels)
 )
 
@@ -97,13 +92,13 @@ To include a spatial random effect, we also need an adjacency graph `.adj` as in
 #| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
-  dplyr::inner_join(area_index, by = "domain_id") |>
+  dplyr::inner_join(area_index, by = "msoa_code") |>
   dplyr::arrange(.data$area_id)
 
 msoa_neighbours <- spdep::poly2nb(
   msoa_boundaries_sorted,
   queen = TRUE,
-  row.names = msoa_boundaries_sorted$domain_id
+  row.names = msoa_boundaries_sorted$msoa_code
 )
 
 spatial_graph_file <- tempfile(fileext = ".adj")
@@ -114,12 +109,12 @@ spdep::nb2INLA(
 )
 ```
 
-We then assemble the modelling data. The models use two area-level random-effect structures, so we create separate INLA index variables:
+We then assemble the modelling data. The models use two area-level random-effect structures, so we create separate `INLA` index variables:
 
 - `area_iid_id` indexes the unstructured, independent area effect.
 - `area_spatial_id` indexes the structured spatial area effect, which uses the   adjacency graph.
 
-Lastly, the sampling variance also needs careful handling before fitting the FH models with INLA. The extent to which the noisy direct estimates will be stablised depends on their sampling variances.
+Lastly, the sampling variance also needs careful handling before fitting the FH models with `INLA`. The extent to which the noisy direct estimates will be stablised depends on their sampling variances.
 
 - For MSOA-year small areas without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
 - Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
@@ -134,7 +129,7 @@ max_variance <- max(
 )
 
 model_data <- model_data_raw |>
-  left_join(area_index, by = "domain_id") |>
+  left_join(area_index, by = "msoa_code") |>
   left_join(year_index, by = "wave_year") |>
   mutate(
     area_iid_id = area_id,
@@ -153,7 +148,7 @@ head(model_data)
 
 ## Fit Models
 
-Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to INLA as known observation-level uncertainty, so cells with noisy direct estimates receive less weight.
+Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight.
 
 We will fit five cumulative models:
 
@@ -239,14 +234,14 @@ model_order <- names(model_formulas)
 fh_fits <- lapply(model_formulas, fit_fh_model)
 ```
 
-At this point the result is just a named list of fitted INLA models. We will collate the fitted values into one results table together with their original direct estimates and sampling variances. 
+At this point the result is just a named list of fitted `INLA` models. We will collate the fitted values into one results table together with their original direct estimates and sampling variances. 
 
 ```{r}
 #| label: collate-fh-results
 
 # Main frame to keep from model data
 output_cols <- c(
-  "domain_id",
+  "msoa_code",
   "wave_year",
   "msoa_name",
   "direct_estimate",
@@ -293,6 +288,8 @@ Before we compare the models and modelled estimates, it is worth undesrtanding h
 We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure. MSOA-years with high sampling variance contain less reliable local information, so M0 pulls them more strongly toward its baseline prediction.
 
 ```{r}
+# Plotting setup
+
 share_label <- scales::label_percent(accuracy = 0.1)
 pp_label <- scales::label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 variance_label <- scales::label_number(accuracy = 0.0001)
@@ -331,7 +328,7 @@ map_annotation_theme <- theme(
 fh_wide <- fh_results |>
   # One row per MSOA-year, with model outputs in separate columns.
   select(
-    domain_id,
+    msoa_code,
     wave_year,
     model,
     direct_estimate,
@@ -347,7 +344,7 @@ fh_wide <- fh_results |>
 
 direct_to_m0 <- fh_wide |>
   transmute(
-    domain_id,
+    msoa_code,
     wave_year,
     direct_variance = variance,
     variance_change = .data[["fh_variance__M0 Baseline"]] - .data$variance
@@ -357,7 +354,7 @@ variance_change_limit <- max(abs(direct_to_m0$variance_change), na.rm = TRUE) * 
 direct_variance_limit <- max(direct_to_m0$direct_variance, na.rm = TRUE)
 
 direct_to_m0_map_data <- msoa_boundaries |>
-  left_join(direct_to_m0, by = "domain_id")
+  left_join(direct_to_m0, by = "msoa_code")
 
 wave_years <- sort(unique(fh_wide$wave_year))
 
@@ -447,7 +444,7 @@ direct_to_m0_ranked_plot <- ggplot(
   facet_wrap(vars(.data$wave_year), nrow = 1) +
   scale_y_continuous(labels = variance_label) +
   scale_colour_manual(values = c(
-    "Variance change (Direct -> M0)" = "purple",
+    "Variance change" = "purple",
     "Variance (direct)" = "red"
   )) +
   labs(
@@ -476,7 +473,7 @@ Because the Bayesian FH model estimates a posterior distribution, cells with mis
 fh_wide |>
   filter(is.na(.data$direct_estimate) | is.na(.data$variance)) |>
   transmute(
-    `MSOA` = .data$domain_id,
+    `MSOA` = .data$msoa_code,
     `Wave year` = .data$wave_year,
     `Direct estimate` = share_label(.data$direct_estimate),
     `Sampling variance` = round(.data$variance, 6),
@@ -520,7 +517,7 @@ For example, moving from M2 to M3 adds the occupation and work-pattern predictor
 
 m2_to_m3 <- fh_wide |>
   transmute(
-    domain_id,
+    msoa_code,
     wave_year,
     estimate_change =
       .data[["fh_estimate__M3 +All predictors"]] - 
@@ -528,7 +525,7 @@ m2_to_m3 <- fh_wide |>
   )
 
 m2_to_m3_map_data <- msoa_boundaries |>
-  left_join(m2_to_m3, by = "domain_id")
+  left_join(m2_to_m3, by = "msoa_code")
 
 m2_to_m3_estimate_limit <- quantile(
   abs(m2_to_m3$estimate_change),
@@ -576,13 +573,13 @@ wrap_plots(m2_to_m3_maps, ncol = 3) +
 ```{r}
 m2_to_m3_drivers <- model_data |>
   select(
-    domain_id,
+    msoa_code,
     wave_year,
     work_from_home = cov_share_work_from_home,
     students = cov_share_students,
     routine_semiroutine = cov_share_routine_semiroutine
   ) |>
-  left_join(m2_to_m3, by = c("domain_id", "wave_year")) |>
+  left_join(m2_to_m3, by = c("msoa_code", "wave_year")) |>
   mutate(
     change_group = case_when(
       estimate_change >= quantile(estimate_change, 0.9, na.rm = TRUE) ~
@@ -651,7 +648,7 @@ Even so, it is still useful to map the estimate change from M3 to M4, because a 
 
 m3_to_m4 <- fh_wide |>
   transmute(
-    domain_id,
+    msoa_code,
     wave_year,
     estimate_change =
       .data[["fh_estimate__M4 +Spatial"]] -
@@ -659,7 +656,7 @@ m3_to_m4 <- fh_wide |>
   )
 
 m3_to_m4_map_data <- msoa_boundaries |>
-  left_join(m3_to_m4, by = "domain_id")
+  left_join(m3_to_m4, by = "msoa_code")
 
 m3_to_m4_limit <- quantile(
   abs(m3_to_m4$estimate_change),
@@ -721,7 +718,7 @@ The final model estimates should be reported with their associated uncertainty. 
 final_model_results <- fh_results |>
   filter(.data$model == "M4 +Spatial")
 final_map_data <- msoa_boundaries |>
-  left_join(final_model_results, by = "domain_id")
+  left_join(final_model_results, by = "msoa_code")
 final_estimate_limits <- range(final_model_results$fh_estimate, na.rm = TRUE)
 final_variance_limits <- c(0, max(final_model_results$fh_variance, na.rm = TRUE))
 final_wave_years <- sort(unique(final_model_results$wave_year))
@@ -810,3 +807,4 @@ write_csv(
   file.path(base_path, "freq_walker_fh_step_diagnostics.csv")
 )
 ```
+

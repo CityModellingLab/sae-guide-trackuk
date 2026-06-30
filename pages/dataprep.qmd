@@ -4,29 +4,114 @@ title: "Modelling Data Preparation"
 
 This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready data products used by the estimation workflows that follow.
 
-## Synthetic National Survey for Wales response datasets - 3 waves
+## The Survey Microdata
 
-The tutorial uses a synthetic teaching dataset based on the **National Survey for Wales (NSW)**. The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. For this tutorial, the cleaned microdata combine three survey periods: 2020-2021, 2022-2023, and 2024-2025 into one harmonised survey microdata.
+The tutorial uses a synthetic teaching dataset based on the three survey waves of the **National Survey for Wales (NSW) in 2020-2021, 2022-2023, and 2024-2025**. 
 
-Since the survey responses are geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent's Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. As such, estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.
+The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. For this tutorial, the cleaned microdata combine three survey periods into one harmonised survey microdata.
 
+Since the survey responses are originally geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent's Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. As such, estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.
 
 This design has two purposes:
 
 - **Higher spatial resolution for tutorial purposes.** The tutorial can demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
-- **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so the tutorial avoids presenting fine-grained respondent locations.
+- **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so the tutorial avoids presenting fine-grained respondent locations. 
 
-![Synthetic areal disaggregation](../assets/la_msoa_n.png)
+```{r}
+#| label: synthetic-geo-counts
+#| fig-width: 12
+#| fig-height: 7
+#| out-width: "100%"
+#| fig-align: "center"
 
+survey_microdata <- readr::read_csv(
+  here::here("data", "clean", "survey_microdata_msoa_year.csv"),
+  show_col_types = FALSE
+)
+
+la_boundaries <- sf::st_read(
+  here::here("data", "boundaries-ltla.geojson"),
+  quiet = TRUE
+) |>
+  dplyr::transmute(la_code = .data$LAD21CD) |>
+  dplyr::filter(stringr::str_starts(.data$la_code, "W"))
+
+msoa_boundaries <- sf::st_read(
+  here::here("data", "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  dplyr::transmute(msoa_code = .data$MSOA21CD) |>
+  dplyr::filter(stringr::str_starts(.data$msoa_code, "W"))
+
+la_response_counts <- survey_microdata |>
+  dplyr::filter(!is.na(.data$la_code), !is.na(.data$la_name)) |>
+  dplyr::count(.data$la_code, name = "responses")
+
+msoa_response_counts <- survey_microdata |>
+  dplyr::filter(!is.na(.data$msoa_code)) |>
+  dplyr::count(.data$msoa_code, name = "responses")
+
+la_count_map_data <- la_boundaries |>
+  dplyr::left_join(la_response_counts, by = "la_code")
+
+msoa_count_map_data <- msoa_boundaries |>
+  dplyr::left_join(msoa_response_counts, by = "msoa_code")
+
+count_map_theme <- ggplot2::theme_void(base_size = 11) +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(face = "bold", size = 13, hjust = 0.5),
+    legend.position = "bottom",
+    legend.title = ggplot2::element_text(size = 10),
+    legend.text = ggplot2::element_text(size = 9)
+  )
+
+plot_response_map <- function(map_data, title, border_colour = "transparent") {
+  ggplot2::ggplot(map_data) +
+    ggplot2::geom_sf(
+      ggplot2::aes(fill = .data$responses),
+      colour = border_colour,
+      linewidth = 0.15
+    ) +
+    ggplot2::scale_fill_viridis_c(
+      option = "magma",
+      direction = -1,
+      labels = scales::label_comma(),
+      na.value = "grey85",
+      guide = ggplot2::guide_colourbar(
+        barwidth = ggplot2::unit(4.5, "cm"),
+        barheight = ggplot2::unit(0.35, "cm")
+      )
+    ) +
+    ggplot2::labs(title = title, fill = "Responses") +
+    count_map_theme
+}
+
+la_count_map <- plot_response_map(
+  la_count_map_data,
+  "Original responses by Local Authority",
+  border_colour = "white"
+)
+
+msoa_count_map <- plot_response_map(
+  msoa_count_map_data,
+  "Synthetic responses by MSOA"
+)
+
+patchwork::wrap_plots(la_count_map, msoa_count_map, ncol = 2)
+```
+
+## Data preparation pipeline
+
+[TO EDIT IMAGE]
 ![Preparation pipeline for analysis-ready inputs](../assets/dataprep.png)
 
-## Defining the Estimand
+### Defining the Estimand
 
-It is important to define the estimand before proceeding to the next step. The estimand determines how we can formulate the appropraite indicator from survey variables, how we aggregate it to the desired area level, and which model inputs such as predictors and spatio-temporal structure are valid downstream. A well-formed estimand answers:
+It is important to define the estimand before proceeding to the next step. The estimand determines how we formulate the appropriate indicator from survey variables, how we aggregate it to the desired area level, and which model inputs such as predictors and spatio-temporal structure are valid downstream. A well-formed estimand answers:
 
 > Estimate the **measure** of **what outcome**, among **which population**, across **which geography** and **time period**.
 
-For the main tutorial, we use seek to perform SAE on estimand:
+For the main tutorial, we perform SAE on the following estimand:
 
 | Component | Choice |
 |---|---|
@@ -38,7 +123,7 @@ For the main tutorial, we use seek to perform SAE on estimand:
 
 The target population definition is particularly important when we are estimating means or proportions since it determines the denominator for such aggregation. Moreover, it dictates the requirement for target population sizes or poststratification tables when formulating the models.
 
-## Preparing the Survey Indicator for the estimand
+### Preparing the Survey Indicator
 
 Since we are interested in whether our respondents walk frequently as the main mode of transport, we can code the indicator from `AtFrqWlk10`, the active-travel frequency question for walking. 
 
@@ -48,9 +133,9 @@ Since we are interested in whether our respondents walk frequently as the main m
 | Raw survey variable | `AtFrqWlk10` |
 | Positive case | `AtFrqWlk10 == 1`, walking daily |
 | Negative case | Walking but not daily |
-| Missing | Missing, invalid, no matched analysis weight, or not asked |
-| Measure | Share |
-| Target population | Adults |
+| Missing | Missing, invalid, or not asked |
+
+The cleaned respondent-level microdata also retains `CarUse`, the raw survey code for household car or van availability, so later unit-level examples can derive the `no_car` predictor directly from the survey field.
 
 Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding weight variable selection rule is as follows:
 - Use `SampleTravelWeight` in survey periods where this question was asked to a subsample and the weight for this exists, 
@@ -67,34 +152,52 @@ The current cleaned data give the following usable observations for the walking 
 
 Note that although the data have gaps when aggregated to the area-year level, that is expected. SAE models will be used to borrow strength for sparse or unsampled domains.
 
-## Preparing auxiliary data
-### Area Predictors
-
-Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
-
-These variables are chosen because daily walking is likely to vary with density, car access, commuting mode, housing form, and the socioeconomic and student composition of each area.
-
-| Variables | Why include |
-|---|---|
-| Population density | Denser urban areas tend to be more walkable |
-| Share of households without car/van | Individual no-car households tend to walk, cycle, take public transport more |
-| Working from home, Full-time students and routine/semi-routine occupations | Individual occupation may explain their propensity to walk |
-
-### Poststratification Table
-
-A population poststratification table is needed to apply the fitted unit-level model to the target population. Because the estimand is the share of adults who walk for transport daily, the tutorial uses an *MSOA-by-year-by-age-by-sex* population table.
-
-We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and keeps the survey years used in this tutorial: 2021, 2023, and 2025. A few notes on the preparation of the poststratification tables:
-
-- The youngest available ONS age band is `15 to 19`. This is used as the closest available population cell for the 16+ walking estimand.
-- For MRP, the variables that define poststratification cells must be available in both the survey and the population table, with compatible categories.
-
-Note that other useful predictors can still enter the unit-level model as area-level predictors. For example, population density and no-car households are joined by MSOA. They help explain spatial differences in walking, but they do not need to define additional poststratification cells. 
+The main survey output has *one row per respondent-wave:*
 
 | Column | Meaning |
 |---|---|
-| `domain_id` | MSOA estimation area |
+| `unit_id` | Respondent-wave identifier |
+| `source_wave` | Original survey period |
 | `wave_year` | Tutorial survey year |
-| `age_band` | Quinary age band used in the unit-level model |
+| `msoa_code` | Synthetic MSOA assignment |
+| `strata` | Local Authority stratum |
+| `indicator` | Binary walking response |
+| `weight` | Matched analysis weight |
+| `weight_source` | Weight variable used for this indicator |
+
+### Preparing auxiliary data
+#### Area Predictors
+
+Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
+
+These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns. The Fay--Herriot workbook introduces them in two groups:
+
+| Group | Variables | Why include |
+|---|---|---|
+| Core predictors | - Population density<br>- Share of households without car/van | Capturing broad urban form and car access |
+| Additional predictors | - Share working from home<br>- Share full-time students<br>- Share in routine or semi-routine occupations | Capturing work-pattern differences that may explain transport mode choice |
+
+The area-predictor output *has one row per MSOA:*
+
+| Column | Meaning |
+|---|---|
+| `msoa_code` | MSOA estimation area |
+| `msoa_name` | MSOA name |
+| `raw_*` | Raw 5 predictors used in the models |
+| `cov_*` | Z-scored versions of the raw predictors |
+
+#### Poststratification Table
+
+A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and kept the survey years used in this tutorial: 2021, 2023, and 2025. 
+
+Note that the youngest available ONS age band is `15 to 19`. Therefore, Age 15+ is used as the closest adult definition used in the NSW (Age 16+)
+
+The area-predictor output *has one row per MSOA--year--age--sex combination:*
+
+| Column | Meaning |
+|---|---|
+| `msoa_code` | MSOA estimation area |
+| `wave_year` | Tutorial survey year |
+| `age_band` | Age band used in the unit-level model |
 | `sex` | Sex category used in the unit-level model |
 | `pop_count` | Number of adults in the cell |

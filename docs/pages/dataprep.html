@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -118,10 +152,6 @@ ul.task-list li input[type="checkbox"] {
   <li class="nav-item">
     <a class="nav-link" href="../pages/resources.html" rel="" target="">
  <span class="menu-text">Resources</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="../pages/about.html" rel="" target="">
- <span class="menu-text">About</span></a>
   </li>  
 </ul>
             <div class="quarto-navbar-tools ms-auto">
@@ -222,13 +252,12 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#synthetic-national-survey-for-wales-response-datasets---3-waves" id="toc-synthetic-national-survey-for-wales-response-datasets---3-waves" class="nav-link active" data-scroll-target="#synthetic-national-survey-for-wales-response-datasets---3-waves"><span class="header-section-number">1</span> Synthetic National Survey for Wales response datasets - 3 waves</a></li>
-  <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">2</span> Defining the Estimand</a></li>
-  <li><a href="#preparing-the-survey-indicator-for-the-estimand" id="toc-preparing-the-survey-indicator-for-the-estimand" class="nav-link" data-scroll-target="#preparing-the-survey-indicator-for-the-estimand"><span class="header-section-number">3</span> Preparing the Survey Indicator for the estimand</a></li>
-  <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">4</span> Preparing auxiliary data</a>
+  <li><a href="#the-survey-microdata" id="toc-the-survey-microdata" class="nav-link active" data-scroll-target="#the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</a></li>
+  <li><a href="#data-preparation-pipeline" id="toc-data-preparation-pipeline" class="nav-link" data-scroll-target="#data-preparation-pipeline"><span class="header-section-number">2</span> Data preparation pipeline</a>
   <ul class="collapse">
-  <li><a href="#area-predictors" id="toc-area-predictors" class="nav-link" data-scroll-target="#area-predictors"><span class="header-section-number">4.1</span> Area Predictors</a></li>
-  <li><a href="#poststratification-table" id="toc-poststratification-table" class="nav-link" data-scroll-target="#poststratification-table"><span class="header-section-number">4.2</span> Poststratification Table</a></li>
+  <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">2.1</span> Defining the Estimand</a></li>
+  <li><a href="#preparing-the-survey-indicator" id="toc-preparing-the-survey-indicator" class="nav-link" data-scroll-target="#preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing the Survey Indicator</a></li>
+  <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing auxiliary data</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -254,35 +283,113 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 <p>This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready data products used by the estimation workflows that follow.</p>
-<section id="synthetic-national-survey-for-wales-response-datasets---3-waves" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="synthetic-national-survey-for-wales-response-datasets---3-waves"><span class="header-section-number">1</span> Synthetic National Survey for Wales response datasets - 3 waves</h2>
-<p>The tutorial uses a synthetic teaching dataset based on the <strong>National Survey for Wales (NSW)</strong>. The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. For this tutorial, the cleaned microdata combine three survey periods: 2020-2021, 2022-2023, and 2024-2025 into one harmonised survey microdata.</p>
-<p>Since the survey responses are geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent’s Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. As such, estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.</p>
+<section id="the-survey-microdata" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</h2>
+<p>The tutorial uses a synthetic teaching dataset based on the three survey waves of the <strong>National Survey for Wales (NSW) in 2020-2021, 2022-2023, and 2024-2025</strong>.</p>
+<p>The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. For this tutorial, the cleaned microdata combine three survey periods into one harmonised survey microdata.</p>
+<p>Since the survey responses are originally geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent’s Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. As such, estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.</p>
 <p>This design has two purposes:</p>
 <ul>
 <li><strong>Higher spatial resolution for tutorial purposes.</strong> The tutorial can demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.</li>
 <li><strong>Privacy and disclosure protection.</strong> The assigned MSOA is not the respondent’s true MSOA, so the tutorial avoids presenting fine-grained respondent locations.</li>
 </ul>
+<div class="cell" data-layout-align="center">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoa_year.csv"</span>),</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_read</span>(</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"boundaries-ltla.geojson"</span>),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">la_code =</span> .data<span class="sc">$</span>LAD21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(stringr<span class="sc">::</span><span class="fu">str_starts</span>(.data<span class="sc">$</span>la_code, <span class="st">"W"</span>))</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> sf<span class="sc">::</span><span class="fu">st_read</span>(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">msoa_code =</span> .data<span class="sc">$</span>MSOA21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(stringr<span class="sc">::</span><span class="fu">str_starts</span>(.data<span class="sc">$</span>msoa_code, <span class="st">"W"</span>))</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>la_response_counts <span class="ot">&lt;-</span> survey_microdata <span class="sc">|&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>la_code), <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>la_name)) <span class="sc">|&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">count</span>(.data<span class="sc">$</span>la_code, <span class="at">name =</span> <span class="st">"responses"</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>msoa_response_counts <span class="ot">&lt;-</span> survey_microdata <span class="sc">|&gt;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>msoa_code)) <span class="sc">|&gt;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">count</span>(.data<span class="sc">$</span>msoa_code, <span class="at">name =</span> <span class="st">"responses"</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>la_count_map_data <span class="ot">&lt;-</span> la_boundaries <span class="sc">|&gt;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(la_response_counts, <span class="at">by =</span> <span class="st">"la_code"</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>msoa_count_map_data <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">left_join</span>(msoa_response_counts, <span class="at">by =</span> <span class="st">"msoa_code"</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>count_map_theme <span class="ot">&lt;-</span> ggplot2<span class="sc">::</span><span class="fu">theme_void</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">theme</span>(</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> ggplot2<span class="sc">::</span><span class="fu">element_text</span>(<span class="at">face =</span> <span class="st">"bold"</span>, <span class="at">size =</span> <span class="dv">13</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>),</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"bottom"</span>,</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.title =</span> ggplot2<span class="sc">::</span><span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">10</span>),</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.text =</span> ggplot2<span class="sc">::</span><span class="fu">element_text</span>(<span class="at">size =</span> <span class="dv">9</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>plot_response_map <span class="ot">&lt;-</span> <span class="cf">function</span>(map_data, title, <span class="at">border_colour =</span> <span class="st">"transparent"</span>) {</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>  ggplot2<span class="sc">::</span><span class="fu">ggplot</span>(map_data) <span class="sc">+</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">geom_sf</span>(</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>      ggplot2<span class="sc">::</span><span class="fu">aes</span>(<span class="at">fill =</span> .data<span class="sc">$</span>responses),</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>      <span class="at">colour =</span> border_colour,</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>      <span class="at">linewidth =</span> <span class="fl">0.15</span></span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">scale_fill_viridis_c</span>(</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>      <span class="at">option =</span> <span class="st">"magma"</span>,</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a>      <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">label_comma</span>(),</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>      <span class="at">na.value =</span> <span class="st">"grey85"</span>,</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>      <span class="at">guide =</span> ggplot2<span class="sc">::</span><span class="fu">guide_colourbar</span>(</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>        <span class="at">barwidth =</span> ggplot2<span class="sc">::</span><span class="fu">unit</span>(<span class="fl">4.5</span>, <span class="st">"cm"</span>),</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>        <span class="at">barheight =</span> ggplot2<span class="sc">::</span><span class="fu">unit</span>(<span class="fl">0.35</span>, <span class="st">"cm"</span>)</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>    ggplot2<span class="sc">::</span><span class="fu">labs</span>(<span class="at">title =</span> title, <span class="at">fill =</span> <span class="st">"Responses"</span>) <span class="sc">+</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>    count_map_theme</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>la_count_map <span class="ot">&lt;-</span> <span class="fu">plot_response_map</span>(</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>  la_count_map_data,</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Original responses by Local Authority"</span>,</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>  <span class="at">border_colour =</span> <span class="st">"white"</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a>msoa_count_map <span class="ot">&lt;-</span> <span class="fu">plot_response_map</span>(</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true" tabindex="-1"></a>  msoa_count_map_data,</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Synthetic responses by MSOA"</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true" tabindex="-1"></a>patchwork<span class="sc">::</span><span class="fu">wrap_plots</span>(la_count_map, msoa_count_map, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="../assets/la_msoa_n.png" class="img-fluid figure-img"></p>
-<figcaption class="figure-caption">Synthetic areal disaggregation</figcaption>
+<p><img src="dataprep_files/figure-html/synthetic-geo-counts-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
 </figure>
 </div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="../assets/dataprep.png" class="img-fluid figure-img"></p>
-<figcaption class="figure-caption">Preparation pipeline for analysis-ready inputs</figcaption>
-</figure>
+</div>
 </div>
 </section>
-<section id="defining-the-estimand" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="defining-the-estimand"><span class="header-section-number">2</span> Defining the Estimand</h2>
-<p>It is important to define the estimand before proceeding to the next step. The estimand determines how we can formulate the appropraite indicator from survey variables, how we aggregate it to the desired area level, and which model inputs such as predictors and spatio-temporal structure are valid downstream. A well-formed estimand answers:</p>
+<section id="data-preparation-pipeline" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="data-preparation-pipeline"><span class="header-section-number">2</span> Data preparation pipeline</h2>
+<p>[TO EDIT IMAGE] <img src="../assets/dataprep.png" class="img-fluid" alt="Preparation pipeline for analysis-ready inputs"></p>
+<section id="defining-the-estimand" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="defining-the-estimand"><span class="header-section-number">2.1</span> Defining the Estimand</h3>
+<p>It is important to define the estimand before proceeding to the next step. The estimand determines how we formulate the appropriate indicator from survey variables, how we aggregate it to the desired area level, and which model inputs such as predictors and spatio-temporal structure are valid downstream. A well-formed estimand answers:</p>
 <blockquote class="blockquote">
 <p>Estimate the <strong>measure</strong> of <strong>what outcome</strong>, among <strong>which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
-<p>For the main tutorial, we use seek to perform SAE on estimand:</p>
+<p>For the main tutorial, we perform SAE on the following estimand:</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -315,8 +422,8 @@ ul.task-list li input[type="checkbox"] {
 </table>
 <p>The target population definition is particularly important when we are estimating means or proportions since it determines the denominator for such aggregation. Moreover, it dictates the requirement for target population sizes or poststratification tables when formulating the models.</p>
 </section>
-<section id="preparing-the-survey-indicator-for-the-estimand" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="preparing-the-survey-indicator-for-the-estimand"><span class="header-section-number">3</span> Preparing the Survey Indicator for the estimand</h2>
+<section id="preparing-the-survey-indicator" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing the Survey Indicator</h3>
 <p>Since we are interested in whether our respondents walk frequently as the main mode of transport, we can code the indicator from <code>AtFrqWlk10</code>, the active-travel frequency question for walking.</p>
 <table class="table">
 <thead>
@@ -344,18 +451,11 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td>Missing</td>
-<td>Missing, invalid, no matched analysis weight, or not asked</td>
-</tr>
-<tr class="even">
-<td>Measure</td>
-<td>Share</td>
-</tr>
-<tr class="odd">
-<td>Target population</td>
-<td>Adults</td>
+<td>Missing, invalid, or not asked</td>
 </tr>
 </tbody>
 </table>
+<p>The cleaned respondent-level microdata also retains <code>CarUse</code>, the raw survey code for household car or van availability, so later unit-level examples can derive the <code>no_car</code> predictor directly from the survey field.</p>
 <p>Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding weight variable selection rule is as follows: - Use <code>SampleTravelWeight</code> in survey periods where this question was asked to a subsample and the weight for this exists, - Use <code>SampleAdultWeight</code> in survey periods where this question was asked to the main sample. The matched analysis weight is stored as <code>weight</code> variable.</p>
 <p>The current cleaned data give the following usable observations for the walking estimand:</p>
 <table class="table">
@@ -385,49 +485,7 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 <p>Note that although the data have gaps when aggregated to the area-year level, that is expected. SAE models will be used to borrow strength for sparse or unsampled domains.</p>
-</section>
-<section id="preparing-auxiliary-data" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">4</span> Preparing auxiliary data</h2>
-<section id="area-predictors" class="level3" data-number="4.1">
-<h3 data-number="4.1" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">4.1</span> Area Predictors</h3>
-<p>Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>cov_*</code> variables for modelling.</p>
-<p>These variables are chosen because daily walking is likely to vary with density, car access, commuting mode, housing form, and the socioeconomic and student composition of each area.</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Variables</th>
-<th>Why include</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Population density</td>
-<td>Denser urban areas tend to be more walkable</td>
-</tr>
-<tr class="even">
-<td>Share of households without car/van</td>
-<td>Individual no-car households tend to walk, cycle, take public transport more</td>
-</tr>
-<tr class="odd">
-<td>Working from home, Full-time students and routine/semi-routine occupations</td>
-<td>Individual occupation may explain their propensity to walk</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="poststratification-table" class="level3" data-number="4.2">
-<h3 data-number="4.2" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">4.2</span> Poststratification Table</h3>
-<p>A population poststratification table is needed to apply the fitted unit-level model to the target population. Because the estimand is the share of adults who walk for transport daily, the tutorial uses an <em>MSOA-by-year-by-age-by-sex</em> population table.</p>
-<p>We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and keeps the survey years used in this tutorial: 2021, 2023, and 2025. A few notes on the preparation of the poststratification tables:</p>
-<ul>
-<li>The youngest available ONS age band is <code>15 to 19</code>. This is used as the closest available population cell for the 16+ walking estimand.</li>
-<li>For MRP, the variables that define poststratification cells must be available in both the survey and the population table, with compatible categories.</li>
-</ul>
-<p>Note that other useful predictors can still enter the unit-level model as area-level predictors. For example, population density and no-car households are joined by MSOA. They help explain spatial differences in walking, but they do not need to define additional poststratification cells.</p>
+<p>The main survey output has <em>one row per respondent-wave:</em></p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -437,7 +495,115 @@ ul.task-list li input[type="checkbox"] {
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>domain_id</code></td>
+<td><code>unit_id</code></td>
+<td>Respondent-wave identifier</td>
+</tr>
+<tr class="even">
+<td><code>source_wave</code></td>
+<td>Original survey period</td>
+</tr>
+<tr class="odd">
+<td><code>wave_year</code></td>
+<td>Tutorial survey year</td>
+</tr>
+<tr class="even">
+<td><code>msoa_code</code></td>
+<td>Synthetic MSOA assignment</td>
+</tr>
+<tr class="odd">
+<td><code>strata</code></td>
+<td>Local Authority stratum</td>
+</tr>
+<tr class="even">
+<td><code>indicator</code></td>
+<td>Binary walking response</td>
+</tr>
+<tr class="odd">
+<td><code>weight</code></td>
+<td>Matched analysis weight</td>
+</tr>
+<tr class="even">
+<td><code>weight_source</code></td>
+<td>Weight variable used for this indicator</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="preparing-auxiliary-data" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing auxiliary data</h3>
+<section id="area-predictors" class="level4" data-number="2.3.1">
+<h4 data-number="2.3.1" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">2.3.1</span> Area Predictors</h4>
+<p>Area-level SAE needs covariates that plausibly explain spatial differences in daily walking. The area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>cov_*</code> variables for modelling.</p>
+<p>These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns. The Fay–Herriot workbook introduces them in two groups:</p>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Group</th>
+<th>Variables</th>
+<th>Why include</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Core predictors</td>
+<td>- Population density<br>- Share of households without car/van</td>
+<td>Capturing broad urban form and car access</td>
+</tr>
+<tr class="even">
+<td>Additional predictors</td>
+<td>- Share working from home<br>- Share full-time students<br>- Share in routine or semi-routine occupations</td>
+<td>Capturing work-pattern differences that may explain transport mode choice</td>
+</tr>
+</tbody>
+</table>
+<p>The area-predictor output <em>has one row per MSOA:</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>msoa_code</code></td>
+<td>MSOA estimation area</td>
+</tr>
+<tr class="even">
+<td><code>msoa_name</code></td>
+<td>MSOA name</td>
+</tr>
+<tr class="odd">
+<td><code>raw_*</code></td>
+<td>Raw 5 predictors used in the models</td>
+</tr>
+<tr class="even">
+<td><code>cov_*</code></td>
+<td>Z-scored versions of the raw predictors</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="poststratification-table" class="level4" data-number="2.3.2">
+<h4 data-number="2.3.2" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.2</span> Poststratification Table</h4>
+<p>A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and kept the survey years used in this tutorial: 2021, 2023, and 2025.</p>
+<p>Note that the youngest available ONS age band is <code>15 to 19</code>. Therefore, Age 15+ is used as the closest adult definition used in the NSW (Age 16+)</p>
+<p>The area-predictor output <em>has one row per MSOA–year–age–sex combination:</em></p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>msoa_code</code></td>
 <td>MSOA estimation area</td>
 </tr>
 <tr class="even">
@@ -446,7 +612,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td><code>age_band</code></td>
-<td>Quinary age band used in the unit-level model</td>
+<td>Age band used in the unit-level model</td>
 </tr>
 <tr class="even">
 <td><code>sex</code></td>
@@ -460,6 +626,7 @@ ul.task-list li input[type="checkbox"] {
 </table>
 
 
+</section>
 </section>
 </section>
 

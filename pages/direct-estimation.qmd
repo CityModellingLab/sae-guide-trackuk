@@ -20,17 +20,17 @@ msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(domain_id = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$domain_id, "W"))
+  rename(msoa_code = all_of("MSOA21CD")) |>
+  filter(str_starts(.data$msoa_code, "W"))
 
 domain_frame <- read_csv(
   file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
-    domain_id = .data$domain_id,
-    wave_year = .data$wave_year,
-    msoa_name = .data$msoa_name
+    msoa_code,
+    wave_year,
+    msoa_name
   )
 ```
 
@@ -40,10 +40,10 @@ We estimate the **share of adults who walk for transport daily in each MSOA-year
 
 | Column | Role |
 |---|---|
-| `domain_id` | MSOA estimation area |
+| `msoa_code` | MSOA estimation area |
 | `wave_year` | Survey wave / year |
 | `indicator` | Binary response: `1` if the adult walks for transport daily, `0` otherwise |
-| `weight` | Matched walking analysis weight |
+| `weight` | Matched walking weight |
 | `strata` | Local Authority code |
 ```{r}
 survey_walk <- read_csv(
@@ -53,7 +53,7 @@ survey_walk <- read_csv(
   filter(
     !is.na(.data$indicator),
     !is.na(.data$weight),
-    !is.na(.data$domain_id),
+    !is.na(.data$msoa_code),
     !is.na(.data$strata)
   )
 head(survey_walk)
@@ -76,7 +76,7 @@ walk_design <- survey::svydesign(
 # Calculate direct estimate and uncertainty
 direct_walk_estimates <- survey::svyby(
   formula = stats::as.formula("~indicator"),
-  by = stats::as.formula("~domain_id + wave_year"),
+  by = stats::as.formula("~msoa_code + wave_year"),
   design = walk_design,
   FUN = survey::svymean,
   vartype = "se",
@@ -85,8 +85,8 @@ direct_walk_estimates <- survey::svyby(
 ) |>
   tibble::as_tibble() |>
   transmute(
-    domain_id = .data$domain_id,
-    wave_year = .data$wave_year,
+    msoa_code,
+    wave_year,
     direct_estimate = .data$indicator,
     standard_error = .data$se
   ) |>
@@ -94,16 +94,16 @@ direct_walk_estimates <- survey::svyby(
 
 # Calculate sample size per MSOA-year
 direct_walk_counts <- survey_walk |>
-  group_by(across(all_of(c("domain_id", "wave_year")))) |>
+  group_by(across(all_of(c("msoa_code", "wave_year")))) |>
   summarise(n = dplyr::n(), .groups = "drop")
 
 # Join
 direct_walk <- domain_frame |>
   left_join(direct_walk_estimates, by = c(
-    "domain_id", "wave_year"
+    "msoa_code", "wave_year"
   )) |>
   left_join(direct_walk_counts, by = c(
-    "domain_id", "wave_year"
+    "msoa_code", "wave_year"
   )) |>
   mutate(n = replace_na(.data$n, 0L))
 
@@ -147,7 +147,7 @@ base_map <- function(wave) {
   wave_direct <- direct_walk[direct_walk[["wave_year"]] == wave, ]
 
   wave_data <- msoa_boundaries |>
-    left_join(wave_direct, by = "domain_id")
+    left_join(wave_direct, by = "msoa_code")
 
   ggplot(wave_data) +
     theme_void() +
