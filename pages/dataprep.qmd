@@ -190,8 +190,6 @@ The area-predictor output *has one row per MSOA:*
 
 A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and kept the survey years used in this tutorial: 2021, 2023, and 2025. 
 
-Note that the youngest available ONS age band is `15 to 19`. Therefore, Age 15+ is used as the closest adult definition used in the NSW (Age 16+)
-
 The area-predictor output *has one row per MSOA--year--age--sex combination:*
 
 | Column | Meaning |
@@ -201,3 +199,7 @@ The area-predictor output *has one row per MSOA--year--age--sex combination:*
 | `age_band` | Age band used in the unit-level model |
 | `sex` | Sex category used in the unit-level model |
 | `pop_count` | Number of adults in the cell |
+
+::: {.callout-note}
+The youngest available ONS age band is `15 to 19`, so age 15+ is used as the closest available match to the NSW adult definition of age 16+.
+:::
