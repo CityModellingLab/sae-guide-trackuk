@@ -1,29 +1,42 @@
 ---
-title: "Spatio-Temporal Bayesian Small Area Estimation for Urban Analytics"
-subtitle: "A practical tutorial using INLA"
+title: "A practical guide to Small Area Estimation for Urban Analytics"
+subtitle: "A practical tutorial for Bayesian small area estimation using R-INLA"
 ---
 
-\[draft\] 
-Beginner-friendly Small Area Estimation (SAE) for researchers estimating survey-derived metrics across a whole country or region at fine geographic resolution.
+Urban research often needs estimates at fine geographic scales: neighbourhoods, small administrative areas, transport zones, or other local geographies. Survey data are rarely collected at that resolution. Once responses are split by area and time, many cells have small samples, high uncertainty, or no observed respondents at all.
 
-The site has two tracks: a theory track that explains the SAE workflow, and a practical tutorial track that applies the workflow to a dataset. It uses the National Survey for Wales as the first worked survey.
+This tutorial introduces **spatio-temporal small area estimation (SAE)** as a practical workflow for this problem. The aim is to show how survey microdata, direct estimates, auxiliary area data, population information, and spatial-temporal model structure can be combined to produce small area estimates with uncertainty.
 
-The main practical uses R, Quarto, and SAE packages such as `survey`, `INLA`. Make sure you have [latest R version](https://cran.r-project.org/) installed.
+![](assets/sae_method_select.png)
 
-## Why Small Area Estimation?
 
-\[draft\] 
-Survey are often not precise enough for fine geographies such as Local Authorities, MSOAs, or LSOAs. Some areas have very few/no respondents, unequal weights Taking weighted meands can be unstable. Also out of domain sample
+## Why Bayesian inference with INLA?
 
-SAE is useful when direct estimates are too noisy or incomplete. Area-level SAE use direct estimates and their sampling variances, borrow strength across areas using covariates and random effects.
+The tutorial uses Bayesian small area estimation models because they provide a coherent way to combine direct survey evidence, auxiliary predictors, spatial structure, temporal structure, and uncertainty. This is especially useful when some MSOA-year cells have small samples or no observed respondents.
 
-SAE can be further improved with bayesian statistics (to smooth out area) and add spatial structure (spatial autocorrelation)
+The model-based examples are fitted with `INLA`, the R interface to Integrated Nested Laplace Approximation. INLA is well suited to this workflow because it provides fast Bayesian inference for latent Gaussian models, including hierarchical, spatial, temporal, and spatio-temporal random effects without relying on long MCMC workflows.
 
-SAE combines survey data, population estimates, auxiliary data, modelling to estimate the unsurveyed in an informed way.
+## Tutorial Workflow
 
-[ADD IMAGE]
+The worked example uses the National Survey for Wales to estimate:
 
-## Methods
-\[draft\] 
-![](assets\sae_method_select.png)
+> Share of adults who walk for transport daily by MSOA-year in Wales over three waves: 2021, 2023, and 2025.
 
+::: {.callout-note}
+The MSOA-level survey geography used here is synthetically prepared for tutorial purposes. The resulting maps and findings should not be treated as true small area estimates for Wales. More information is provided in the [data preparation step](pages/dataprep.qmd).
+:::
+
+1. **[Prepare data](pages/dataprep.qmd)**  
+   Build the survey indicator, matched weights, MSOA-year domain, area predictors, unit predictors, and poststratification inputs.
+
+2. **[Direct estimation](pages/direct-estimation.qmd)**  
+   Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.
+
+3. **[Fay--Herriot area-level model](pages/fh-area.qmd)**  
+   Model the direct estimates and their sampling variances using area predictors, temporal effects, and spatial smoothing.
+
+4. **[Battese--Harter--Fuller unit-level model](pages/bhf-unit.qmd)**  
+   Model survey microdata directly, then aggregate the fitted relationship to MSOA-year estimates using known area-level predictor means.
+
+5. **[Multilevel regression and poststratification](pages/mrp.qmd)**  
+   Fit a richer unit-level model and average predictions over population poststratification cells, so the final estimates better reflect the target population structure.

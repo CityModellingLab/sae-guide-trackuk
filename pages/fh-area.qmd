@@ -1,9 +1,7 @@
 ---
-title: "Bayesian Fay-Herriot area-level model"
-subtitle: With area predictors, temporal and spatial effects
+title: "Spatio-Temporal Fay-Herriot Area-Level Model"
+subtitle: "Stabilise noisy direct area estimates using area predictors, time effects, and spatial smoothing"
 ---
-
-Area-level SAE starts from the direct estimates created in the previous workbook. The Fay--Herriot model lets direct estimates for each MSOA--year borrow strength from predictors and spatial and temporal structures to stabilise noisy estimates.
 
 ```{r}
 #| label: setup-area-level
@@ -16,8 +14,15 @@ library(ggplot2)
 library(patchwork)
 library(spdep)
 library(INLA)
+library(tibble)
+library(purrr)
+library(scales)
 
 base_path <- here::here("data")
+domain_frame <- read_csv(
+  file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
+  show_col_types = FALSE
+)
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -27,19 +32,133 @@ msoa_boundaries <- st_read(
   filter(str_starts(.data$msoa_code, "W")) |>
   arrange(.data$msoa_code)
 ```
-## Prepare modelling data
+
+```{r}
+#| label: plotting-config
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
+variance_label <- label_number(accuracy = 0.0001)
+missing_fill <- "grey85"
+diverging_low <- "#2166ac"
+diverging_high <- "#b2182b"
+
+map_text_theme <- theme(
+  plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(
+    size = 12,
+    face = "bold",
+    angle = 90,
+    margin = margin(r = 15)
+  ),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 9)
+)
+
+chart_text_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  strip.text = element_text(size = 14, face = "bold"),
+  axis.title = element_text(size = 14),
+  axis.text = element_text(size = 12),
+  legend.text = element_text(size = 12)
+)
+
+map_annotation_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
+```
+
+Area-level SAE starts from the direct estimates created in the previous workbook. The Fay--Herriot model lets direct estimates for each MSOA--year borrow strength from predictors and spatial and temporal structures to stabilise noisy estimates.
 
 As a reminder, our estimand is 
 
 >  Share of Welsh adults who walk for transport daily by MSOA in 2021, 2023 and 2025
 
-First we imported the direct estimates computed in the previous step, together with their sampling variances for all MSOA--year combinations. We will also load the prepared dataset of normalised area predictors for daily walking.
+## Define Domain, Indices And Spatial Graph
+
+First we join the complete MSOA--year domain to the direct estimates and their sampling variances from the previous workbook.
 
 ```{r}
-#| label: load-area-inputs
-direct_walk <- read_csv(
+#| label: load-direct-estimates
+direct_estimates <- read_csv(
   file.path(base_path, "freq_walker_estimates_direct.csv"),
   show_col_types = FALSE
+) |>
+  select(-.data$msoa_name)
+
+direct_walk <- domain_frame |>
+  left_join(direct_estimates, by = c("msoa_code", "wave_year"))
+
+head(direct_walk)
+```
+
+Before fitting the models, we create a consistent numeric index for each MSOA and survey year. These indices are used by `INLA` to attach random effects to the correct area and period. 
+
+```{r}
+#| label: define-model-index
+#| code-fold: false
+
+area_levels <- sort(unique(domain_frame[["msoa_code"]]))
+year_levels <- sort(unique(domain_frame[["wave_year"]]))
+
+area_index <- tibble(
+  msoa_code = area_levels,
+  area_id = seq_along(area_levels)
+)
+
+year_index <- tibble(
+  wave_year = year_levels,
+  year_id = seq_along(year_levels)
+)
+```
+
+To include a spatial random effect, we also need an adjacency graph `.adj` as input. We use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point. The boundary file is sorted using `area_index` so that the graph order matches the area IDs used in the modelling data.
+
+![](../assets/spatial_weights_example.png)
+
+```{r}
+#| label: build-spatial-graph
+#| code-fold: false
+
+msoa_boundaries_sorted <- msoa_boundaries |>
+  inner_join(area_index, by = "msoa_code") |>
+  arrange(.data$area_id)
+
+msoa_neighbours <- poly2nb(
+  msoa_boundaries_sorted,
+  queen = TRUE,
+  row.names = msoa_boundaries_sorted$msoa_code
+)
+
+spatial_graph_file <- tempfile(fileext = ".adj")
+
+nb2INLA(
+  file = spatial_graph_file,
+  nb = msoa_neighbours
+)
+```
+
+## Prepare Modelling Data
+
+We then load the area predictors and assemble the modelling data.
+
+The models use two area-level random-effect structures, so we create separate `INLA` index variables:
+
+- `area_iid_id` indexes the unstructured, independent area effect.
+- `area_spatial_id` indexes the structured spatial area effect, which uses the adjacency graph.
+
+Lastly, the sampling variance also needs careful handling before fitting the FH models with `INLA`. The extent to which the noisy direct estimates will be stablised depends on their sampling variances.
+
+- For MSOA-year small areas without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
+- Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
+
+```{r}
+#| label: prepare-model-data
+#| code-fold: false
+
+max_variance <- max(
+  direct_walk$variance[direct_walk$variance > 0],
+  na.rm = TRUE
 )
 
 area_covariates <- read_csv(
@@ -55,80 +174,10 @@ area_covariates <- read_csv(
       "cov_share_students",
       "cov_share_routine_semiroutine"
     ))
-)
+  )
 
-model_data_raw <- direct_walk |>
-  left_join(area_covariates, by = "msoa_code")
-
-head(model_data_raw)
-```
-
-Before fitting the models, we create a consistent numeric index for each MSOA and survey year. These indices are used by `INLA` to attach random effects to the correct area and period. 
-
-```{r}
-#| label: define-model-index
-#| code-fold: false
-
-area_levels <- sort(unique(model_data_raw[["msoa_code"]]))
-year_levels <- sort(unique(model_data_raw[["wave_year"]]))
-
-area_index <- tibble::tibble(
-  msoa_code = area_levels,
-  area_id = seq_along(area_levels)
-)
-
-year_index <- tibble::tibble(
-  wave_year = year_levels,
-  year_id = seq_along(year_levels)
-)
-```
-
-To include a spatial random effect, we also need an adjacency graph `.adj` as input. We use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point. The boundary file is sorted using `area_index` so that the graph order matches the area IDs used in the modelling data.
-
-![](../assets/spatial_weights_example.png)
-
-```{r}
-#| label: build-spatial-graph
-#| code-fold: false
-
-msoa_boundaries_sorted <- msoa_boundaries |>
-  dplyr::inner_join(area_index, by = "msoa_code") |>
-  dplyr::arrange(.data$area_id)
-
-msoa_neighbours <- spdep::poly2nb(
-  msoa_boundaries_sorted,
-  queen = TRUE,
-  row.names = msoa_boundaries_sorted$msoa_code
-)
-
-spatial_graph_file <- tempfile(fileext = ".adj")
-
-spdep::nb2INLA(
-  file = spatial_graph_file,
-  nb = msoa_neighbours
-)
-```
-
-We then assemble the modelling data. The models use two area-level random-effect structures, so we create separate `INLA` index variables:
-
-- `area_iid_id` indexes the unstructured, independent area effect.
-- `area_spatial_id` indexes the structured spatial area effect, which uses the   adjacency graph.
-
-Lastly, the sampling variance also needs careful handling before fitting the FH models with `INLA`. The extent to which the noisy direct estimates will be stablised depends on their sampling variances.
-
-- For MSOA-year small areas without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
-- Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
-
-```{r}
-#| label: prepare-model-data
-#| code-fold: false
-
-max_variance <- max(
-  model_data_raw$variance[model_data_raw$variance > 0],
-  na.rm = TRUE
-)
-
-model_data <- model_data_raw |>
+model_data <- direct_walk |>
+  left_join(area_covariates, by = "msoa_code") |>
   left_join(area_index, by = "msoa_code") |>
   left_join(year_index, by = "wave_year") |>
   mutate(
@@ -146,11 +195,11 @@ model_data <- model_data_raw |>
 head(model_data)
 ```
 
-## Fit Models
+## Fit And Evaluate Models
 
 Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight.
 
-We will fit five cumulative models:
+We define these model specifications and fit each one to the direct estimates using `INLA`. 
 
 | Model | Name | Specifications |
 |---|---|---|
@@ -159,8 +208,6 @@ We will fit five cumulative models:
 | M2 | +Core predictors | M1 plus population density and no-car households |
 | M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
 | M4 | +Spatial | M3 plus spatial structure among MSOA adjacency |
-
-We define the model specifications and fit each one to the direct estimates using `INLA`. 
 
 ```{r}
 #| label: fit-fh-models
@@ -214,7 +261,7 @@ model_formulas <- list(
 )
 
 fit_fh_model <- function(formula) {
-  INLA::inla(
+  inla(
     formula = formula,
     family = "gaussian",
     data = model_data,
@@ -234,6 +281,31 @@ model_order <- names(model_formulas)
 fh_fits <- lapply(model_formulas, fit_fh_model)
 ```
 
+Next, we use **WAIC** as a first check for comparing the fitted model specifications. WAIC, returned by `INLA`, is a global predictive-fit measure: lower values indicate better expected prediction after penalising model complexity.
+
+```{r}
+#| label: waic-comparison
+
+model_waic <- imap_dfr(
+  fh_fits,
+  \(fit, model_name) {
+    tibble(
+      model = model_name,
+      waic = fit$waic$waic,
+      eff_params = fit$waic$p.eff
+    )
+  }
+)
+
+model_waic
+```
+
+M2 has the lowest WAIC, while M0 is clearly the weakest model. This suggests that the temporal term and the two core predictors, population density and car access, already capture much of the area-level variability. The differences among M1-M4 are small, so we treat them as having broadly similar predictive performance. 
+
+Because WAIC is a global summary, we next look at how estimates change locally as terms are added.
+
+## Compare Stepwise Estimate Changes
+
 At this point the result is just a named list of fitted `INLA` models. We will collate the fitted values into one results table together with their original direct estimates and sampling variances. 
 
 ```{r}
@@ -252,11 +324,11 @@ output_cols <- c(
 model_output_frame <- select(model_data, all_of(output_cols))
 
 # Extract fitted values from each model and bind them to the frame
-fh_result_tables <- purrr::map2(
+fh_result_tables <- map2(
   fh_fits,
   names(fh_fits),
   function(fit, model_name) {
-    fitted_values <- tibble::as_tibble(fit$summary.fitted.values)
+    fitted_values <- as_tibble(fit$summary.fitted.values)
 
     model_results <- bind_cols(model_output_frame, fitted_values)
 
@@ -281,44 +353,10 @@ fh_results <- mutate(
 head(fh_results)
 ```
 
-## Choose Model
+### Direct To Baseline Model
 
-Before we compare the models and modelled estimates, it is worth undesrtanding how the FH models fundamentally handle noisy direct estimates.
+We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure to understand how the FH models fundamentally handle noisy direct estimates. 
 
-We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure. MSOA-years with high sampling variance contain less reliable local information, so M0 pulls them more strongly toward its baseline prediction.
-
-```{r}
-# Plotting setup
-
-share_label <- scales::label_percent(accuracy = 0.1)
-pp_label <- scales::label_number(accuracy = 0.1, scale = 100, suffix = " pp")
-variance_label <- scales::label_number(accuracy = 0.0001)
-
-map_text_theme <- theme(
-  plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
-  axis.title.y = element_text(
-    size = 12,
-    face = "bold",
-    angle = 90,
-    margin = margin(r = 15)
-  ),
-  legend.title = element_text(size = 10),
-  legend.text = element_text(size = 9)
-)
-
-chart_text_theme <- theme(
-  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  strip.text = element_text(size = 14, face = "bold"),
-  axis.title = element_text(size = 14),
-  axis.text = element_text(size = 12),
-  legend.text = element_text(size = 12)
-)
-
-map_annotation_theme <- theme(
-  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
-)
-```
 ```{r}
 #| label: direct-to-m0-comparison
 #| fig-width: 16
@@ -364,14 +402,14 @@ plot_m0_variance_change <- function(wave) {
     ggplot() +
     geom_sf(aes(fill = .data$variance_change), colour = "transparent") +
     scale_fill_gradient2(
-      low = "#2166ac",
+      low = diverging_low,
       mid = "white",
-      high = "#b2182b",
+      high = diverging_high,
       midpoint = 0,
       limits = c(-variance_change_limit, variance_change_limit),
-      oob = scales::squish,
+      oob = squish,
       labels = variance_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Change"
     ) +
     ggtitle(wave) +
@@ -389,7 +427,7 @@ plot_direct_variance <- function(wave) {
       direction = 1,
       limits = c(0, direct_variance_limit),
       labels = variance_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Variance"
     ) +
     ggtitle(wave) +
@@ -465,8 +503,9 @@ direct_to_m0_ranked_plot <- ggplot(
     theme = map_annotation_theme
   )
 ```
+MSOA-years with high sampling variance contain less reliable local information, so M0 pulls them more strongly toward its baseline prediction.
 
-Because the Bayesian FH model estimates a posterior distribution, cells with missing direct estimates or zero/missing variance can still receive a model-based estimate, reported as a posterior mean with associated uncertainty. This is a benefit of the Bayesian approach in small area estimation where survey information is sparse or unavailable for several small areas.
+Moreover, because the Bayesian FH model estimates a posterior distribution, cells with missing direct estimates or zero/missing variance can still receive a model-based estimate, reported as a posterior mean with associated uncertainty. This is a benefit of the Bayesian approach in small area estimation where survey information is sparse or unavailable for several small areas.
 
 ```{r}
 #| label: missing-direct-m0-estimates
@@ -485,28 +524,11 @@ fh_wide |>
   )
 ```
 
-### Model Comparison
+## Adding Predictors
 
-Next, we use **WAIC** as a first check for comparing the model specifications. WAIC, returned by `INLA`, is a global predictive-fit measure: lower values indicate better expected prediction after penalising model complexity. This helps identify model specifications that are clearly weaker before we examine the remaining models in more detail.
+WAIC is useful, but it does not show where estimates change locally or whether those changes are substantive. 
 
-```{r}
-#| label: waic-comparison
-model_waic <- purrr::imap_dfr(
-  fh_fits,
-  \(fit, model_name) {
-    tibble::tibble(
-      model = model_name,
-      waic = fit$waic$waic,
-      eff_params = fit$waic$p.eff
-    )
-  }
-) 
-model_waic
-```
-
-M0 is understandably weaker than the structured models because it has no predictors (`-636.6415`). M2 has the lowest WAIC (`-642.5301`), suggesting that the temporal term and the two core predictors, population density and car access, already capture much of the area-level variability. However, the differences among M1-M3 are small, so we treat them as having broadly similar predictive performance.
-
-WAIC is useful, but it does not show where estimates change locally or whether those changes are substantive. For Fay-Herriot models, this matters because the aim is not only good overall prediction, but also stabilising noisy local estimates. When predictors are added, the model updates the expected value for each MSOA-year. Unstable direct estimates are then pulled more strongly toward those updated model predictions, which can improve local accuracy when the predictors are relevant.
+For Fay-Herriot SAE models, the final aim is stabilising noisy local estimates. When predictors are added, the model updates the expected value for each MSOA-year. Unstable direct estimates are then pulled more strongly toward those updated model predictions, which can improve local accuracy when the predictors are relevant.
 
 For example, moving from M2 to M3 adds the occupation and work-pattern predictors. We map where M3 changes the estimates relative to M2, then summarise the predictor profiles of the areas with the largest upward and downward shifts (top and bottom 10%).
 
@@ -540,14 +562,14 @@ plot_m2_to_m3_change <- function(wave) {
     ggplot() +
     geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
     scale_fill_gradient2(
-      low = "#2166ac",
+      low = diverging_low,
       mid = "white",
-      high = "#b2182b",
+      high = diverging_high,
       midpoint = 0,
       limits = c(-m2_to_m3_estimate_limit, m2_to_m3_estimate_limit),
-      oob = scales::squish,
+      oob = squish,
       labels = pp_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Change"
     ) +
     ggtitle(wave) +
@@ -600,9 +622,11 @@ m2_to_m3_drivers |>
     .groups = "drop"
   )
 ```
-The areas whose estimates are raised most by M3 have higher work-from-home and student shares, and lower routine/semi-routine occupation shares. This pattern is plausible: students and remote workers may have more flexible daily routines, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport. This makes the M3 shifts interpretable and gives some support for including these additional predictors, despite slightly lower WAIC.
+The areas whose estimates are raised most by M3 have higher work-from-home and student shares, and lower routine/semi-routine occupation shares. This pattern is plausible: students and remote workers may have more flexible daily routines, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport. 
 
-### Assessing Temporal and spatial effects
+This makes the M3 shifts interpretable and gives some support for including these additional predictors, despite slightly lower WAIC.
+
+## Adding Temporal And Spatial Effects
 
 The contribution of the temporal and spatial effects on the model prediction can be exmined through two diagnostic outputs by `INLA`:
 
@@ -614,11 +638,11 @@ The **temporal effect** has a high `tau` (`6091.734`), which means the model est
 #| label: temporal-tau
 
 fh_fits[["M1 +Temporal"]]$summary.hyperpar |>
-  tibble::as_tibble(rownames = "parameter") |>
-  dplyr::filter(stringr::str_detect(.data$parameter, "year_id")) |>
-  dplyr::select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
-  dplyr::mutate(
-    dplyr::across(where(is.numeric), ~ round(.x, 3))
+  as_tibble(rownames = "parameter") |>
+  filter(str_detect(.data$parameter, "year_id")) |>
+  select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
+  mutate(
+    across(where(is.numeric), ~ round(.x, 3))
   )
 ```
 
@@ -628,17 +652,17 @@ The **spatial effect** has a lower `tau` (`102.617`) than the temporal effect, w
 #| label: spatial-tau-phi
 #| 
 fh_fits[["M4 +Spatial"]]$summary.hyperpar |>
-  tibble::as_tibble(rownames = "parameter") |>
-  dplyr::filter(
-    stringr::str_detect(.data$parameter, "area_spatial_id|Phi")
+  as_tibble(rownames = "parameter") |>
+  filter(
+    str_detect(.data$parameter, "area_spatial_id|Phi")
   ) |>
-  dplyr::select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`)|>
-  dplyr::mutate(
-    dplyr::across(where(is.numeric), ~ round(.x, 3))
+  select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
+  mutate(
+    across(where(is.numeric), ~ round(.x, 3))
   )
 ```
 
-Even so, it is still useful to map the estimate change from M3 to M4, because a weak global contribution can still produce local smoothing in specific areas that is plausible and defensible. The map below shows small local clusters of spatial smoothing. For exampl, in parts of southern Wales, where several neighbouring MSOAs have higher estimated daily-walking rates, estimates of nearby areas are raised.
+Even so, it is still useful to map the estimate change from M3 to M4, because a weak global contribution can still produce local smoothing in specific areas that is plausible and defensible. 
 
 ```{r}
 #| label: spatial-change-map
@@ -671,14 +695,14 @@ plot_m3_to_m4_change <- function(wave) {
     ggplot() +
     geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
     scale_fill_gradient2(
-      low = "#2166ac",
+      low = diverging_low,
       mid = "white",
-      high = "#b2182b",
+      high = diverging_high,
       midpoint = 0,
       limits = c(-m3_to_m4_limit, m3_to_m4_limit),
-      oob = scales::squish,
+      oob = squish,
       labels = pp_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Change"
     ) +
     ggtitle(wave) +
@@ -701,8 +725,9 @@ wrap_plots(m3_to_m4_maps, ncol = 3) +
     theme = map_annotation_theme
   )
 ```
+The maps show small local clusters of spatial smoothing. For exampl, in parts of southern Wales, where several neighbouring MSOAs have higher estimated daily-walking rates, estimates of nearby areas are raised.
 
-### Reporting final estimates and uncertainty
+## Report Final Estimates And Uncertainty
 
 Choosing the final model therefore requires balanced judgement, combining performance diagnostics such as `INLA`'s WAIC with domain knowledge about the estimand. Where possible, model choice can also be strengthened through further benchmarking, such as comparison with related external indicators or sensitivity checks.
 
@@ -732,7 +757,7 @@ plot_final_estimate <- function(wave) {
       option = "magma",
       limits = final_estimate_limits,
       labels = share_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Share"
     ) +
     ggtitle(wave) +
@@ -750,7 +775,7 @@ plot_final_variance <- function(wave) {
       direction = 1,
       limits = final_variance_limits,
       labels = variance_label,
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Variance"
     ) +
     ggtitle(wave) +
@@ -779,32 +804,14 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 3) +
   )
 ```
 
-The final maps illustrate why this matters: Even after the direct estimates have been stabilised through the Fay-Herriot model, weaker survey coverage can still leave unusual year-specific patterns in the modelled estimates. 2023 estimates are generally higher than in 2021 and 2025, likely due to that wave's smaller sample size. For transparency, the 2023 estimates should therefore be read alongside their posterior uncertainty and the original sample sizes.
-
+Even after the direct estimates have been stabilised through the Fay-Herriot model, weaker survey coverage can still leave unusual year-specific patterns in the modelled estimates. 2023 estimates are generally higher than in 2021 and 2025, likely due to that wave's smaller sample size. Therefore, for transparency, the modelled estimates should always be read alongside their posterior uncertainty and the original sample sizes.
 
 ```{r}
 #| label: export-fh-results
 #| echo: false
 write_csv(
-  fh_results,
-  file.path(base_path, "freq_walker_estimates_fh_inla.csv")
-)
-
-write_csv(
   final_model_results,
-  file.path(base_path, "freq_walker_estimates_final_m4.csv")
-)
-
-local_change_diagnostics <- bind_rows(
-  m2_to_m3 |>
-    mutate(comparison = "M2 to M3", .before = 1),
-  m3_to_m4 |>
-    mutate(comparison = "M3 to M4", .before = 1)
-)
-
-write_csv(
-  local_change_diagnostics,
-  file.path(base_path, "freq_walker_fh_step_diagnostics.csv")
+  file.path(base_path, "freq_walker_estimates_area-fh.csv")
 )
 ```
 

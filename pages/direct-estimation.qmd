@@ -1,9 +1,7 @@
 ---
 title: "Direct Estimation"
-subtitle: "Design-based direct estimates and their sampling variances"
+subtitle: "Produce survey design-based estimates and uncertainty"
 ---
-
-Direct estimation is the design-based starting point for the SAE workflow. At this stage, each MSOA-year estimate is calculated only from the survey respondents observed in that MSOA and wave, using the matched survey weight.
 
 ```{r}
 #| label: setup-direct-estimation
@@ -14,6 +12,9 @@ library(tidyr)
 library(sf)
 library(ggplot2)
 library(patchwork)
+library(survey)
+library(tibble)
+library(scales)
 
 base_path <- here::here("data")
 msoa_boundaries <- st_read(
@@ -26,106 +27,15 @@ msoa_boundaries <- st_read(
 domain_frame <- read_csv(
   file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
   show_col_types = FALSE
-) |>
-  transmute(
-    msoa_code,
-    wave_year,
-    msoa_name
-  )
-```
-
-## Calculate direct estimates
-
-We estimate the **share of adults who walk for transport daily in each MSOA-year** using a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched analysis weight, MSOA assignment, wave label, and survey stratum:
-
-| Column | Role |
-|---|---|
-| `msoa_code` | MSOA estimation area |
-| `wave_year` | Survey wave / year |
-| `indicator` | Binary response: `1` if the adult walks for transport daily, `0` otherwise |
-| `weight` | Matched walking weight |
-| `strata` | Local Authority code |
-```{r}
-survey_walk <- read_csv(
-  file.path(base_path, "clean", "ind_weight_freq_walker.csv"),
-  show_col_types = FALSE
-) |>
-  filter(
-    !is.na(.data$indicator),
-    !is.na(.data$weight),
-    !is.na(.data$msoa_code),
-    !is.na(.data$strata)
-  )
-head(survey_walk)
-```
-
-We use `survey::svyby()` to compute the weighted share and its uncertainty diagnostics for every MSOA-year cell with usable observations. It then completes the MSOA-by-wave grid so missing cells are retained for modelling.
-
-```{r}
-#| label: direct-estimates-walking
-#| code-fold: false
-
-# Define survey design
-walk_design <- survey::svydesign(
-  ids = stats::as.formula("~1"),
-  strata = stats::as.formula("~strata"),
-  weights = stats::as.formula("~weight"),
-  data = survey_walk
 )
-
-# Calculate direct estimate and uncertainty
-direct_walk_estimates <- survey::svyby(
-  formula = stats::as.formula("~indicator"),
-  by = stats::as.formula("~msoa_code + wave_year"),
-  design = walk_design,
-  FUN = survey::svymean,
-  vartype = "se",
-  na.rm = TRUE,
-  keep.names = FALSE
-) |>
-  tibble::as_tibble() |>
-  transmute(
-    msoa_code,
-    wave_year,
-    direct_estimate = .data$indicator,
-    standard_error = .data$se
-  ) |>
-  mutate(variance = .data$standard_error^2)
-
-# Calculate sample size per MSOA-year
-direct_walk_counts <- survey_walk |>
-  group_by(across(all_of(c("msoa_code", "wave_year")))) |>
-  summarise(n = dplyr::n(), .groups = "drop")
-
-# Join
-direct_walk <- domain_frame |>
-  left_join(direct_walk_estimates, by = c(
-    "msoa_code", "wave_year"
-  )) |>
-  left_join(direct_walk_counts, by = c(
-    "msoa_code", "wave_year"
-  )) |>
-  mutate(n = replace_na(.data$n, 0L))
-
-head(direct_walk)
 ```
 
-## Evaluate direct estimates
-
-Direct estimation provides a useful starting point because they make three limitations visible:
-
-- **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and across MSOAs. This means some MSOA-year estimates are based on much less direct evidence than others.
-- **Unstable area estimate over time:** For some MSOAs, direct estimates change sharply between waves. These changes may reflect real behavioural change, but they may also reflect sampling noise.
-- **Zero within-area variance:** For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unrealistically low variances.
-
 ```{r}
-#| label: direct-map-diagnostics
-#| fig-width: 16
-#| fig-height: 12
-#| out-width: "100%"
-#| fig-align: "center"
-#| 
-# Plotting functions
+#| label: plotting-config
+share_label <- label_percent(accuracy = 1)
+variance_label <- label_number(accuracy = 0.001)
+missing_fill <- "grey85"
+
 map_text_theme <- theme(
   plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
   axis.title.y = element_text(
@@ -142,7 +52,102 @@ map_annotation_theme <- theme(
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
 )
+```
 
+Direct estimation is the design-based starting point for the SAE workflow. At this stage, each MSOA-year estimate is calculated only from the survey respondents observed in that MSOA and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced. It also shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.
+
+## Calculate Direct Estimates
+
+We estimate the **share of adults who walk for transport daily in each MSOA-year** using a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:
+
+| Column | Role |
+|---|---|
+| `msoa_code` | MSOA estimation area |
+| `wave_year` | Survey wave / year |
+| `indicator` | Binary response: `1` if the adult walks for transport daily, `0` otherwise |
+| `weight` | Matched weight |
+| `strata` | Local Authority code |
+```{r}
+survey_walk <- read_csv(
+  file.path(base_path, "clean", "ind_weight_freq_walker.csv"),
+  show_col_types = FALSE
+) |>
+  filter(
+    !is.na(.data$indicator),
+    !is.na(.data$weight),
+    !is.na(.data$msoa_code),
+    !is.na(.data$strata)
+  )
+head(survey_walk)
+```
+
+We use `svyby()` from the `survey` package to compute the weighted share and its uncertainty diagnostics for every MSOA-year cell with usable observations. It then completes the MSOA-by-wave grid so missing cells are retained for modelling.
+
+```{r}
+#| label: direct-estimates-walking
+#| code-fold: false
+
+# Define survey design
+walk_design <- svydesign(
+  ids = as.formula("~1"),
+  strata = as.formula("~strata"),
+  weights = as.formula("~weight"),
+  data = survey_walk
+)
+
+# Calculate direct estimate and uncertainty
+direct_walk_estimates <- svyby(
+  formula = as.formula("~indicator"),
+  by = as.formula("~msoa_code + wave_year"),
+  design = walk_design,
+  FUN = svymean,
+  vartype = "se",
+  na.rm = TRUE,
+  keep.names = FALSE
+) |>
+  as_tibble() |>
+  transmute(
+    msoa_code,
+    wave_year,
+    direct_estimate = .data$indicator,
+    standard_error = .data$se
+  ) |>
+  mutate(variance = .data$standard_error^2)
+
+# Calculate sample size per MSOA-year
+direct_walk_counts <- survey_walk |>
+  group_by(across(all_of(c("msoa_code", "wave_year")))) |>
+  summarise(n = n(), .groups = "drop")
+
+# Join
+direct_walk <- domain_frame |>
+  left_join(direct_walk_estimates, by = c(
+    "msoa_code", "wave_year"
+  )) |>
+  left_join(direct_walk_counts, by = c(
+    "msoa_code", "wave_year"
+  )) |>
+  mutate(n = replace_na(.data$n, 0L))
+
+head(direct_walk)
+```
+
+## Evaluate Direct Estimates
+
+Direct estimation provides a useful starting point because they make three limitations visible:
+
+- **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and across MSOAs. This means some MSOA-year estimates are based on much less direct evidence than others.
+- **Unstable area estimate over time:** For some MSOAs, direct estimates change sharply between waves. These changes may reflect real behavioural change, but they may also reflect sampling noise.
+- **Zero within-area variance:** For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unrealistically low variances.
+
+```{r}
+#| label: direct-map-diagnostics
+#| fig-width: 16
+#| fig-height: 12
+#| out-width: "100%"
+#| fig-align: "center"
+#| 
+# Plotting functions
 base_map <- function(wave) {
   wave_direct <- direct_walk[direct_walk[["wave_year"]] == wave, ]
 
@@ -160,8 +165,8 @@ plot_estimate <- function(wave) {
     scale_fill_viridis_c(
       option = "magma",
       limits = c(0, 1),
-      labels = scales::label_percent(accuracy = 1),
-      na.value = "grey85",
+      labels = share_label,
+      na.value = missing_fill,
       name = "Share"
     )
 }
@@ -172,9 +177,9 @@ plot_uncertainty <- function(wave) {
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
-      na.value = "grey85",
+      na.value = missing_fill,
       limits = c(0, max(direct_walk$variance, na.rm = TRUE)),
-      labels = scales::label_number(accuracy = 0.001),
+      labels = variance_label,
       name = "Variance"
     )
 }
@@ -186,7 +191,7 @@ plot_sample <- function(wave) {
       low = "#fff8e1",
       high = "#4f3b10",
       limits = c(0, max(direct_walk$n, na.rm = TRUE)),
-      na.value = "grey85",
+      na.value = missing_fill,
       name = "Sample size"
     )
 }
