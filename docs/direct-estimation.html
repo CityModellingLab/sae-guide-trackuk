@@ -129,7 +129,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
         <li>
     <a class="dropdown-item" href="./dataprep.html" rel="" target="">
- <span class="dropdown-text">Data preparation</span></a>
+ <span class="dropdown-text">Setting up</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
@@ -137,11 +137,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level estimation (FH model)</span></a>
+ <span class="dropdown-text">Area-level estimation (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level estimation (BHF model)</span></a>
+ <span class="dropdown-text">Unit-level estimation (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
@@ -149,10 +149,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" href="./resources.html" rel="" target="">
- <span class="menu-text">Resources</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
+ <span class="dropdown-text">Toolkit</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
+ <span class="dropdown-text">Bibliography</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -213,7 +224,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Data preparation</span></a>
+ <span class="menu-text">Setting up</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -225,19 +236,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level estimation (FH model)</span></a>
+ <span class="menu-text">Area-level estimation (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level estimation (BHF model)</span></a>
+ <span class="menu-text">Unit-level estimation (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">MRP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text">Resources</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
   </div>
 </li>
       </ul>
@@ -278,10 +312,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>Direct estimation is the design-based starting point for the SAE workflow. At this stage, each MSOA-year estimate is calculated only from the survey respondents observed in that MSOA and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced. It also shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.</p>
+<p>Direct estimation is the design-based starting point for the SAE workflow. At this stage, each area-time estimate, an <em>MSOA-year cell</em> in this example, is calculated only from the survey respondents observed in that area and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced and shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.</p>
 <section id="calculate-direct-estimates" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="calculate-direct-estimates"><span class="header-section-number">1</span> Calculate Direct Estimates</h2>
-<p>We estimate the <strong>share of adults who walk for transport daily in each MSOA-year</strong> using a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:</p>
+<p>For the estimand:</p>
+<blockquote class="blockquote">
+<p>Share of Welsh adults who walk for transport daily, estimated for each MSOA in the NSW waves ending in 2021, 2023, and 2025.</p>
+</blockquote>
+<p>we use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -295,11 +333,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>msoa_code</code></td>
-<td>MSOA estimation area</td>
+<td><code>area_id</code></td>
+<td>Estimation area</td>
 </tr>
 <tr class="even">
-<td><code>wave_year</code></td>
+<td><code>time_id</code></td>
 <td>Survey wave / year</td>
 </tr>
 <tr class="odd">
@@ -326,7 +364,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>indicator),</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>weight),</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>msoa_code),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>area_id),</span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>strata)</span>
 <span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(survey_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -336,18 +374,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="table table-sm table-striped small">
 <colgroup>
 <col style="width: 15%">
+<col style="width: 8%">
 <col style="width: 10%">
 <col style="width: 10%">
 <col style="width: 10%">
 <col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 34%">
+<col style="width: 35%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">unit_id</th>
-<th style="text-align: right;">wave_year</th>
-<th style="text-align: left;">msoa_code</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: left;">area_id</th>
 <th style="text-align: left;">strata</th>
 <th style="text-align: right;">indicator</th>
 <th style="text-align: right;">weight</th>
@@ -414,7 +452,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </div>
-<p>We use <code>svyby()</code> from the <code>survey</code> package to compute the weighted share and its uncertainty diagnostics for every MSOA-year cell with usable observations. It then completes the MSOA-by-wave grid so missing cells are retained for modelling.</p>
+<p>We use <code>svyby()</code> from the <code>survey</code> package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define survey design</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>walk_design <span class="ot">&lt;-</span> <span class="fu">svydesign</span>(</span>
@@ -427,7 +465,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate direct estimate and uncertainty</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>direct_walk_estimates <span class="ot">&lt;-</span> <span class="fu">svyby</span>(</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">as.formula</span>(<span class="st">"~indicator"</span>),</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">as.formula</span>(<span class="st">"~msoa_code + wave_year"</span>),</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">as.formula</span>(<span class="st">"~area_id + time_id"</span>),</span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> walk_design,</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">FUN =</span> svymean,</span>
 <span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">vartype =</span> <span class="st">"se"</span>,</span>
@@ -436,25 +474,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
 <span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    msoa_code,</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    wave_year,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">direct_estimate =</span> .data<span class="sc">$</span>indicator,</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">standard_error =</span> .data<span class="sc">$</span>se</span>
 <span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
 <span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">variance =</span> .data<span class="sc">$</span>standard_error<span class="sc">^</span><span class="dv">2</span>)</span>
 <span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate sample size per MSOA-year</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate sample size per area-time cell</span></span>
 <span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>direct_walk_counts <span class="ot">&lt;-</span> survey_walk <span class="sc">|&gt;</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"msoa_code"</span>, <span class="st">"wave_year"</span>)))) <span class="sc">|&gt;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)))) <span class="sc">|&gt;</span></span>
 <span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
 <span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Join</span></span>
 <span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
 <span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_estimates, <span class="at">by =</span> <span class="fu">c</span>(</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"msoa_code"</span>, <span class="st">"wave_year"</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
 <span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
 <span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_counts, <span class="at">by =</span> <span class="fu">c</span>(</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">"msoa_code"</span>, <span class="st">"wave_year"</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
 <span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
 <span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">replace_na</span>(.data<span class="sc">$</span>n, 0L))</span>
 <span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
@@ -464,12 +502,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <table class="table table-sm table-striped small">
 <colgroup>
 <col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 14%">
+<col style="width: 5%">
+<col style="width: 15%">
 <col style="width: 11%">
 <col style="width: 7%">
-<col style="width: 11%">
-<col style="width: 9%">
+<col style="width: 12%">
+<col style="width: 10%">
 <col style="width: 11%">
 <col style="width: 10%">
 <col style="width: 7%">
@@ -477,8 +515,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">msoa_code</th>
-<th style="text-align: right;">wave_year</th>
+<th style="text-align: left;">area_id</th>
+<th style="text-align: right;">time_id</th>
 <th style="text-align: left;">msoa_name</th>
 <th style="text-align: left;">msoa_name_welsh</th>
 <th style="text-align: left;">la_code</th>
@@ -579,7 +617,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 data-number="2" class="anchored" data-anchor-id="evaluate-direct-estimates"><span class="header-section-number">2</span> Evaluate Direct Estimates</h2>
 <p>Direct estimation provides a useful starting point because they make three limitations visible:</p>
 <ul>
-<li><strong>Uneven temporal and spatial coverage:</strong> The number of usable observations varies across survey waves and across MSOAs. This means some MSOA-year estimates are based on much less direct evidence than others.</li>
+<li><strong>Uneven temporal and spatial coverage:</strong> The number of usable observations varies across survey waves and across MSOAs. This means some area-time cells are based on much less direct evidence than others.</li>
 <li><strong>Unstable area estimate over time:</strong> For some MSOAs, direct estimates change sharply between waves. These changes may reflect real behavioural change, but they may also reflect sampling noise.</li>
 <li><strong>Zero within-area variance:</strong> For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unrealistically low variances.</li>
 </ul>
@@ -588,10 +626,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plotting functions</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>base_map <span class="ot">&lt;-</span> <span class="cf">function</span>(wave) {</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  wave_direct <span class="ot">&lt;-</span> direct_walk[direct_walk[[<span class="st">"wave_year"</span>]] <span class="sc">==</span> wave, ]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  wave_direct <span class="ot">&lt;-</span> direct_walk[direct_walk[[<span class="st">"time_id"</span>]] <span class="sc">==</span> wave, ]</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  wave_data <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(wave_direct, <span class="at">by =</span> <span class="st">"msoa_code"</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">left_join</span>(wave_direct, <span class="at">by =</span> <span class="st">"area_id"</span>)</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(wave_data) <span class="sc">+</span></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">theme_void</span>() <span class="sc">+</span></span>
@@ -684,7 +722,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <details>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave <span class="ot">&lt;-</span> direct_walk <span class="sc">|&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.data<span class="sc">$</span>wave_year) <span class="sc">|&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(.data<span class="sc">$</span>time_id) <span class="sc">|&gt;</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Usable observations</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(.data<span class="sc">$</span>n),</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MSOAs without direct estimates</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(.data<span class="sc">$</span>direct_estimate)),</span>
@@ -700,7 +738,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
 <span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
 <span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Wave</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">all_of</span>(<span class="st">"wave_year"</span>))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Wave</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">all_of</span>(<span class="st">"time_id"</span>))</span>
 <span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -1025,12 +1063,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./dataprep.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Data preparation</span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Setting up</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
       <a href="./fh-area.html" class="pagination-link">
-        <span class="nav-page-text">Area-level estimation (FH model)</span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">Area-level estimation (FH)</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

@@ -94,7 +94,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
         <li>
     <a class="dropdown-item" href="./dataprep.html" rel="" target="">
- <span class="dropdown-text">Data preparation</span></a>
+ <span class="dropdown-text">Setting up</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
@@ -102,11 +102,11 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level estimation (FH model)</span></a>
+ <span class="dropdown-text">Area-level estimation (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level estimation (BHF model)</span></a>
+ <span class="dropdown-text">Unit-level estimation (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
@@ -114,10 +114,21 @@ ul.task-list li input[type="checkbox"] {
   </li>  
     </ul>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" href="./resources.html" rel="" target="">
- <span class="menu-text">Resources</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
+ <span class="dropdown-text">Toolkit</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
+ <span class="dropdown-text">Bibliography</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -178,7 +189,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Data preparation</span></a>
+ <span class="menu-text">Setting up</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -190,19 +201,42 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level estimation (FH model)</span></a>
+ <span class="menu-text">Area-level estimation (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level estimation (BHF model)</span></a>
+ <span class="menu-text">Unit-level estimation (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">MRP</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text">Resources</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Bibliography</span></a>
   </div>
 </li>
       </ul>
@@ -257,24 +291,37 @@ ul.task-list li input[type="checkbox"] {
 <p>The tutorial is selective. It covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.</p>
 <p><img src="assets/sae_method_select.png" class="img-fluid"></p>
 <ol type="1">
-<li><p><strong><a href="./dataprep.html">Prepare data</a></strong><br>
-Build the survey indicator, matched weights, area predictors, unit predictors, and poststratification inputs.</p></li>
+<li><p><strong><a href="./dataprep.html">Estimation setup</a></strong><br>
+Start by specifying the estimand: outcome, target population, areas, and time periods. This defines the area-time cells that need estimates and the inputs required for each possible route.</p></li>
 <li><p><strong><a href="./direct-estimation.html">Direct estimation</a></strong><br>
-Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.</p></li>
+Compute survey design-based estimates and sampling variances for observed area-time cells. If these estimates are precise enough and have adequate coverage, direct estimation may be sufficient.</p></li>
 <li><p><strong><a href="./fh-area.html">Fay–Herriot area-level model</a></strong><br>
-Model the direct estimates and their sampling variances using area-level predictors, and structured temporal and spatial random effects.</p></li>
+Use this route when direct estimates exist but are too noisy or incomplete, and the available auxiliary data are area-level predictors. The model smooths direct estimates across predictors, neighbouring areas, and time periods.</p></li>
 <li><p><strong><a href="./bhf-unit.html">Battese–Harter–Fuller unit-level model</a></strong><br>
-Model survey microdata directly using unit-level predictors and structured temporal and spatial random effects, then aggregate the fitted relationship to small-area estimates.</p></li>
+Use this route when survey microdata are available and the outcome can be modelled at respondent or household level. The fitted unit-level relationship is then aggregated to area-time estimates using area-level summaries of the predictors.</p></li>
 <li><p><strong><a href="./mrp.html">Multilevel Regression with Poststratification (MRP)</a></strong><br>
-Fit a richer unit-level model and project predictions over population poststratification cells.</p></li>
+Use this route when population counts are available for poststratification cells, such as area by age by sex. The model predicts outcomes for each population cell and weights those predictions back to area-time estimates.</p></li>
 </ol>
 </div>
 <div class="home-section">
 <div class="section-label">
-<p>Worked example</p>
+<p>Tutorial data</p>
 </div>
-<p>The worked example found throughout this tutorial uses synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a></p>
-<p>The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">data preparation step</a>.</p>
+<p>The tutorial uses synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>.</p>
+<p>The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">estimation setup step</a>.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>About the project</p>
+</div>
+<p>The tutorial is part of the <strong>TRACK-UK</strong> project by the <a href="https://citymodellinglab.uk"><strong>City Modelling Lab</strong></a>.</p>
+<p>TRACK-UK develops spatial and statistical methods for analysing mobility patterns at fine geographic scales and assessing their implications for transport decarbonisation in the UK. The project works with academic, policy, and industry partners to produce evidence for transport and energy policy.</p>
+<p>For questions about the tutorial, contact:</p>
+<ul>
+<li><strong>Shaun Hoang</strong> - University College London</li>
+<li><strong>Anna Freni-Sterrantino</strong> - The Alan Turing Institute</li>
+<li><strong>Esra Suel</strong> - University College London; University of Zurich</li>
+</ul>
 </div>
 
 
@@ -532,7 +579,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   </div>
   <div class="nav-page nav-page-next">
       <a href="./dataprep.html" class="pagination-link">
-        <span class="nav-page-text">Data preparation</span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">Setting up</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

@@ -1,6 +1,6 @@
 ---
-title: "Prepare Input for Small Area Estimation Modelling"
-subtitle: "Define estimands, build survey indicators, and auxiliary data"
+title: "Setting up for the estimation workflow"
+subtitle: "Define the estimand, area-time domain, survey indicator, and model inputs"
 ---
 
 ```{r}
@@ -31,8 +31,8 @@ msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  transmute(msoa_code = .data$MSOA21CD) |>
-  filter(str_starts(.data$msoa_code, "W"))
+  transmute(area_id = .data$MSOA21CD) |>
+  filter(str_starts(.data$area_id, "W"))
 ```
 
 ```{r}
@@ -78,14 +78,14 @@ la_response_counts <- survey_microdata |>
   count(.data$la_code, name = "responses")
 
 msoa_response_counts <- survey_microdata |>
-  filter(!is.na(.data$msoa_code)) |>
-  count(.data$msoa_code, name = "responses")
+  filter(!is.na(.data$area_id)) |>
+  count(.data$area_id, name = "responses")
 
 la_count_map_data <- la_boundaries |>
   left_join(la_response_counts, by = "la_code")
 
 msoa_count_map_data <- msoa_boundaries |>
-  left_join(msoa_response_counts, by = "msoa_code")
+  left_join(msoa_response_counts, by = c("area_id" = "area_id"))
 
 plot_response_map <- function(map_data, title, border_colour = "transparent") {
   ggplot(map_data) +
@@ -129,11 +129,11 @@ wrap_plots(la_count_map, msoa_count_map, ncol = 2)
 
 ### Defining The Estimand
 
-It is important to define the estimand before proceeding to the next step. The estimand determines how we formulate the appropriate indicator from survey variables, how we aggregate it to the desired area level, and which model inputs such as predictors and spatio-temporal structure are valid downstream. A well-formed estimand answers:
+The estimand is the quantity we want to estimate. It should be defined before preparing the survey indicator or choosing a model, because it determines the outcome coding, denominator, target geography, time period, auxiliary predictors, and poststratification requirements.
 
 > Estimate the **measure** of **what outcome**, among **which population**, across **which geography** and **time period**.
 
-For the main tutorial, we perform SAE on the following estimand:
+In this tutorial, the estimand is:
 
 | Component | Choice |
 |---|---|
@@ -141,13 +141,15 @@ For the main tutorial, we perform SAE on the following estimand:
 | Outcome | Walks for transport daily |
 | Target population | Adults |
 | Geography | MSOAs in Wales |
-| Time | 2021, 2023, 2025 |
+| Time | Three NSW waves ending in 2021, 2023 and 2025 |
+
+In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*. 
 
 ::: {.callout-note}
-We simplified year label in this tutorial; each survey period is labelled by its end year. E.g., `2020-2021` becomes `2021`.
+The survey period labels are simplified to their end year. For example, the `2020-2021` survey wave is labelled as and referred to as the `2021` wave.
 :::
 
-The target population definition is particularly important when we are estimating means or proportions since it determines the denominator for such aggregation. Moreover, it dictates the requirement for target population sizes or poststratification tables when formulating the models.
+The target population is especially important for proportions. Here, the denominator is adults, so direct estimates, model aggregation, and any poststratification table must represent the adult population rather than all residents, commuters, or another subgroup.
 
 ### Preparing The Survey Indicator
 
@@ -170,9 +172,9 @@ The cleaned survey microdata has *one row per respondent-wave:*
 
 | Column | Meaning |
 |---|---|
-| `unit_id` | Respondent-wave identifier in the `wave_year`_`case_no` format |
-| `wave_year` | Survey year |
-| `msoa_code` | Synthetic MSOA assignment |
+| `unit_id` | Respondent-wave identifier in the `time_id`_`case_no` format |
+| `time_id` | Survey year |
+| `area_id` | Synthetic MSOA assignment |
 | `strata` | Local Authority stratum |
 | `indicator` | Binary walking response |
 | `weight` | Matched weight |
@@ -186,12 +188,12 @@ As an overview, the current cleaned data give the following usable observations 
 | 2023 | 1,999 | 406 |
 | 2025 | 5,893 | 408 |
 
-Note that although the data have gaps when aggregated to the area-year level (e.g., in 2023), that is expected. SAE models will be used to borrow strength for sparse or unsampled areas.
+Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
 #### Unit Predictors
 
-Unit-level SAE uses respondent-level predictors available in the survey microdata. We keep a small set of predictors that could explain frequent walking behaviour.
+Unit-level SAE, including MRP workflow, uses respondent-level predictors available in the survey microdata. We keep a small set of predictors that could explain frequent walking behaviour.
 
 The unit-predictor output has *one row per respondent-wave*: 
 
@@ -204,7 +206,7 @@ The unit-predictor output has *one row per respondent-wave*:
 
 #### Area Predictors
 
-Area-level SAE needs predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
+SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
 
 These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns.
 
@@ -217,7 +219,7 @@ The area-predictor output *has one row per MSOA*:
 
 | Column | Meaning |
 |---|---|
-| `msoa_code` | MSOA estimation area |
+| `area_id` | MSOA estimation area |
 | `msoa_name` | MSOA name |
 | `raw_*` | Raw 5 predictors used in the models |
 | `cov_*` | Z-scored versions of the raw predictors |
@@ -226,12 +228,12 @@ The area-predictor output *has one row per MSOA*:
 
 A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and kept the survey years used: 2021, 2023, and 2025. 
 
-The area-predictor output *has one row per MSOA--year--age--sex combination:*
+The poststratification output *has one row per area-time-age-sex combination, or MSOA--year--age--sex in this example:*
 
 | Column | Meaning |
 |---|---|
-| `msoa_code` | MSOA estimation area |
-| `wave_year` | Survey year |
+| `area_id` | MSOA estimation area |
+| `time_id` | Survey year |
 | `age_band` | 5-year age band |
 | `sex` | Sex category (`1` for Male, `2` for Female) |
 | `pop_count` | Population count |

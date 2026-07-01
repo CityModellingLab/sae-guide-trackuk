@@ -28,8 +28,8 @@ msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(msoa_code = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$msoa_code, "W"))
+  rename(area_id = all_of("MSOA21CD")) |>
+  filter(str_starts(.data$area_id, "W"))
 ```
 
 ```{r}
@@ -69,31 +69,31 @@ chart_text_theme <- theme(
 )
 ```
 
-BHF unit-level SAE starts from respondent records rather than area-level direct estimates. Here we use a Bayesian extension of the Battese--Harter--Fuller model: individual responses borrow strength from respondent-level predictors and area/time random effects, then the fitted relationship is aggregated to MSOA--year estimates using known area-level predictor means.
+BHF unit-level SAE starts from respondent records rather than area-level direct estimates. Here we use a Bayesian extension of the Battese--Harter--Fuller model: individual responses borrow strength from respondent-level predictors and area/time random effects, then the fitted relationship is aggregated to area-time estimates. In this example, each area-time cell is one *MSOA-year cell*.
 
 A reminder that our target estimand is:
 
-> Share of Welsh adults who walk for transport daily by MSOA in 2021, 2023 and 2025
+>  Share of Welsh adults who walk for transport daily, estimated for each MSOA in the NSW waves ending in 2021, 2023, and 2025.
 
 ## Define Domain, Indices And Spatial Graph
 
-Before preparing the model inputs, we create a consistent numeric index for each MSOA and survey year in the complete MSOA--year domain. These indices are used by `INLA` to attach random effects to the correct area and period.
+Before preparing the model inputs, we create a consistent numeric index for each area and survey year in the complete area-time domain. These indices are used by `INLA` to attach random effects to the correct area and period.
 
 ```{r}
 #| label: define-model-index
 #| code-fold: false
 
-area_levels <- sort(unique(domain_frame[["msoa_code"]]))
-year_levels <- sort(unique(domain_frame[["wave_year"]]))
+area_levels <- sort(unique(domain_frame[["area_id"]]))
+time_levels <- sort(unique(domain_frame[["time_id"]]))
 
 area_index <- tibble(
-  msoa_code = area_levels,
-  area_id = seq_along(area_levels)
+  area_id = area_levels,
+  area_inla_id = seq_along(area_levels)
 )
 
-year_index <- tibble(
-  wave_year = year_levels,
-  year_id = seq_along(year_levels)
+time_index <- tibble(
+  time_id = time_levels,
+  time_inla_id = seq_along(time_levels)
 )
 ```
 
@@ -104,13 +104,13 @@ To include a spatial random effect, we also need an adjacency graph `.adj` as in
 #| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
-  inner_join(area_index, by = "msoa_code") |>
-  arrange(.data$area_id)
+  inner_join(area_index, by = "area_id") |>
+  arrange(.data$area_inla_id)
 
 msoa_neighbours <- poly2nb(
   msoa_boundaries_sorted,
   queen = TRUE,
-  row.names = msoa_boundaries_sorted$msoa_code
+  row.names = msoa_boundaries_sorted$area_id
 )
 
 spatial_graph_file <- tempfile(fileext = ".adj")
@@ -126,7 +126,7 @@ nb2INLA(
 BHF modelling has two separate data-preparation tasks:
 
 - prepare the respondent-level rows used to fit the model;
-- prepare the area-level rows used to aggregate the fitted relationship to MSOA--year estimates.
+- prepare the area-level rows used to aggregate the fitted relationship to area-time estimates.
 
 ### Respondent Model Data
 
@@ -134,8 +134,8 @@ The respondent model data has one row per sampled person. For this constrained e
 
 - `indicator` as the binary response, our target;
 - `no_car` as the unit-level auxiliary variable, our predictor;
-- `wave_year` as the survey wave year identifier;
-- `msoa_code` as the area identifier;
+- `time_id` as the survey wave year identifier;
+- `area_id` as the area identifier;
 
 ```{r}
 #| label: prepare-unit-sample
@@ -152,8 +152,8 @@ walking_indicator <- read_csv(
 ) |>
   select(
     unit_id,
-    wave_year,
-    msoa_code,
+    time_id,
+    area_id,
     indicator
   )
 
@@ -164,8 +164,8 @@ unit_sample <- unit_predictors |>
   ) |>
   filter(
     !is.na(.data$indicator),
-    !is.na(.data$msoa_code),
-    !is.na(.data$wave_year),
+    !is.na(.data$area_id),
+    !is.na(.data$time_id),
     !is.na(.data$no_car)
   )
 
@@ -174,7 +174,7 @@ head(unit_sample)
 
 ### Area Aggregation Data
 
-The aggregation input contains the complete MSOA--year grid we want to estimate, and the MSOA-level mean of the unit-level predictor. Since `no_car` is binary, the area mean is simply the share of households with no car or van (a pre-processed area-level predictor).
+The aggregation input contains the complete area-time grid we want to estimate, and the area-level mean of the unit-level predictor. Since `no_car` is binary, the area mean is simply the share of households with no car or van (a pre-processed area-level predictor).
 
 ```{r}
 #| label: prepare-unit-aggregation-data
@@ -186,14 +186,14 @@ area_covariates <- read_csv(
 )
 
 prediction_frame <- domain_frame |>
-  select(msoa_code, msoa_name, wave_year) |>
+  select(area_id, msoa_name, time_id) |>
   left_join(
     area_covariates |>
       transmute(
-        msoa_code,
+        area_id,
         no_car = raw_share_no_car_households
       ),
-    by = "msoa_code"
+    by = "area_id"
   )
 
 head(prediction_frame)
@@ -206,38 +206,38 @@ The area mean for `no_car` comes from Census 2021 and is used as a time-stable M
 Finally, we prepare two datasets for `INLA`.
 
 - `model_data` contains the sampled respondent records used to fit the model. `no_car` here represents individual responses.
-- `aggregation_data` contains one row for each MSOA--year we want to estimate. `no_car` here represents area means.
+- `aggregation_data` contains one row for each area-time cell we want to estimate. `no_car` here represents area means.
 
 ```{r}
 #| label: prepare-model-data
 #| code-fold: false
 
 model_data <- unit_sample |>
-  left_join(area_index, by = "msoa_code") |>
-  left_join(year_index, by = "wave_year") |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
   transmute(
     unit_id,
-    msoa_code,
-    wave_year,
+    area_id,
+    time_id,
     indicator,
     no_car,
-    year_id,
-    area_spatial_id = area_id
+    time_inla_id,
+    area_spatial_id = area_inla_id
   ) |>
-  arrange(.data$wave_year, .data$area_spatial_id)
+  arrange(.data$time_id, .data$area_spatial_id)
 
 aggregation_data <- prediction_frame |>
-  left_join(area_index, by = "msoa_code") |>
-  left_join(year_index, by = "wave_year") |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
   transmute(
-    msoa_code,
+    area_id,
     msoa_name,
-    wave_year,
+    time_id,
     no_car,
-    year_id,
-    area_spatial_id = area_id
+    time_inla_id,
+    area_spatial_id = area_inla_id
   ) |>
-  arrange(.data$wave_year, .data$area_spatial_id)
+  arrange(.data$time_id, .data$area_spatial_id)
 
 head(model_data)
 head(aggregation_data)
@@ -245,7 +245,7 @@ head(aggregation_data)
 
 ## Fit And Evaluate Models
 
-We fit linear mixed models to respondent-level records, then use them to predict MSOA--year means. This follows the BHF nested-error idea, extended here with temporal and spatial random effects.
+We fit linear mixed models to respondent-level records, then use them to predict area-time means. This follows the BHF nested-error idea, extended here with temporal and spatial random effects.
 
 ::: {.callout-note}
 The response is binary, so this is a linear probability version of the BHF-style model.
@@ -264,7 +264,7 @@ The two models are:
 
 m1_formula <- indicator ~
   1 +
-  f(year_id, model = "rw1", constr = TRUE) +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_spatial_id,
     model = "bym2",
@@ -275,7 +275,7 @@ m1_formula <- indicator ~
 
 m2_formula <- indicator ~
   no_car +
-  f(year_id, model = "rw1", constr = TRUE) +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_spatial_id,
     model = "bym2",
@@ -291,10 +291,10 @@ model_formulas <- list(
 
 ```
 
-`INLA` does not use a separate `predict(newdata = ...)` step; instead, it returns fitted values for every row in the input data. We therefore add aggregation MSOA--year rows with `indicator = NA` for `INLA` to return fitted values for them.
+`INLA` does not use a separate `predict(newdata = ...)` step; instead, it returns fitted values for every row in the input data. We therefore add aggregation rows for the area-time cells with `indicator = NA` for `INLA` to return fitted values for them.
 
 ::: {.callout-note}
-In the Fay--Herriot model, this feature allows for MSOA--years without survey data (unsampled) to also receive an estimate.
+In the Fay--Herriot model, this feature allows area-time cells without survey data (unsampled) to also receive an estimate.
 :::
 
 ```{r}
@@ -307,7 +307,7 @@ inla_input <- bind_rows(
       row_type = "model",
       indicator,
       no_car,
-      year_id,
+      time_inla_id,
       area_spatial_id
     ),
   aggregation_data |>
@@ -315,7 +315,7 @@ inla_input <- bind_rows(
       row_type = "aggregation",
       indicator = NA_real_,
       no_car,
-      year_id,
+      time_inla_id,
       area_spatial_id
     )
 )
@@ -375,7 +375,7 @@ Finally, the **spatial and temporal random-effect** hyperparameters help show wh
 
 bhf_fits[["M2 +No-car"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
-  filter(str_detect(.data$parameter, "year_id|area_spatial_id|Phi")) |>
+  filter(str_detect(.data$parameter, "time_inla_id|area_spatial_id|Phi")) |>
   select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
   mutate(
     across(where(is.numeric), ~ round(.x, 3))
@@ -385,7 +385,7 @@ The temporal `tau` is high, suggesting that the survey-wave adjustments are rela
 
 Interestingly, the BYM2 `phi` is high and above `0.5`, suggesting that much of the remaining area-level variation in the BHF model is spatially structured. This may look different from the lower `phi` seen in the Fay--Herriot model, but the two values are not directly comparable. They come from different modelling units and specifications: the BHF model is fitted to individual respondent records, while the Fay--Herriot model is fitted to area-level direct estimates and their sampling variances. Therefore, the higher `phi` here should be read as evidence that, within this simpler unit-level specification, the remaining between-MSOA differences are spatially patterned.
 
-With M2 being the most performant, we now collate the final fitted values for the aggregation rows into one MSOA--year results table. 
+With M2 being the most performant, we now collate the final fitted values for the aggregation rows into one area-time results table.
 
 ```{r}
 #| label: collect-bhf-estimates
@@ -408,13 +408,13 @@ bhf_estimates <- as_tibble(
   bind_cols(
     aggregation_data |>
       select(
-        msoa_code,
+        area_id,
         msoa_name,
-        wave_year,
+        time_id,
         no_car
       )
   ) |>
-  relocate(msoa_code, msoa_name, wave_year, no_car)
+  relocate(area_id, msoa_name, time_id, no_car)
 
 ```
 
@@ -426,14 +426,14 @@ bhf_estimates <- as_tibble(
 
 final_bhf_results <- bhf_estimates
 final_bhf_map_data <- msoa_boundaries |>
-  left_join(final_bhf_results, by = "msoa_code")
+  left_join(final_bhf_results, by = "area_id")
 bhf_estimate_limits <- range(final_bhf_results$bhf_estimate, na.rm = TRUE)
 bhf_variance_limits <- c(0, max(final_bhf_results$bhf_variance, na.rm = TRUE))
-bhf_wave_years <- sort(unique(final_bhf_results$wave_year))
+bhf_wave_years <- sort(unique(final_bhf_results$time_id))
 
 plot_bhf_estimate <- function(wave) {
   final_bhf_map_data |>
-    filter(.data$wave_year == wave) |>
+    filter(.data$time_id == wave) |>
     ggplot() +
     geom_sf(aes(fill = .data$bhf_estimate), colour = "transparent") +
     scale_fill_viridis_c(
@@ -450,7 +450,7 @@ plot_bhf_estimate <- function(wave) {
 
 plot_bhf_variance <- function(wave) {
   final_bhf_map_data |>
-    filter(.data$wave_year == wave) |>
+    filter(.data$time_id == wave) |>
     ggplot() +
     geom_sf(aes(fill = .data$bhf_variance), colour = "transparent") +
     scale_fill_distiller(
@@ -496,28 +496,28 @@ direct_estimates <- read_csv(
   file.path(base_path, "freq_walker_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
-  select(msoa_code, wave_year, direct_estimate, standard_error, variance, n)
+  select(area_id, time_id, direct_estimate, standard_error, variance, n)
 
 fh_final_estimates <- read_csv(
   file.path(base_path, "freq_walker_estimates_area-fh.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
-    msoa_code,
-    wave_year,
+    area_id,
+    time_id,
     fh_estimate,
     fh_variance
   )
 
 bhf_estimates <- bhf_estimates |>
-  left_join(direct_estimates, by = c("msoa_code", "wave_year")) |>
-  left_join(fh_final_estimates, by = c("msoa_code", "wave_year")) |>
-  relocate(direct_estimate, standard_error, variance, n, .after = wave_year)
+  left_join(direct_estimates, by = c("area_id", "time_id")) |>
+  left_join(fh_final_estimates, by = c("area_id", "time_id")) |>
+  relocate(direct_estimate, standard_error, variance, n, .after = time_id)
 
 bhf_estimates |>
   select(
-    msoa_code,
-    wave_year,
+    area_id,
+    time_id,
     direct_estimate,
     fh_estimate,
     bhf_estimate
@@ -531,9 +531,9 @@ bhf_estimates |>
 
 bhf_fh_comparison <- bhf_estimates |>
   transmute(
-    msoa_code,
+    area_id,
     msoa_name,
-    wave_year,
+    time_id,
     direct_estimate,
     fh_estimate,
     fh_variance,
@@ -544,8 +544,8 @@ bhf_fh_comparison <- bhf_estimates |>
 
 bhf_scatter_comparison <- bhf_fh_comparison |>
   select(
-    msoa_code,
-    wave_year,
+    area_id,
+    time_id,
     n,
     bhf_estimate,
     direct_estimate,
@@ -584,7 +584,7 @@ bhf_scatter_comparison |>
   coord_equal(xlim = bhf_scatter_limits, ylim = bhf_scatter_limits) +
   labs(
     title = "BHF Comparison",
-    subtitle = "Dashed line shows equality; points are MSOA-years",
+    subtitle = "Dashed line shows equality; points are area-time cells",
     x = "Comparison estimate",
     y = "BHF estimate (M2)"
   ) +
@@ -605,7 +605,7 @@ The BHF estimates are smoother than the direct estimates because the model borro
 #| out-width: "100%"
 
 bhf_fh_map_data <- msoa_boundaries |>
-  left_join(bhf_fh_comparison, by = "msoa_code")
+  left_join(bhf_fh_comparison, by = "area_id")
 
 bhf_fh_difference_limit <- quantile(
   abs(bhf_fh_comparison$bhf_minus_fh),
@@ -613,11 +613,11 @@ bhf_fh_difference_limit <- quantile(
   na.rm = TRUE,
   names = FALSE
 )
-bhf_fh_wave_years <- sort(unique(bhf_fh_comparison$wave_year))
+bhf_fh_wave_years <- sort(unique(bhf_fh_comparison$time_id))
 
 plot_bhf_fh_difference <- function(wave) {
   bhf_fh_map_data |>
-    filter(.data$wave_year == wave) |>
+    filter(.data$time_id == wave) |>
     ggplot() +
     geom_sf(aes(fill = .data$bhf_minus_fh), colour = "transparent") +
     scale_fill_gradient2(

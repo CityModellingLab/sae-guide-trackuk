@@ -31,28 +31,44 @@ The tutorial is selective. It covers the SAE methods most relevant to common Urb
 
 ![](assets/sae_method_select.png)
 
-1. **[Prepare data](dataprep.qmd)**  
-   Build the survey indicator, matched weights, area predictors, unit predictors, and poststratification inputs.
+1. **[Estimation setup](dataprep.qmd)**  
+   Start by specifying the estimand: outcome, target population, areas, and time periods. This defines the area-time cells that need estimates and the inputs required for each possible route.
 
 2. **[Direct estimation](direct-estimation.qmd)**  
-   Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.
+   Compute survey design-based estimates and sampling variances for observed area-time cells. If these estimates are precise enough and have adequate coverage, direct estimation may be sufficient.
 
 3. **[Fay--Herriot area-level model](fh-area.qmd)**  
-   Model the direct estimates and their sampling variances using area-level predictors, and structured temporal and spatial random effects.
+   Use this route when direct estimates exist but are too noisy or incomplete, and the available auxiliary data are area-level predictors. The model smooths direct estimates across predictors, neighbouring areas, and time periods.
 
 4. **[Battese--Harter--Fuller unit-level model](bhf-unit.qmd)**  
-   Model survey microdata directly using unit-level predictors and structured temporal and spatial random effects, then aggregate the fitted relationship to small-area estimates.
+   Use this route when survey microdata are available and the outcome can be modelled at respondent or household level. The fitted unit-level relationship is then aggregated to area-time estimates using area-level summaries of the predictors.
 
 5. **[Multilevel Regression with Poststratification (MRP)](mrp.qmd)**  
-   Fit a richer unit-level model and project predictions over population poststratification cells.
+   Use this route when population counts are available for poststratification cells, such as area by age by sex. The model predicts outcomes for each population cell and weights those predictions back to area-time estimates.
 :::
 
 ::: {.home-section}
 ::: {.section-label}
-Worked example
+Tutorial data
 :::
 
-The worked example found throughout this tutorial uses synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales)
+The tutorial uses synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales).
 
-The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the [data preparation step](dataprep.qmd).
+The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the [estimation setup step](dataprep.qmd).
+:::
+
+::: {.home-section}
+::: {.section-label}
+About the project
+:::
+
+The tutorial is part of the **TRACK-UK** project by the [**City Modelling Lab**](https://citymodellinglab.uk).
+
+TRACK-UK develops spatial and statistical methods for analysing mobility patterns at fine geographic scales and assessing their implications for transport decarbonisation in the UK. The project works with academic, policy, and industry partners to produce evidence for transport and energy policy.
+
+For questions about the tutorial, contact:
+
+- **Shaun Hoang** - University College London
+- **Anna Freni-Sterrantino** - The Alan Turing Institute
+- **Esra Suel** - University College London; University of Zurich
 :::

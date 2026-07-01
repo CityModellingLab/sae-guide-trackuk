@@ -1,6 +1,8 @@
 project:
   type: website
   output-dir: docs
+  resources:
+    - "toolkit-scripts/*.R"
   render:
     - "index.qmd"
     - "*.qmd"
@@ -17,18 +19,22 @@ website:
         href: index.qmd
       - text: "Tutorial"
         menu:
-          - text: "Data preparation"
+          - text: "Setting up"
             href: dataprep.qmd
           - text: "Direct estimation"
             href: direct-estimation.qmd
-          - text: "Area-level estimation (FH model)"
+          - text: "Area-level estimation (FH)"
             href: fh-area.qmd
-          - text: "Unit-level estimation (BHF model)"
+          - text: "Unit-level estimation (BHF)"
             href: bhf-unit.qmd
           - text: "MRP"
             href: mrp.qmd
       - text: "Resources"
-        href: resources.qmd
+        menu:
+          - text: "Toolkit"
+            href: toolkit.qmd
+          - text: "Bibliography"
+            href: bibliography.qmd
 
 
   sidebar:
@@ -41,16 +47,22 @@ website:
             href: index.qmd
       - section: "Tutorial"
         contents:
-          - text: "Data preparation"
+          - text: "Setting up"
             href: dataprep.qmd
           - text: "Direct estimation"
             href: direct-estimation.qmd
-          - text: "Area-level estimation (FH model)"
+          - text: "Area-level estimation (FH)"
             href: fh-area.qmd
-          - text: "Unit-level estimation (BHF model)"
+          - text: "Unit-level estimation (BHF)"
             href: bhf-unit.qmd
           - text: "MRP"
             href: mrp.qmd
+      - section: "Resources"
+        contents:
+          - text: "Toolkit"
+            href: toolkit.qmd
+          - text: "Bibliography"
+            href: bibliography.qmd
           
 
 format:
