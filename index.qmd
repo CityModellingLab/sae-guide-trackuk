@@ -23,20 +23,20 @@ The worked example uses the National Survey for Wales to estimate:
 > Share of adults who walk for transport daily by MSOA-year in Wales over three waves: 2021, 2023, and 2025.
 
 ::: {.callout-note}
-The MSOA-level survey geography used here is synthetically prepared for tutorial purposes. The resulting maps and findings should not be treated as true small area estimates for Wales. More information is provided in the [data preparation step](pages/dataprep.qmd).
+The MSOA-level survey geography used here is synthetically prepared for tutorial purposes. The resulting maps and findings should not be treated as true small area estimates for Wales. More information is provided in the [data preparation step](dataprep.qmd).
 :::
 
-1. **[Prepare data](pages/dataprep.qmd)**  
+1. **[Prepare data](dataprep.qmd)**  
    Build the survey indicator, matched weights, MSOA-year domain, area predictors, unit predictors, and poststratification inputs.
 
-2. **[Direct estimation](pages/direct-estimation.qmd)**  
+2. **[Direct estimation](direct-estimation.qmd)**  
    Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.
 
-3. **[Fay--Herriot area-level model](pages/fh-area.qmd)**  
+3. **[Fay--Herriot area-level model](fh-area.qmd)**  
    Model the direct estimates and their sampling variances using area predictors, temporal effects, and spatial smoothing.
 
-4. **[Battese--Harter--Fuller unit-level model](pages/bhf-unit.qmd)**  
+4. **[Battese--Harter--Fuller unit-level model](bhf-unit.qmd)**  
    Model survey microdata directly, then aggregate the fitted relationship to MSOA-year estimates using known area-level predictor means.
 
-5. **[Multilevel regression and poststratification](pages/mrp.qmd)**  
+5. **[Generalised linear mixed model regression and poststratification](mrp.qmd)**  
    Fit a richer unit-level model and average predictions over population poststratification cells, so the final estimates better reflect the target population structure.
