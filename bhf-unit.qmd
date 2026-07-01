@@ -5,6 +5,7 @@ subtitle: "Predict small area estimates from survey microdata using temporal and
 
 ```{r}
 #| label: setup-bhf
+#| echo: false
 library(dplyr)
 library(readr)
 library(stringr)
@@ -33,6 +34,7 @@ msoa_boundaries <- st_read(
 
 ```{r}
 #| label: plotting-config
+#| echo: false
 share_label <- label_percent(accuracy = 0.1)
 pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 variance_label <- label_number(accuracy = 0.0001)

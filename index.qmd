@@ -1,42 +1,58 @@
 ---
 title: "A practical guide to Small Area Estimation for Urban Analytics"
-subtitle: "A practical tutorial for Bayesian small area estimation using R-INLA"
+subtitle: "With Bayesian inference implemented through R-INLA"
 ---
 
-Urban research often needs estimates at fine geographic scales: neighbourhoods, small administrative areas, transport zones, or other local geographies. Survey data are rarely collected at that resolution. Once responses are split by area and time, many cells have small samples, high uncertainty, or no observed respondents at all.
+::: {.home-section}
+::: {.section-label}
+Small area estimation for Urban Analytics
+:::
+Urban researchers often want to use survey data at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. This may involve comparing places, monitoring change over time, identifying local inequalities, or linking survey outcomes to area-level conditions. The problem is that most surveys are not designed to support reliable estimates at all geographic levels and time periods. When responses are broken down by area and year, some cells have only a few respondents and others have none.
 
-This tutorial introduces **spatio-temporal small area estimation (SAE)** as a practical workflow for this problem. The aim is to show how survey microdata, direct estimates, auxiliary area data, population information, and spatial-temporal model structure can be combined to produce small area estimates with uncertainty.
+This tutorial presents a workflow for choosing **spatio-temporal Bayesian small-area estimation (SAE)** methods for urban analytics. It focuses on method choice and shows how these approaches can be implemented in `R-INLA`.
+:::
+
+::: {.home-section}
+::: {.section-label}
+Bayesian inference and INLA
+:::
+
+Bayesian inference is used to combine survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. One advantage is that uncertainty of a modelled estimate is returned as posterior distributions for each estimate, which faciliates interpretation in policy contexts.
+
+For code implementation, the examples are fitted with `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. INLA provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.
+:::
+
+::: {.home-section}
+::: {.section-label}
+Tutorial structure
+:::
+
+The tutorial is selective. It covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.
 
 ![](assets/sae_method_select.png)
 
-
-## Why Bayesian inference with INLA?
-
-The tutorial uses Bayesian small area estimation models because they provide a coherent way to combine direct survey evidence, auxiliary predictors, spatial structure, temporal structure, and uncertainty. This is especially useful when some MSOA-year cells have small samples or no observed respondents.
-
-The model-based examples are fitted with `INLA`, the R interface to Integrated Nested Laplace Approximation. INLA is well suited to this workflow because it provides fast Bayesian inference for latent Gaussian models, including hierarchical, spatial, temporal, and spatio-temporal random effects without relying on long MCMC workflows.
-
-## Tutorial Workflow
-
-The worked example uses the National Survey for Wales to estimate:
-
-> Share of adults who walk for transport daily by MSOA-year in Wales over three waves: 2021, 2023, and 2025.
-
-::: {.callout-note}
-The MSOA-level survey geography used here is synthetically prepared for tutorial purposes. The resulting maps and findings should not be treated as true small area estimates for Wales. More information is provided in the [data preparation step](dataprep.qmd).
-:::
-
 1. **[Prepare data](dataprep.qmd)**  
-   Build the survey indicator, matched weights, MSOA-year domain, area predictors, unit predictors, and poststratification inputs.
+   Build the survey indicator, matched weights, area predictors, unit predictors, and poststratification inputs.
 
 2. **[Direct estimation](direct-estimation.qmd)**  
    Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.
 
 3. **[Fay--Herriot area-level model](fh-area.qmd)**  
-   Model the direct estimates and their sampling variances using area predictors, temporal effects, and spatial smoothing.
+   Model the direct estimates and their sampling variances using area-level predictors, and structured temporal and spatial random effects.
 
 4. **[Battese--Harter--Fuller unit-level model](bhf-unit.qmd)**  
-   Model survey microdata directly, then aggregate the fitted relationship to MSOA-year estimates using known area-level predictor means.
+   Model survey microdata directly using unit-level predictors and structured temporal and spatial random effects, then aggregate the fitted relationship to small-area estimates.
 
-5. **[Generalised linear mixed model regression and poststratification](mrp.qmd)**  
-   Fit a richer unit-level model and average predictions over population poststratification cells, so the final estimates better reflect the target population structure.
+5. **[Multilevel Regression with Poststratification (MRP)](mrp.qmd)**  
+   Fit a richer unit-level model and project predictions over population poststratification cells.
+:::
+
+::: {.home-section}
+::: {.section-label}
+Worked example
+:::
+
+The worked example found throughout this tutorial uses synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales)
+
+The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the [data preparation step](dataprep.qmd).
+:::

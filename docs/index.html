@@ -102,11 +102,11 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level estimation (Fay–Herriot)</span></a>
+ <span class="dropdown-text">Area-level estimation (FH model)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">BHF unit-level model</span></a>
+ <span class="dropdown-text">Unit-level estimation (BHF model)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
@@ -190,13 +190,13 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level estimation</span></a>
+ <span class="menu-text">Area-level estimation (FH model)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">BHF unit-level model</span></a>
+ <span class="menu-text">Unit-level estimation (BHF model)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -213,14 +213,7 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#why-bayesian-inference-with-inla" id="toc-why-bayesian-inference-with-inla" class="nav-link active" data-scroll-target="#why-bayesian-inference-with-inla"><span class="header-section-number">1</span> Why Bayesian inference with INLA?</a></li>
-  <li><a href="#tutorial-workflow" id="toc-tutorial-workflow" class="nav-link" data-scroll-target="#tutorial-workflow"><span class="header-section-number">2</span> Tutorial Workflow</a></li>
-  </ul>
-</nav>
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -228,7 +221,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">A practical guide to Small Area Estimation for Urban Analytics</h1>
-<p class="subtitle lead">A practical tutorial for Bayesian small area estimation using R-INLA</p>
+<p class="subtitle lead">With Bayesian inference implemented through R-INLA</p>
 </div>
 
 
@@ -243,48 +236,48 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>Urban research often needs estimates at fine geographic scales: neighbourhoods, small administrative areas, transport zones, or other local geographies. Survey data are rarely collected at that resolution. Once responses are split by area and time, many cells have small samples, high uncertainty, or no observed respondents at all.</p>
-<p>This tutorial introduces <strong>spatio-temporal small area estimation (SAE)</strong> as a practical workflow for this problem. The aim is to show how survey microdata, direct estimates, auxiliary area data, population information, and spatial-temporal model structure can be combined to produce small area estimates with uncertainty.</p>
+<div class="home-section">
+<div class="section-label">
+<p>Small area estimation for Urban Analytics</p>
+</div>
+<p>Urban researchers often want to use survey data at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. This may involve comparing places, monitoring change over time, identifying local inequalities, or linking survey outcomes to area-level conditions. The problem is that most surveys are not designed to support reliable estimates at all geographic levels and time periods. When responses are broken down by area and year, some cells have only a few respondents and others have none.</p>
+<p>This tutorial presents a workflow for choosing <strong>spatio-temporal Bayesian small-area estimation (SAE)</strong> methods for urban analytics. It focuses on method choice and shows how these approaches can be implemented in <code>R-INLA</code>.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Bayesian inference and INLA</p>
+</div>
+<p>Bayesian inference is used to combine survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. One advantage is that uncertainty of a modelled estimate is returned as posterior distributions for each estimate, which faciliates interpretation in policy contexts.</p>
+<p>For code implementation, the examples are fitted with <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. INLA provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Tutorial structure</p>
+</div>
+<p>The tutorial is selective. It covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.</p>
 <p><img src="assets/sae_method_select.png" class="img-fluid"></p>
-<section id="why-bayesian-inference-with-inla" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="why-bayesian-inference-with-inla"><span class="header-section-number">1</span> Why Bayesian inference with INLA?</h2>
-<p>The tutorial uses Bayesian small area estimation models because they provide a coherent way to combine direct survey evidence, auxiliary predictors, spatial structure, temporal structure, and uncertainty. This is especially useful when some MSOA-year cells have small samples or no observed respondents.</p>
-<p>The model-based examples are fitted with <code>INLA</code>, the R interface to Integrated Nested Laplace Approximation. INLA is well suited to this workflow because it provides fast Bayesian inference for latent Gaussian models, including hierarchical, spatial, temporal, and spatio-temporal random effects without relying on long MCMC workflows.</p>
-</section>
-<section id="tutorial-workflow" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="tutorial-workflow"><span class="header-section-number">2</span> Tutorial Workflow</h2>
-<p>The worked example uses the National Survey for Wales to estimate:</p>
-<blockquote class="blockquote">
-<p>Share of adults who walk for transport daily by MSOA-year in Wales over three waves: 2021, 2023, and 2025.</p>
-</blockquote>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>The MSOA-level survey geography used here is synthetically prepared for tutorial purposes. The resulting maps and findings should not be treated as true small area estimates for Wales. More information is provided in the <a href="./dataprep.html">data preparation step</a>.</p>
-</div>
-</div>
 <ol type="1">
 <li><p><strong><a href="./dataprep.html">Prepare data</a></strong><br>
-Build the survey indicator, matched weights, MSOA-year domain, area predictors, unit predictors, and poststratification inputs.</p></li>
+Build the survey indicator, matched weights, area predictors, unit predictors, and poststratification inputs.</p></li>
 <li><p><strong><a href="./direct-estimation.html">Direct estimation</a></strong><br>
 Produce survey design-based small area estimates and sampling variances. This establishes the baseline and shows where direct estimates are too sparse or noisy.</p></li>
 <li><p><strong><a href="./fh-area.html">Fay–Herriot area-level model</a></strong><br>
-Model the direct estimates and their sampling variances using area predictors, temporal effects, and spatial smoothing.</p></li>
+Model the direct estimates and their sampling variances using area-level predictors, and structured temporal and spatial random effects.</p></li>
 <li><p><strong><a href="./bhf-unit.html">Battese–Harter–Fuller unit-level model</a></strong><br>
-Model survey microdata directly, then aggregate the fitted relationship to MSOA-year estimates using known area-level predictor means.</p></li>
-<li><p><strong><a href="./mrp.html">Generalised linear mixed model regression and poststratification</a></strong><br>
-Fit a richer unit-level model and average predictions over population poststratification cells, so the final estimates better reflect the target population structure.</p></li>
+Model survey microdata directly using unit-level predictors and structured temporal and spatial random effects, then aggregate the fitted relationship to small-area estimates.</p></li>
+<li><p><strong><a href="./mrp.html">Multilevel Regression with Poststratification (MRP)</a></strong><br>
+Fit a richer unit-level model and project predictions over population poststratification cells.</p></li>
 </ol>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Worked example</p>
+</div>
+<p>The worked example found throughout this tutorial uses synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a></p>
+<p>The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">data preparation step</a>.</p>
+</div>
 
 
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
