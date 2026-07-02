@@ -5,6 +5,8 @@ subtitle: "Define the estimand, area-time domain, survey indicator, and model in
 
 ```{r}
 #| label: setup-data-preparation
+#| echo: false
+
 library(dplyr)
 library(readr)
 library(stringr)
@@ -65,6 +67,10 @@ This design has two purposes:
 - **Higher spatial resolution for tutorial purposes.** Possible to demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
 - **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so we avoid presenting fine-grained respondent locations. 
 
+::: {.callout-note}
+From here on, the survey period labels are simplified to their end year. For example, the `2020-2021` survey wave is labelled as and referred to as the `2021` wave.
+:::
+
 ```{r}
 #| label: synthetic-geo-counts
 #| echo: false
@@ -124,7 +130,6 @@ wrap_plots(la_count_map, msoa_count_map, ncol = 2)
 
 ## Data Preparation Pipeline
 
-[TO EDIT IMAGE]
 ![Preparation pipeline for analysis-ready inputs](assets/dataprep.png)
 
 ### Defining The Estimand
@@ -135,15 +140,9 @@ The estimand is the quantity we want to estimate. It should be defined before pr
 
 In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*. 
 
-The target population is especially important for proportions. Here, the denominator is adults, so direct estimates, model aggregation, and any poststratification table must represent the adult population rather than all residents, commuters, or another subgroup.
-
 In this tutorial, the estimand is:
 
 {{< include _includes/target-estimand.qmd >}}
-
-::: {.callout-note}
-The survey period labels are simplified to their end year. For example, the `2020-2021` survey wave is labelled as and referred to as the `2021` wave.
-:::
 
 
 ### Preparing The Survey Indicator
