@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Bibliography</title>
+<title>Small Area Estimation for Urban Analytics - SAE Toolkit</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,7 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./toolkit.html" rel="prev">
+<link href="./bibliography.html" rel="next">
+<link href="./mrp.html" rel="prev">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
@@ -143,7 +144,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./toolkit.html">Resources</a></li><li class="breadcrumb-item"><a href="./bibliography.html">Bibliography</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./toolkit.html">Resources</a></li><li class="breadcrumb-item"><a href="./toolkit.html">Toolkit</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -221,13 +222,13 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Toolkit</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./bibliography.html" class="sidebar-item-text sidebar-link active">
+  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Bibliography</span></a>
   </div>
 </li>
@@ -239,15 +240,31 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#define-the-estimates-you-need" id="toc-define-the-estimates-you-need" class="nav-link active" data-scroll-target="#define-the-estimates-you-need">1. Define the estimates you need</a></li>
+  <li><a href="#prepare-the-input-tables" id="toc-prepare-the-input-tables" class="nav-link" data-scroll-target="#prepare-the-input-tables">2. Prepare the input tables</a>
+  <ul class="collapse">
+  <li><a href="#survey-indicator" id="toc-survey-indicator" class="nav-link" data-scroll-target="#survey-indicator">Survey indicator</a></li>
+  <li><a href="#domain-frame" id="toc-domain-frame" class="nav-link" data-scroll-target="#domain-frame">Domain frame</a></li>
+  <li><a href="#area-predictors" id="toc-area-predictors" class="nav-link" data-scroll-target="#area-predictors">Area predictors</a></li>
+  <li><a href="#population-frame" id="toc-population-frame" class="nav-link" data-scroll-target="#population-frame">Population frame</a></li>
+  </ul></li>
+  <li><a href="#choose-the-modelling-route" id="toc-choose-the-modelling-route" class="nav-link" data-scroll-target="#choose-the-modelling-route">3. Choose the modelling route</a></li>
+  <li><a href="#use-the-scripts" id="toc-use-the-scripts" class="nav-link" data-scroll-target="#use-the-scripts">4. Use the scripts</a></li>
+  <li><a href="#expected-outputs" id="toc-expected-outputs" class="nav-link" data-scroll-target="#expected-outputs">5. Expected outputs</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Bibliography</h1>
-<p class="subtitle lead">Key references for small area estimation and Bayesian spatial modelling</p>
+<h1 class="title">SAE Toolkit</h1>
+<p class="subtitle lead">Bring your own survey into the workflow</p>
 </div>
 
 
@@ -262,30 +279,227 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>Foundational references for the methods used in the tutorial.</p>
-<section id="survey-estimation-and-small-area-estimation" class="level4">
-<h4 class="anchored" data-anchor-id="survey-estimation-and-small-area-estimation">Survey Estimation And Small Area Estimation</h4>
+<p>This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and reusing the same estimation steps.</p>
+<section id="define-the-estimates-you-need" class="level2">
+<h2 class="anchored" data-anchor-id="define-the-estimates-you-need">1. Define the estimates you need</h2>
+<p>Start by writing the estimand in plain language. It should say:</p>
 <ul>
-<li>Horvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” <em>Journal of the American Statistical Association</em>, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.</li>
-<li>Fay, R. E., and Herriot, R. A. (1979). “Estimates of Income for Small Places: An Application of James-Stein Procedures to Census Data.” <em>Journal of the American Statistical Association</em>, 74(366), 269-277. doi:10.1080/01621459.1979.10482505.</li>
-<li>Battese, G. E., Harter, R. M., and Fuller, W. A. (1988). “An Error-Components Model for Prediction of County Crop Areas Using Survey and Satellite Data.” <em>Journal of the American Statistical Association</em>, 83(401), 28-36. doi:10.1080/01621459.1988.10478561.</li>
-<li>Molina, I., and Rao, J. N. K. (2010). “Small Area Estimation of Poverty Indicators.” <em>The Canadian Journal of Statistics</em>, 38(3), 369-385. doi:10.1002/cjs.10051.</li>
+<li>what outcome is being estimated;</li>
+<li>who is in the target population;</li>
+<li>which areas need estimates;</li>
+<li>which time periods need estimates.</li>
 </ul>
+<p>In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an <strong>area-time cell</strong>. In the Wales example, one area-time cell is one MSOA in one survey year.</p>
 </section>
-<section id="multilevel-regression-and-poststratification" class="level4">
-<h4 class="anchored" data-anchor-id="multilevel-regression-and-poststratification">Multilevel Regression And Poststratification</h4>
-<ul>
-<li>Gelman, A., and Little, T. C. (1997). “Poststratification into Many Categories Using Hierarchical Logistic Regression.” <em>Survey Methodology</em>, 23(2), 127-135.</li>
-<li>Park, D. K., Gelman, A., and Bafumi, J. (2004). “Bayesian Multilevel Estimation with Poststratification: State-Level Estimates from National Polls.” <em>Political Analysis</em>, 12(4), 375-385. doi:10.1093/pan/mph002.</li>
-</ul>
+<section id="prepare-the-input-tables" class="level2">
+<h2 class="anchored" data-anchor-id="prepare-the-input-tables">2. Prepare the input tables</h2>
+<p>The workflow expects a small set of analysis-ready tables. They do not have to come from the same source, but they must use the same <code>area_id</code> and <code>time_id</code> values.</p>
+<section id="survey-indicator" class="level3">
+<h3 class="anchored" data-anchor-id="survey-indicator">Survey indicator</h3>
+<p>One row per respondent-period for the outcome being estimated.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>unit_id</code></td>
+<td>Respondent or respondent-period identifier</td>
+</tr>
+<tr class="even">
+<td><code>area_id</code></td>
+<td>Area assigned to the respondent</td>
+</tr>
+<tr class="odd">
+<td><code>time_id</code></td>
+<td>Survey period</td>
+</tr>
+<tr class="even">
+<td><code>indicator</code></td>
+<td>Outcome used in estimation, often binary or continuous</td>
+</tr>
+<tr class="odd">
+<td><code>weight</code></td>
+<td>Survey or analysis weight</td>
+</tr>
+<tr class="even">
+<td><code>strata</code></td>
+<td>Survey stratum, where available</td>
+</tr>
+</tbody>
+</table>
 </section>
-<section id="bayesian-spatial-and-spatio-temporal-modelling" class="level4">
-<h4 class="anchored" data-anchor-id="bayesian-spatial-and-spatio-temporal-modelling">Bayesian Spatial And Spatio-Temporal Modelling</h4>
-<ul>
-<li>Besag, J., York, J., and Mollie, A. (1991). “Bayesian Image Restoration, with Two Applications in Spatial Statistics.” <em>Annals of the Institute of Statistical Mathematics</em>, 43(1), 1-20. doi:10.1007/BF00116466.</li>
-<li>Rue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” <em>Journal of the Royal Statistical Society: Series B</em>, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.</li>
-<li>Riebler, A., Sorbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” <em>Statistical Methods in Medical Research</em>, 25(4), 1145-1165. doi:10.1177/0962280216660421.</li>
-</ul>
+<section id="domain-frame" class="level3">
+<h3 class="anchored" data-anchor-id="domain-frame">Domain frame</h3>
+<p>One row for every area-time cell that should receive an estimate. This table defines the target grid, including cells with no survey respondents.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>area_id</code></td>
+<td>Area to estimate</td>
+</tr>
+<tr class="even">
+<td><code>time_id</code></td>
+<td>Time period to estimate</td>
+</tr>
+<tr class="odd">
+<td>labels</td>
+<td>Optional area or period labels for reporting</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="area-predictors" class="level3">
+<h3 class="anchored" data-anchor-id="area-predictors">Area predictors</h3>
+<p>One row per area, with predictors used to explain spatial differences in the outcome.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>area_id</code></td>
+<td>Area identifier</td>
+</tr>
+<tr class="even">
+<td><code>cov_*</code></td>
+<td>Model-ready area predictors</td>
+</tr>
+<tr class="odd">
+<td><code>raw_*</code></td>
+<td>Optional raw values kept for interpretation</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="population-frame" class="level3">
+<h3 class="anchored" data-anchor-id="population-frame">Population frame</h3>
+<p>Needed when the final estimate is produced by aggregating model predictions over population groups, as in MRP.</p>
+<table class="table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>area_id</code></td>
+<td>Area identifier</td>
+</tr>
+<tr class="even">
+<td><code>time_id</code></td>
+<td>Time period</td>
+</tr>
+<tr class="odd">
+<td>population groups</td>
+<td>Age, sex, household type, or other poststratification categories</td>
+</tr>
+<tr class="even">
+<td><code>pop_count</code></td>
+<td>Population count for each cell</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="choose-the-modelling-route" class="level2">
+<h2 class="anchored" data-anchor-id="choose-the-modelling-route">3. Choose the modelling route</h2>
+<p><img src="assets/sae_method_select.png" class="img-fluid"></p>
+</section>
+<section id="use-the-scripts" class="level2">
+<h2 class="anchored" data-anchor-id="use-the-scripts">4. Use the scripts</h2>
+<p>These public scripts are intended for adapting the workflow to another survey or outcome. Edit the setup block in each script for file paths, source columns, target areas, time periods, and model covariates.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Workflow step</th>
+<th>Script</th>
+<th>Use it for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Direct estimation</td>
+<td><a href="toolkit-scripts/direct_estimates.R"><code>calculate_direct_estimates.R</code></a></td>
+<td>Produce area-time direct estimates, sampling variances, and sample counts</td>
+</tr>
+<tr class="even">
+<td>Area-level SAE</td>
+<td><a href="toolkit-scripts/fit_fh_inla_area_level.R"><code>fit_fh_inla_area_level.R</code></a></td>
+<td>Fit a spatio-temporal Fay–Herriot area-level model with <code>R-INLA</code></td>
+</tr>
+<tr class="odd">
+<td>Unit-level SAE</td>
+<td><a href="toolkit-scripts/fit_bhf_inla_unit_level.R"><code>fit_bhf_inla_unit_level.R</code></a></td>
+<td>Fit a BHF-style unit-level model and aggregate predictions to area-time cells</td>
+</tr>
+<tr class="even">
+<td>MRP</td>
+<td>Forthcoming</td>
+<td>Fit a multilevel model and poststratify over population cells</td>
+</tr>
+</tbody>
+</table>
+<p>The model-fitting steps are shown in the <a href="./direct-estimation.html">direct estimation</a>, <a href="./fh-area.html">Fay–Herriot</a>, <a href="./bhf-unit.html">unit-level</a>, and <a href="./mrp.html">MRP</a> workbooks.</p>
+</section>
+<section id="expected-outputs" class="level2">
+<h2 class="anchored" data-anchor-id="expected-outputs">5. Expected outputs</h2>
+<p>All method outputs should keep the same identifying columns so estimates can be compared, mapped, and joined back to other urban datasets.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>area_id</code></td>
+<td>Estimated area</td>
+</tr>
+<tr class="even">
+<td><code>time_id</code></td>
+<td>Estimated period</td>
+</tr>
+<tr class="odd">
+<td><code>estimate</code></td>
+<td>Direct or model-based point estimate</td>
+</tr>
+<tr class="even">
+<td><code>variance</code></td>
+<td>Sampling or posterior variance</td>
+</tr>
+<tr class="odd">
+<td><code>lower</code>, <code>upper</code></td>
+<td>Interval bounds, where produced</td>
+</tr>
+<tr class="even">
+<td><code>n</code></td>
+<td>Usable survey observations, where relevant</td>
+</tr>
+<tr class="odd">
+<td><code>method</code></td>
+<td>Direct, Fay–Herriot, BHF, MRP, or another method label</td>
+</tr>
+</tbody>
+</table>
 
 
 </section>
@@ -540,11 +754,14 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./toolkit.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Toolkit</span>
+      <a href="./mrp.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">MRP</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
+      <a href="./bibliography.html" class="pagination-link">
+        <span class="nav-page-text">Bibliography</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
   </div>
 </nav>
 </div> <!-- /content -->

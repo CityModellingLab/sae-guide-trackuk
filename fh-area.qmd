@@ -31,6 +31,7 @@ msoa_boundaries <- st_read(
   rename(area_id = all_of("MSOA21CD")) |>
   filter(str_starts(.data$area_id, "W")) |>
   arrange(.data$area_id)
+
 ```
 
 ```{r}
@@ -94,25 +95,31 @@ Here $u_j$ borrows strength across areas while the target remains the area-time 
 
 ## Prepare modelling data
 
-First we join the complete area-time domain to the direct estimates and their sampling variances from the previous workbook, as well as the area predictors.
+First we import the complete area-time direct-estimate table exported from the direct-estimation workbook, then load the area predictors.
 
 ```{r}
 #| label: load-direct-estimates
-direct_estimates <- read_csv(
+direct_walk <- read_csv(
   file.path(base_path, "freq_walker_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
-  select(-.data$msoa_name)
-
-direct_walk <- domain_frame |>
-  left_join(direct_estimates, by = c("area_id", "time_id"))
+  select(
+    all_of(c(
+      "area_id",
+      "msoa_name",
+      "time_id",
+      "direct_estimate",
+      "variance",
+      "n"
+    ))
+  )
 
 head(direct_walk)
 ```
 ```{r}
-#| label: load-area-covariates
-area_covariates <- read_csv(
-  file.path(base_path, "clean", "area_covariates_daily_walking.csv"),
+#| label: load-area-predictors
+area_predictors <- read_csv(
+  file.path(base_path, "clean", "area_predictors_daily_walking.csv"),
   show_col_types = FALSE
 ) |>
   select(
@@ -125,7 +132,7 @@ area_covariates <- read_csv(
       "cov_share_routine_semiroutine"
     ))
   )
-head(area_covariates)
+head(area_predictors)
 ```
 
 Before fitting the models, we create a consistent numeric index for each MSOA and survey year. `INLA` uses these indices to attach random effects to the correct area and period.
@@ -205,7 +212,7 @@ Now, we assemble the modelling data for `INLA` by adding the area predictors and
 #| label: prepare-model-data
 
 model_data <- direct_walk_model |>
-  left_join(area_covariates, by = "area_id") |>
+  left_join(area_predictors, by = "area_id") |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   arrange(.data$time_id, .data$area_inla_id)
@@ -841,7 +848,7 @@ Even after the direct estimates have been stabilised through the Fay-Herriot mod
 #| echo: false
 write_csv(
   final_fh_results,
-  file.path(base_path, "freq_walker_estimates_area-fh.csv")
+  file.path(base_path, "freq_walker_estimates_fh.csv")
 )
 ```
 

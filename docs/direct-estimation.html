@@ -97,8 +97,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -110,6 +124,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <nav class="navbar navbar-expand-lg navbar-dark ">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    <img src="./assets/favicon.svg" alt="" class="navbar-logo">
+    </a>
     <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">Small Area Estimation for Urban Analytics</span>
     </a>
@@ -197,32 +214,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         </div>
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Home</span></a>
+  </div>
+</li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Home</span></a>
+ <span class="menu-text">Tutorial</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Introduction</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
@@ -257,13 +263,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
  <span class="menu-text">Resources</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
@@ -354,16 +360,16 @@ Theory in brief
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>For an area-time cell <span class="math inline">\((j,t)\)</span>, the target is the population mean or proportion:</p>
-<p><span class="math display">\[
+<p>For an area-time cell <span class="math inline">(j,t)</span>, the target is the population mean or proportion:</p>
+<p><span class="math display">
 \mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
-\]</span></p>
-<p>If respondent <span class="math inline">\(i\)</span> has inclusion probability <span class="math inline">\(\pi_{ijt}\)</span> and survey weight <span class="math inline">\(w_{ijt}=1/\pi_{ijt}\)</span>, the Horvitz–Thompson ratio estimator is:</p>
-<p><span class="math display">\[
+</span></p>
+<p>If respondent <span class="math inline">i</span> has inclusion probability <span class="math inline">\pi_{ijt}</span> and survey weight <span class="math inline">w_{ijt}=1/\pi_{ijt}</span>, the Horvitz–Thompson ratio estimator is:</p>
+<p><span class="math display">
 \hat{\mu}^{w}_{jt} =
 \frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
 {\sum_{i \in S_{jt}} w_{ijt}}.
-\]</span></p>
+</span></p>
 </div>
 </div>
 <div class="method-divider" aria-hidden="true">
@@ -443,15 +449,6 @@ Target estimand
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 15%">
-<col style="width: 8%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 35%">
-</colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">unit_id</th>
@@ -460,7 +457,6 @@ Target estimand
 <th style="text-align: left;">strata</th>
 <th style="text-align: right;">indicator</th>
 <th style="text-align: right;">weight</th>
-<th style="text-align: left;">weight_source</th>
 </tr>
 </thead>
 <tbody>
@@ -471,7 +467,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0.7033577</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">2021_202100002</td>
@@ -480,7 +475,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0.7033577</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">2021_202100003</td>
@@ -489,7 +483,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0.7033577</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">2021_202100004</td>
@@ -498,7 +491,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: right;">0.4728312</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">2021_202100005</td>
@@ -507,7 +499,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0.3820134</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">2021_202100006</td>
@@ -516,7 +507,6 @@ Target estimand
 <td style="text-align: left;">W06000001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0.5635623</td>
-<td style="text-align: left;">sample_adult_weight_wave_fallback</td>
 </tr>
 </tbody>
 </table>
@@ -575,27 +565,19 @@ Target estimand
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 7%">
-<col style="width: 5%">
-<col style="width: 15%">
-<col style="width: 11%">
-<col style="width: 7%">
 <col style="width: 12%">
-<col style="width: 10%">
-<col style="width: 11%">
-<col style="width: 10%">
-<col style="width: 7%">
-<col style="width: 2%">
+<col style="width: 9%">
+<col style="width: 25%">
+<col style="width: 19%">
+<col style="width: 18%">
+<col style="width: 12%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
 <th style="text-align: right;">time_id</th>
 <th style="text-align: left;">msoa_name</th>
-<th style="text-align: left;">msoa_name_welsh</th>
-<th style="text-align: left;">la_code</th>
-<th style="text-align: left;">la_name</th>
-<th style="text-align: left;">la_name_welsh</th>
 <th style="text-align: right;">direct_estimate</th>
 <th style="text-align: right;">standard_error</th>
 <th style="text-align: right;">variance</th>
@@ -607,10 +589,6 @@ Target estimand
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
@@ -620,10 +598,6 @@ Target estimand
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.1856526</td>
 <td style="text-align: right;">0.1267159</td>
 <td style="text-align: right;">0.0160569</td>
@@ -633,10 +607,6 @@ Target estimand
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.0094000</td>
 <td style="text-align: right;">0.0096569</td>
 <td style="text-align: right;">0.0000933</td>
@@ -646,10 +616,6 @@ Target estimand
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.4319654</td>
 <td style="text-align: right;">0.2016562</td>
 <td style="text-align: right;">0.0406652</td>
@@ -659,10 +625,6 @@ Target estimand
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.4885359</td>
 <td style="text-align: right;">0.1824803</td>
 <td style="text-align: right;">0.0332991</td>
@@ -672,10 +634,6 @@ Target estimand
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
 <td style="text-align: right;">0.0511807</td>
 <td style="text-align: right;">0.0368717</td>
 <td style="text-align: right;">0.0013595</td>
@@ -784,7 +742,7 @@ Target estimand
 </div>
 </div>
 </div>
-<p>Model-based approaches are designed to address these issues. Area-level models can stabilise noisy direct estimates by borrowing strength from area-level predictors. Unit-level models go a step further by modelling individual outcomes directly, which helps avoid problems caused by zero or unreliable within-area variance estimates.</p>
+<p>Model-based approaches are designed to address these issues. Area-level models can stabilise noisy direct estimates by borrowing strength from area-level predictors; unit-level models model individual outcomes directly and then aggregate to each small area.</p>
 
 
 </section>

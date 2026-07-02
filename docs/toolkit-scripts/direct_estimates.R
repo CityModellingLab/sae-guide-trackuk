@@ -125,6 +125,15 @@ results <- domain_frame |>
 dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)
 
 write_csv(
-  results,
+  results |>
+    select(
+      area_id,
+      time_id,
+      direct_estimate,
+      standard_error,
+      variance,
+      n,
+      method
+    ),
   file.path(config$output_dir, config$output_file)
 )

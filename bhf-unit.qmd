@@ -197,7 +197,7 @@ The aggregation input contains the complete area-time grid we want to estimate, 
 #| label: prepare-aggregation-data
 
 area_predictors <- read_csv(
-  file.path(base_path, "clean", "area_covariates_daily_walking.csv"),
+  file.path(base_path, "clean", "area_predictors_daily_walking.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -354,9 +354,7 @@ bhf_results <- imap_dfr(
 head(bhf_results)
 ```
 
-To compare the fitted models' overall performance, we again use **WAIC** as a first check. WAIC is a global predictive-fit measure returned by INLA; lower values indicate better expected prediction after penalising model complexity. 
-
-Here, the lower WAIC for M2 shows that adding the no-car predictor improves the temporal-spatial model enough to justify the extra term.
+To compare the fitted models' overall performance, we again use **WAIC** as a first check. WAIC is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M2 shows that adding the no-car predictor improves the model predictive power as expected.
 
 ```{r}
 #| label: bhf-waic-comparison
@@ -514,11 +512,11 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 3) +
     theme = map_annotation_theme
   )
 ```
-The scatterplot shows that BHF estimates are much smoother than the direct estimates and closer to the Fay--Herriot estimates, as expected for a model-based approach that borrows strength across area-time cells.
+The scatterplot below shows that BHF estimates are much smoother than the direct estimates and closer to the Fay--Herriot estimates, as expected for a model-based approach that borrows strength across area-time cells.
 ```{r}
 #| label: load-comparison-estimates
 fh_final_estimates <- read_csv(
-  file.path(base_path, "freq_walker_estimates_area-fh.csv"),
+  file.path(base_path, "freq_walker_estimates_fh.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -531,8 +529,6 @@ bhf_estimates <- final_bhf_results |>
   left_join(fh_final_estimates, by = c("area_id", "time_id")) |>
   relocate(direct_estimate, n, .after = time_id)
 ```
-
-
 ```{r}
 #| label: bhf-comparison-scatter
 #| echo: false

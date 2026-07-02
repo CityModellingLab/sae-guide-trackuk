@@ -97,8 +97,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -110,6 +124,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <nav class="navbar navbar-expand-lg navbar-dark ">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    <img src="./assets/favicon.svg" alt="" class="navbar-logo">
+    </a>
     <a class="navbar-brand" href="./index.html">
     <span class="navbar-title">Small Area Estimation for Urban Analytics</span>
     </a>
@@ -197,32 +214,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         </div>
     <div class="sidebar-menu-container"> 
     <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Home</span></a>
+  </div>
+</li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Home</span></a>
+ <span class="menu-text">Tutorial</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Introduction</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
@@ -257,13 +263,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
  <span class="menu-text">Resources</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
       </div>
-      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
@@ -364,15 +370,15 @@ Theory in brief
 </div>
 <div class="callout-body-container callout-body">
 <p>The Fay–Herriot model treats each direct estimate as a noisy observation of the true area-time quantity:</p>
-<p><span class="math display">\[
+<p><span class="math display">
 \hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
 e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
-\]</span></p>
-<p>where <span class="math inline">\(\psi_{jt}\)</span> is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:</p>
-<p><span class="math display">\[
+</span></p>
+<p>where <span class="math inline">\psi_{jt}</span> is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:</p>
+<p><span class="math display">
 \mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j.
-\]</span></p>
-<p>Here <span class="math inline">\(u_j\)</span> borrows strength across areas while the target remains the area-time quantity <span class="math inline">\(\mu_{jt}\)</span>. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">\(v_t\)</span> can be added to represent wave-to-wave dependence.</p>
+</span></p>
+<p>Here <span class="math inline">u_j</span> borrows strength across areas while the target remains the area-time quantity <span class="math inline">\mu_{jt}</span>. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">v_t</span> can be added to represent wave-to-wave dependence.</p>
 </div>
 </div>
 <div class="method-divider" aria-hidden="true">
@@ -399,56 +405,44 @@ Target estimand
 </div>
 <section id="prepare-modelling-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-modelling-data"><span class="header-section-number">1</span> Prepare modelling data</h2>
-<p>First we join the complete area-time domain to the direct estimates and their sampling variances from the previous workbook, as well as the area predictors.</p>
+<p>First we import the complete area-time direct-estimate table exported from the direct-estimation workbook, then load the area predictors.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>direct_estimates <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"freq_walker_estimates_direct.csv"</span>),</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>.data<span class="sc">$</span>msoa_name)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>))</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all_of</span>(<span class="fu">c</span>(</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">"area_id"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="st">"msoa_name"</span>,</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">"time_id"</span>,</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="st">"direct_estimate"</span>,</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="st">"variance"</span>,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      <span class="st">"n"</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
+<col style="width: 14%">
+<col style="width: 30%">
+<col style="width: 11%">
+<col style="width: 23%">
+<col style="width: 14%">
 <col style="width: 4%">
-<col style="width: 3%">
-<col style="width: 10%">
-<col style="width: 8%">
-<col style="width: 4%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 8%">
-<col style="width: 4%">
-<col style="width: 8%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 7%">
-<col style="width: 4%">
-<col style="width: 1%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
-<th style="text-align: right;">time_id</th>
 <th style="text-align: left;">msoa_name</th>
-<th style="text-align: left;">msoa_name_welsh.x</th>
-<th style="text-align: left;">la_code.x</th>
-<th style="text-align: left;">la_name.x</th>
-<th style="text-align: left;">la_name_welsh.x</th>
-<th style="text-align: left;">msoa_name_welsh.y</th>
-<th style="text-align: left;">la_code.y</th>
-<th style="text-align: left;">la_name.y</th>
-<th style="text-align: left;">la_name_welsh.y</th>
+<th style="text-align: right;">time_id</th>
 <th style="text-align: right;">direct_estimate</th>
-<th style="text-align: right;">standard_error</th>
 <th style="text-align: right;">variance</th>
 <th style="text-align: right;">n</th>
 </tr>
@@ -456,103 +450,49 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2023</td>
 <td style="text-align: right;">0.1856526</td>
-<td style="text-align: right;">0.1267159</td>
 <td style="text-align: right;">0.0160569</td>
 <td style="text-align: right;">9</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2025</td>
 <td style="text-align: right;">0.0094000</td>
-<td style="text-align: right;">0.0096569</td>
 <td style="text-align: right;">0.0000933</td>
 <td style="text-align: right;">22</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.4319654</td>
-<td style="text-align: right;">0.2016562</td>
 <td style="text-align: right;">0.0406652</td>
 <td style="text-align: right;">9</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2023</td>
 <td style="text-align: right;">0.4885359</td>
-<td style="text-align: right;">0.1824803</td>
 <td style="text-align: right;">0.0332991</td>
 <td style="text-align: right;">8</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2025</td>
 <td style="text-align: right;">0.0511807</td>
-<td style="text-align: right;">0.0368717</td>
 <td style="text-align: right;">0.0013595</td>
 <td style="text-align: right;">26</td>
 </tr>
@@ -564,8 +504,8 @@ Target estimand
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>area_covariates <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"area_covariates_daily_walking.csv"</span>),</span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>area_predictors <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"area_predictors_daily_walking.csv"</span>),</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
@@ -578,7 +518,7 @@ Target estimand
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      <span class="st">"cov_share_routine_semiroutine"</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    ))</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(area_covariates)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(area_predictors)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -727,7 +667,7 @@ Target estimand
 <details>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>model_data <span class="ot">&lt;-</span> direct_walk_model <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_covariates, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_predictors, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(time_index, <span class="at">by =</span> <span class="st">"time_id"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>time_id, .data<span class="sc">$</span>area_inla_id)</span>
@@ -738,46 +678,28 @@ Target estimand
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 2%">
-<col style="width: 2%">
+<col style="width: 4%">
+<col style="width: 8%">
+<col style="width: 3%">
+<col style="width: 6%">
+<col style="width: 4%">
+<col style="width: 1%">
+<col style="width: 5%">
+<col style="width: 9%">
+<col style="width: 11%">
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 12%">
 <col style="width: 5%">
 <col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 2%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 4%">
-<col style="width: 3%">
-<col style="width: 2%">
-<col style="width: 0%">
-<col style="width: 3%">
-<col style="width: 6%">
-<col style="width: 7%">
-<col style="width: 6%">
-<col style="width: 4%">
-<col style="width: 7%">
-<col style="width: 3%">
-<col style="width: 3%">
-<col style="width: 3%">
+<col style="width: 5%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
-<th style="text-align: right;">time_id</th>
 <th style="text-align: left;">msoa_name</th>
-<th style="text-align: left;">msoa_name_welsh.x</th>
-<th style="text-align: left;">la_code.x</th>
-<th style="text-align: left;">la_name.x</th>
-<th style="text-align: left;">la_name_welsh.x</th>
-<th style="text-align: left;">msoa_name_welsh.y</th>
-<th style="text-align: left;">la_code.y</th>
-<th style="text-align: left;">la_name.y</th>
-<th style="text-align: left;">la_name_welsh.y</th>
+<th style="text-align: right;">time_id</th>
 <th style="text-align: right;">direct_estimate</th>
-<th style="text-align: right;">standard_error</th>
 <th style="text-align: right;">variance</th>
 <th style="text-align: right;">n</th>
 <th style="text-align: right;">adj_variance</th>
@@ -794,17 +716,8 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 001</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">6</td>
@@ -820,18 +733,9 @@ Target estimand
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 002</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.4319654</td>
-<td style="text-align: right;">0.2016562</td>
 <td style="text-align: right;">0.0406652</td>
 <td style="text-align: right;">9</td>
 <td style="text-align: right;">0.0406652</td>
@@ -846,18 +750,9 @@ Target estimand
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 003</td>
-<td style="text-align: left;">Ynys Môn 003</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 003</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.1612313</td>
-<td style="text-align: right;">0.1076960</td>
 <td style="text-align: right;">0.0115984</td>
 <td style="text-align: right;">11</td>
 <td style="text-align: right;">0.0115984</td>
@@ -872,18 +767,9 @@ Target estimand
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 004</td>
-<td style="text-align: left;">Ynys Môn 004</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 004</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.1388181</td>
-<td style="text-align: right;">0.1247829</td>
 <td style="text-align: right;">0.0155708</td>
 <td style="text-align: right;">14</td>
 <td style="text-align: right;">0.0155708</td>
@@ -898,18 +784,9 @@ Target estimand
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 005</td>
-<td style="text-align: left;">Ynys Môn 005</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 005</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.2357801</td>
-<td style="text-align: right;">0.1253119</td>
 <td style="text-align: right;">0.0157031</td>
 <td style="text-align: right;">17</td>
 <td style="text-align: right;">0.0157031</td>
@@ -924,18 +801,9 @@ Target estimand
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
-<td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 006</td>
-<td style="text-align: left;">Ynys Môn 006</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
-<td style="text-align: left;">Ynys Môn 006</td>
-<td style="text-align: left;">W06000001</td>
-<td style="text-align: left;">Isle of Anglesey</td>
-<td style="text-align: left;">Ynys Môn</td>
+<td style="text-align: right;">2021</td>
 <td style="text-align: right;">0.1008805</td>
-<td style="text-align: right;">0.0744196</td>
 <td style="text-align: right;">0.0055383</td>
 <td style="text-align: right;">19</td>
 <td style="text-align: right;">0.0055383</td>
@@ -1293,8 +1161,8 @@ Note
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M2 +Core predictors</td>
-<td style="text-align: right;">-737.2760</td>
-<td style="text-align: right;">149.2630</td>
+<td style="text-align: right;">-737.2761</td>
+<td style="text-align: right;">149.2631</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M3 +All predictors</td>
@@ -1303,8 +1171,8 @@ Note
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M4 +Spatial</td>
-<td style="text-align: right;">-738.0246</td>
-<td style="text-align: right;">151.4955</td>
+<td style="text-align: right;">-738.0241</td>
+<td style="text-align: right;">151.4952</td>
 </tr>
 </tbody>
 </table>
@@ -1537,10 +1405,10 @@ Note
 <tr class="odd">
 <td style="text-align: left;">Precision for area_inla_id</td>
 <td style="text-align: right;">493.861</td>
-<td style="text-align: right;">89.232</td>
-<td style="text-align: right;">343.660</td>
-<td style="text-align: right;">485.270</td>
-<td style="text-align: right;">693.830</td>
+<td style="text-align: right;">89.230</td>
+<td style="text-align: right;">343.652</td>
+<td style="text-align: right;">485.274</td>
+<td style="text-align: right;">693.813</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Phi for area_inla_id</td>
@@ -1552,11 +1420,11 @@ Note
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">625.767</td>
-<td style="text-align: right;">535.684</td>
-<td style="text-align: right;">92.618</td>
-<td style="text-align: right;">475.889</td>
-<td style="text-align: right;">2041.740</td>
+<td style="text-align: right;">625.801</td>
+<td style="text-align: right;">535.820</td>
+<td style="text-align: right;">92.625</td>
+<td style="text-align: right;">475.873</td>
+<td style="text-align: right;">2042.153</td>
 </tr>
 </tbody>
 </table>
@@ -1637,10 +1505,10 @@ Note
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.0187914</td>
+<td style="text-align: right;">0.0187915</td>
 <td style="text-align: right;">0.0001460</td>
-<td style="text-align: right;">-0.0049311</td>
-<td style="text-align: right;">0.0424598</td>
+<td style="text-align: right;">-0.0049310</td>
+<td style="text-align: right;">0.0424599</td>
 <td style="text-align: right;">0.0473909</td>
 </tr>
 <tr class="even">
@@ -1652,9 +1520,9 @@ Note
 <td style="text-align: right;">0.0406652</td>
 <td style="text-align: right;">0.0895580</td>
 <td style="text-align: right;">0.0008221</td>
-<td style="text-align: right;">0.0332717</td>
-<td style="text-align: right;">0.1457702</td>
-<td style="text-align: right;">0.1124985</td>
+<td style="text-align: right;">0.0332718</td>
+<td style="text-align: right;">0.1457700</td>
+<td style="text-align: right;">0.1124982</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1663,11 +1531,11 @@ Note
 <td style="text-align: right;">11</td>
 <td style="text-align: right;">0.1612313</td>
 <td style="text-align: right;">0.0115984</td>
-<td style="text-align: right;">0.1100613</td>
-<td style="text-align: right;">0.0011224</td>
-<td style="text-align: right;">0.0443997</td>
-<td style="text-align: right;">0.1758993</td>
-<td style="text-align: right;">0.1314995</td>
+<td style="text-align: right;">0.1100611</td>
+<td style="text-align: right;">0.0011223</td>
+<td style="text-align: right;">0.0444001</td>
+<td style="text-align: right;">0.1758985</td>
+<td style="text-align: right;">0.1314984</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1676,11 +1544,11 @@ Note
 <td style="text-align: right;">14</td>
 <td style="text-align: right;">0.1388181</td>
 <td style="text-align: right;">0.0155708</td>
-<td style="text-align: right;">0.0941635</td>
-<td style="text-align: right;">0.0018909</td>
-<td style="text-align: right;">0.0091109</td>
-<td style="text-align: right;">0.1800235</td>
-<td style="text-align: right;">0.1709126</td>
+<td style="text-align: right;">0.0941631</td>
+<td style="text-align: right;">0.0018908</td>
+<td style="text-align: right;">0.0091114</td>
+<td style="text-align: right;">0.1800224</td>
+<td style="text-align: right;">0.1709111</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1689,11 +1557,11 @@ Note
 <td style="text-align: right;">17</td>
 <td style="text-align: right;">0.2357801</td>
 <td style="text-align: right;">0.0157031</td>
-<td style="text-align: right;">0.1118162</td>
+<td style="text-align: right;">0.1118157</td>
 <td style="text-align: right;">0.0012474</td>
-<td style="text-align: right;">0.0427710</td>
-<td style="text-align: right;">0.1814124</td>
-<td style="text-align: right;">0.1386414</td>
+<td style="text-align: right;">0.0427709</td>
+<td style="text-align: right;">0.1814115</td>
+<td style="text-align: right;">0.1386406</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1702,11 +1570,11 @@ Note
 <td style="text-align: right;">19</td>
 <td style="text-align: right;">0.1008805</td>
 <td style="text-align: right;">0.0055383</td>
-<td style="text-align: right;">0.0952000</td>
+<td style="text-align: right;">0.0951998</td>
 <td style="text-align: right;">0.0009635</td>
-<td style="text-align: right;">0.0343616</td>
-<td style="text-align: right;">0.1561731</td>
-<td style="text-align: right;">0.1218115</td>
+<td style="text-align: right;">0.0343617</td>
+<td style="text-align: right;">0.1561727</td>
+<td style="text-align: right;">0.1218110</td>
 </tr>
 </tbody>
 </table>

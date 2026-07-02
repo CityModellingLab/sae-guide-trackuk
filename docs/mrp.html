@@ -63,8 +63,22 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -276,21 +290,21 @@ Theory in brief
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Let <span class="math inline">\(c\)</span> index poststratification cells, such as age-by-sex cells within area <span class="math inline">\(j\)</span> and time <span class="math inline">\(t\)</span>. A compact unit-level model is:</p>
-<p><span class="math display">\[
+<p>Let <span class="math inline">c</span> index poststratification cells, such as age-by-sex cells within area <span class="math inline">j</span> and time <span class="math inline">t</span>. A compact unit-level model is:</p>
+<p><span class="math display">
 y_{ijt} = \alpha + \varphi_{a_i} + \gamma_{s_i}
 + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + \epsilon_{ijt},
-\]</span></p>
-<p>where <span class="math inline">\(\varphi_{a_i}\)</span> and <span class="math inline">\(\gamma_{s_i}\)</span> capture demographic structure, while <span class="math inline">\(u_j\)</span> captures area-level variation. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">\(v_t\)</span> can be added to represent wave-to-wave dependence. The model gives a predicted outcome for each area-time poststratification cell:</p>
-<p><span class="math display">\[
+</span></p>
+<p>where <span class="math inline">\varphi_{a_i}</span> and <span class="math inline">\gamma_{s_i}</span> capture demographic structure, while <span class="math inline">u_j</span> captures area-level variation. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">v_t</span> can be added to represent wave-to-wave dependence. The model gives a predicted outcome for each area-time poststratification cell:</p>
+<p><span class="math display">
 \hat{\mu}_{jtc} = \widehat{\mathbb{E}}(Y \mid j,t,c).
-\]</span></p>
-<p>Area-time estimates are then poststratified using population counts <span class="math inline">\(N_{jtc}\)</span>:</p>
-<p><span class="math display">\[
+</span></p>
+<p>Area-time estimates are then poststratified using population counts <span class="math inline">N_{jtc}</span>:</p>
+<p><span class="math display">
 \hat{\mu}_{jt}^{\mathrm{MRP}} =
 \frac{\sum_c N_{jtc}\hat{\mu}_{jtc}}
 {\sum_c N_{jtc}}.
-\]</span></p>
+</span></p>
 </div>
 </div>
 <div class="method-divider" aria-hidden="true">

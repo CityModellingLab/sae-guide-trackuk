@@ -4,7 +4,7 @@
 # Required inputs:
 # - domain frame: one row per area-time cell to estimate
 # - direct estimates: direct estimate and sampling variance for observed cells
-# - area covariates: one row per area
+# - area predictors: one row per area
 # - area boundaries: polygons used to build the spatial adjacency graph
 
 library(dplyr)
@@ -18,7 +18,7 @@ library(tibble)
 config <- list(
   domain_file = "data/clean/domain_frame.csv",
   direct_file = "data/clean/direct_estimates.csv",
-  covariate_file = "data/clean/area_covariates.csv",
+  predictor_file = "data/clean/area_predictors.csv",
   boundary_file = "data/boundaries.geojson",
   output_dir = "outputs",
 
@@ -106,7 +106,7 @@ direct_estimates <- read_csv(config$direct_file, show_col_types = FALSE) |>
     variance = all_of(config$variance_col)
   )
 
-area_covariates <- read_csv(config$covariate_file, show_col_types = FALSE) |>
+area_predictors <- read_csv(config$predictor_file, show_col_types = FALSE) |>
   rename(area_id = all_of(config$area_col))
 
 boundaries <- st_read(config$boundary_file, quiet = TRUE) |>
@@ -120,7 +120,7 @@ check_columns(
   c("area_id", "time_id", "direct_estimate", "variance"),
   "direct_estimates"
 )
-check_columns(area_covariates, c("area_id", all_covariates), "area_covariates")
+check_columns(area_predictors, c("area_id", all_covariates), "area_predictors")
 check_columns(boundaries, "area_id", "boundaries")
 
 area_index <- domain_frame |>
@@ -153,7 +153,7 @@ max_variance <- max(
 
 model_data <- domain_frame |>
   left_join(direct_estimates, by = c("area_id", "time_id")) |>
-  left_join(area_covariates, by = "area_id") |>
+  left_join(area_predictors, by = "area_id") |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   mutate(
