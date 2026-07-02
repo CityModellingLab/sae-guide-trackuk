@@ -2,3 +2,33 @@
 title: "Multilevel Regression and Poststratification"
 subtitle: "Predict small area estimates using survey microdata and population poststratification cells"
 ---
+
+MRP extends the unit-level route by fitting a model to survey responses and then then averaging those predictions over a poststratification table that represents the target population in each area-time cell. This helps reduce bias from uneven sample composition in the original survey microdata.
+
+::: {.callout-note title="Theory in brief"}
+Let $c$ index poststratification cells, such as age-by-sex cells within area $j$ and time $t$. A compact unit-level model is:
+
+$$
+y_{ijt} = \alpha + \varphi_{a_i} + \gamma_{s_i}
++ \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + \epsilon_{ijt},
+$$
+
+where $\varphi_{a_i}$ and $\gamma_{s_i}$ capture demographic structure, while $u_j$ captures area-level variation. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. The model gives a predicted outcome for each area-time poststratification cell:
+
+$$
+\hat{\mu}_{jtc} = \widehat{\mathbb{E}}(Y \mid j,t,c).
+$$
+
+Area-time estimates are then poststratified using population counts $N_{jtc}$:
+
+$$
+\hat{\mu}_{jt}^{\mathrm{MRP}} =
+\frac{\sum_c N_{jtc}\hat{\mu}_{jtc}}
+{\sum_c N_{jtc}}.
+$$
+
+:::
+
+<div class="method-divider" aria-hidden="true"></div>
+
+{{< include _includes/target-estimand.qmd >}}
