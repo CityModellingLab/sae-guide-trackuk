@@ -5,7 +5,6 @@ subtitle: "Produce survey design-based estimates and uncertainty"
 
 ```{r}
 #| label: setup-direct-estimation
-#| echo: false
 library(dplyr)
 library(readr)
 library(stringr)
@@ -56,15 +55,31 @@ map_annotation_theme <- theme(
 )
 ```
 
-Direct estimation is the design-based starting point for the SAE workflow. At this stage, each area-time estimate, an *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced and shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.
+Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or an *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced and shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.
 
-## Calculate Direct Estimates
+::: {.callout-note title="Theory in brief"}
+For an area-time cell $(j,t)$, the target is the population mean or proportion:
 
-For the estimand:
+$$
+\mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
+$$
 
->  Share of Welsh adults who walk for transport daily, estimated for each MSOA in the NSW waves ending in 2021, 2023, and 2025.
+If respondent $i$ has inclusion probability $\pi_{ijt}$ and survey weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio estimator is:
 
-we use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:
+$$
+\hat{\mu}^{w}_{jt} =
+\frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
+{\sum_{i \in S_{jt}} w_{ijt}}.
+$$
+:::
+
+<div class="method-divider" aria-hidden="true"></div>
+
+{{< include _includes/target-estimand.qmd >}}
+
+## Prepare survey data
+
+We use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:
 
 | Column | Role |
 |---|---|
@@ -74,6 +89,7 @@ we use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
+#| label: load-survey-indicator
 survey_walk <- read_csv(
   file.path(base_path, "clean", "ind_weight_freq_walker.csv"),
   show_col_types = FALSE
@@ -86,6 +102,8 @@ survey_walk <- read_csv(
   )
 head(survey_walk)
 ```
+
+## Calculate direct estimates
 
 We use `svyby()` from the `survey` package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.
 
@@ -138,16 +156,17 @@ direct_walk <- domain_frame |>
 head(direct_walk)
 ```
 
-## Evaluate Direct Estimates
+## Assess precision and coverage
 
-Direct estimation provides a useful starting point because they make three limitations visible:
+Direct estimation provides a useful starting point because it makes three limitations visible:
 
-- **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and across MSOAs. This means some area-time cells are based on much less direct evidence than others.
-- **Unstable area estimate over time:** For some MSOAs, direct estimates change sharply between waves. These changes may reflect real behavioural change, but they may also reflect sampling noise.
-- **Zero within-area variance:** For binary indicators, especially with small samples, some MSOAs show no within-area variation because all respondents give the same response. This can produce zero or unrealistically low variances.
+- **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and MSOAs, leaving some area-time cells with much less direct evidence than others.
+- **Unstable area estimates over time:** For some MSOAs, direct estimates change sharply between waves, which may reflect real behavioural change or sampling noise.
+- **Zero within-area variance:** For binary indicators, small samples can contain only one response value, producing zero or unrealistically low variances.
 
 ```{r}
 #| label: direct-map-diagnostics
+#| echo: false
 #| fig-width: 16
 #| fig-height: 12
 #| out-width: "100%"
@@ -243,7 +262,7 @@ diagnostic_panel
 
 
 ```{r}
-#| label: export-direct-estimates-walking
+#| label: summarise-direct-estimates
 direct_summary_by_wave <- direct_walk |>
   group_by(.data$time_id) |>
   summarise(
@@ -269,6 +288,8 @@ direct_summary_by_wave
 Model-based approaches are designed to address these issues. Area-level models can stabilise noisy direct estimates by borrowing strength from area-level predictors. Unit-level models go a step further by modelling individual outcomes directly, which helps avoid problems caused by zero or unreliable within-area variance estimates.
 
 ```{r}
+#| label: save-direct-estimates
+#| echo: false
 write_csv(
   direct_walk,
   file.path(base_path, "freq_walker_estimates_direct.csv")

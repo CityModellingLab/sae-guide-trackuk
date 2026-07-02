@@ -137,11 +137,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level estimation (FH)</span></a>
+ <span class="dropdown-text">Area-level model (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level estimation (BHF)</span></a>
+ <span class="dropdown-text">Unit-level model (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
@@ -236,13 +236,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level estimation (FH)</span></a>
+ <span class="menu-text">Area-level model (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level estimation (BHF)</span></a>
+ <span class="menu-text">Unit-level model (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -317,6 +317,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoa_year.csv"</span>),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">la_code =</span> .data<span class="sc">$</span>LAD21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(.data<span class="sc">$</span>la_code, <span class="st">"W"</span>))</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">area_id =</span> .data<span class="sc">$</span>MSOA21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(.data<span class="sc">$</span>area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 <p>This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.</p>
 <section id="the-survey-microdata" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</h2>
@@ -329,56 +361,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Privacy and disclosure protection.</strong> The assigned MSOA is not the respondent’s true MSOA, so we avoid presenting fine-grained respondent locations.</li>
 </ul>
 <div class="cell" data-layout-align="center">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>la_response_counts <span class="ot">&lt;-</span> survey_microdata <span class="sc">|&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>la_code), <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>la_name)) <span class="sc">|&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.data<span class="sc">$</span>la_code, <span class="at">name =</span> <span class="st">"responses"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>msoa_response_counts <span class="ot">&lt;-</span> survey_microdata <span class="sc">|&gt;</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>area_id)) <span class="sc">|&gt;</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(.data<span class="sc">$</span>area_id, <span class="at">name =</span> <span class="st">"responses"</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>la_count_map_data <span class="ot">&lt;-</span> la_boundaries <span class="sc">|&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(la_response_counts, <span class="at">by =</span> <span class="st">"la_code"</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>msoa_count_map_data <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(msoa_response_counts, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span> <span class="ot">=</span> <span class="st">"area_id"</span>))</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>plot_response_map <span class="ot">&lt;-</span> <span class="cf">function</span>(map_data, title, <span class="at">border_colour =</span> <span class="st">"transparent"</span>) {</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(map_data) <span class="sc">+</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_sf</span>(</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">aes</span>(<span class="at">fill =</span> .data<span class="sc">$</span>responses),</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">colour =</span> border_colour,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">linewidth =</span> <span class="fl">0.15</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scale_fill_viridis_c</span>(</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>      <span class="at">option =</span> <span class="st">"magma"</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>      <span class="at">direction =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">label_comma</span>(),</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">na.value =</span> missing_fill,</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">guide =</span> <span class="fu">guide_colourbar</span>(</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        <span class="at">barwidth =</span> legend_bar_width,</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        <span class="at">barheight =</span> legend_bar_height</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">title =</span> title, <span class="at">fill =</span> <span class="st">"Responses"</span>) <span class="sc">+</span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    count_map_theme</span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>la_count_map <span class="ot">&lt;-</span> <span class="fu">plot_response_map</span>(</span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>  la_count_map_data,</span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Original responses by Local Authority"</span>,</span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  <span class="at">border_colour =</span> <span class="st">"white"</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>msoa_count_map <span class="ot">&lt;-</span> <span class="fu">plot_response_map</span>(</span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>  msoa_count_map_data,</span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Synthetic responses by MSOA"</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="fu">wrap_plots</span>(la_count_map, msoa_count_map, <span class="at">ncol =</span> <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -395,40 +377,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 data-number="2.1" class="anchored" data-anchor-id="defining-the-estimand"><span class="header-section-number">2.1</span> Defining The Estimand</h3>
 <p>The estimand is the quantity we want to estimate. It should be defined before preparing the survey indicator or choosing a model, because it determines the outcome coding, denominator, target geography, time period, auxiliary predictors, and poststratification requirements.</p>
 <blockquote class="blockquote">
-<p>Estimate the <strong>measure</strong> of <strong>what outcome</strong>, among <strong>which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
+<p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
-<p>In this tutorial, the estimand is:</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Component</th>
-<th>Choice</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Measure</td>
-<td>Share</td>
-</tr>
-<tr class="even">
-<td>Outcome</td>
-<td>Walks for transport daily</td>
-</tr>
-<tr class="odd">
-<td>Target population</td>
-<td>Adults</td>
-</tr>
-<tr class="even">
-<td>Geography</td>
-<td>MSOAs in Wales</td>
-</tr>
-<tr class="odd">
-<td>Time</td>
-<td>Three NSW waves ending in 2021, 2023 and 2025</td>
-</tr>
-</tbody>
-</table>
 <p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
+<p>The target population is especially important for proportions. Here, the denominator is adults, so direct estimates, model aggregation, and any poststratification table must represent the adult population rather than all residents, commuters, or another subgroup.</p>
+<p>In this tutorial, the estimand is:</p>
+<div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Target estimand
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<div class="estimand-grid">
+<ul>
+<li><strong>Target outcome and Population:</strong> Share of Adults who walk for transport daily</li>
+<li><strong>Geography:</strong> MSOAs in Wales</li>
+<li><strong>Time:</strong> 2021, 2023, and 2025</li>
+</ul>
+</div>
+</div>
+</div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -442,7 +414,6 @@ Note
 <p>The survey period labels are simplified to their end year. For example, the <code>2020-2021</code> survey wave is labelled as and referred to as the <code>2021</code> wave.</p>
 </div>
 </div>
-<p>The target population is especially important for proportions. Here, the denominator is adults, so direct estimates, model aggregation, and any poststratification table must represent the adult population rather than all residents, commuters, or another subgroup.</p>
 </section>
 <section id="preparing-the-survey-indicator" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing The Survey Indicator</h3>
@@ -541,7 +512,7 @@ Note
 <td style="text-align: right;">408</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">2023</td>
+<td style="text-align: right;">2023 (subsampled)</td>
 <td style="text-align: right;">1,999</td>
 <td style="text-align: right;">406</td>
 </tr>
@@ -552,6 +523,7 @@ Note
 </tr>
 </tbody>
 </table>
+<p>The 2023 wave is marked as subsampled because this survey question was asked of a smaller respondent group and uses a subsample weight.</p>
 <p>Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.</p>
 </section>
 <section id="preparing-auxiliary-data" class="level3" data-number="2.3">
@@ -651,7 +623,7 @@ Note
 </section>
 <section id="poststratification-table" class="level4" data-number="2.3.3">
 <h4 data-number="2.3.3" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.3</span> Poststratification Table</h4>
-<p>A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from ONS MSOA quinary age-by-sex population estimates and kept the survey years used: 2021, 2023, and 2025.</p>
+<p>A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics">ONS MSOA quinary age-by-sex population estimates</a> for the corresponding time periods, namely 2021, 2023, and 2025.</p>
 <p>The poststratification output <em>has one row per area-time-age-sex combination, or MSOA–year–age–sex in this example:</em></p>
 <table class="table">
 <thead>
