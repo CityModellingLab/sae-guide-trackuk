@@ -286,8 +286,8 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li>what outcome is being estimated;</li>
 <li>who is in the target population;</li>
-<li>which areas need estimates;</li>
-<li>which time periods need estimates.</li>
+<li>at which spatial scale;</li>
+<li>over which time periods.</li>
 </ul>
 <p>In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an <strong>area-time cell</strong>. In the Wales example, one area-time cell is one MSOA in one survey year.</p>
 </section>
@@ -425,39 +425,16 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="use-the-scripts" class="level2">
 <h2 class="anchored" data-anchor-id="use-the-scripts">4. Use the scripts</h2>
-<p>These public scripts are intended for adapting the workflow to another survey or outcome. Edit the setup block in each script for file paths, source columns, target areas, time periods, and model covariates.</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Workflow step</th>
-<th>Script</th>
-<th>Use it for</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Direct estimation</td>
-<td><a href="toolkit-scripts/direct_estimates.R"><code>calculate_direct_estimates.R</code></a></td>
-<td>Produce area-time direct estimates, sampling variances, and sample counts</td>
-</tr>
-<tr class="even">
-<td>Area-level SAE</td>
-<td><a href="toolkit-scripts/fit_fh_inla_area_level.R"><code>fit_fh_inla_area_level.R</code></a></td>
-<td>Fit a spatio-temporal Fay–Herriot area-level model with <code>R-INLA</code></td>
-</tr>
-<tr class="odd">
-<td>Unit-level SAE</td>
-<td><a href="toolkit-scripts/fit_bhf_inla_unit_level.R"><code>fit_bhf_inla_unit_level.R</code></a></td>
-<td>Fit a BHF-style unit-level model and aggregate predictions to area-time cells</td>
-</tr>
-<tr class="even">
-<td>MRP</td>
-<td>Forthcoming</td>
-<td>Fit a multilevel model and poststratify over population cells</td>
-</tr>
-</tbody>
-</table>
-<p>The model-fitting steps are shown in the <a href="./direct-estimation.html">direct estimation</a>, <a href="./fh-area.html">Fay–Herriot</a>, <a href="./bhf-unit.html">unit-level</a>, and <a href="./mrp.html">MRP</a> workbooks.</p>
+<p>[wip] <!-- These public scripts are intended for adapting the workflow to another survey or outcome. Edit the setup block in each script for file paths, source columns, target areas, time periods, and model covariates.
+
+| Workflow step | Script | Use it for |
+|---|---|---|
+| Direct estimation | [`calculate_direct_estimates.R`](toolkit-scripts/direct_estimates.R) | Produce area-time direct estimates, sampling variances, and sample counts |
+| Area-level SAE | [`fit_fh_inla_area_level.R`](toolkit-scripts/fit_fh_inla_area_level.R) | Fit a spatio-temporal Fay--Herriot area-level model with `R-INLA` |
+| Unit-level SAE | [`fit_bhf_inla_unit_level.R`](toolkit-scripts/fit_bhf_inla_unit_level.R) | Fit a BHF-style unit-level model and aggregate predictions to area-time cells |
+| MRP | Forthcoming | Fit a multilevel model and poststratify over population cells |
+
+The model-fitting steps are shown in the [direct estimation](direct-estimation.qmd), [Fay--Herriot](fh-area.qmd), [unit-level](bhf-unit.qmd), and [MRP](mrp.qmd) workbooks. --></p>
 </section>
 <section id="expected-outputs" class="level2">
 <h2 class="anchored" data-anchor-id="expected-outputs">5. Expected outputs</h2>
