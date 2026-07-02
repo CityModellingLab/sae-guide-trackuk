@@ -134,9 +134,8 @@ direct_walk_estimates <- svyby(
     area_id,
     time_id,
     direct_estimate = .data$indicator,
-    standard_error = .data$se
-  ) |>
-  mutate(variance = .data$standard_error^2)
+    variance = .data$se^2
+  )
 
 # Calculate sample size per area-time cell
 direct_walk_counts <- survey_walk |>
@@ -285,7 +284,7 @@ direct_summary_by_wave <- direct_walk |>
 direct_summary_by_wave
 ```
 
-Model-based approaches are designed to address these issues. Area-level models can stabilise noisy direct estimates by borrowing strength from area-level predictors; unit-level models model individual outcomes directly and then aggregate to each small area.
+In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE** models stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
 
 ```{r}
 #| label: save-direct-estimates

@@ -541,37 +541,35 @@ Target estimand
 <span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">direct_estimate =</span> .data<span class="sc">$</span>indicator,</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">standard_error =</span> .data<span class="sc">$</span>se</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">variance =</span> .data<span class="sc">$</span>standard_error<span class="sc">^</span><span class="dv">2</span>)</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate sample size per area-time cell</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>direct_walk_counts <span class="ot">&lt;-</span> survey_walk <span class="sc">|&gt;</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)))) <span class="sc">|&gt;</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Join</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_estimates, <span class="at">by =</span> <span class="fu">c</span>(</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_counts, <span class="at">by =</span> <span class="fu">c</span>(</span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">replace_na</span>(.data<span class="sc">$</span>n, 0L))</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance =</span> .data<span class="sc">$</span>se<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate sample size per area-time cell</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>direct_walk_counts <span class="ot">&lt;-</span> survey_walk <span class="sc">|&gt;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)))) <span class="sc">|&gt;</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Join</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_estimates, <span class="at">by =</span> <span class="fu">c</span>(</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_counts, <span class="at">by =</span> <span class="fu">c</span>(</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="st">"area_id"</span>, <span class="st">"time_id"</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">|&gt;</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">replace_na</span>(.data<span class="sc">$</span>n, 0L))</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 12%">
-<col style="width: 9%">
-<col style="width: 25%">
-<col style="width: 19%">
-<col style="width: 18%">
-<col style="width: 12%">
-<col style="width: 3%">
+<col style="width: 14%">
+<col style="width: 11%">
+<col style="width: 30%">
+<col style="width: 23%">
+<col style="width: 14%">
+<col style="width: 4%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -579,7 +577,6 @@ Target estimand
 <th style="text-align: right;">time_id</th>
 <th style="text-align: left;">msoa_name</th>
 <th style="text-align: right;">direct_estimate</th>
-<th style="text-align: right;">standard_error</th>
 <th style="text-align: right;">variance</th>
 <th style="text-align: right;">n</th>
 </tr>
@@ -591,7 +588,6 @@ Target estimand
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
@@ -599,7 +595,6 @@ Target estimand
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0.1856526</td>
-<td style="text-align: right;">0.1267159</td>
 <td style="text-align: right;">0.0160569</td>
 <td style="text-align: right;">9</td>
 </tr>
@@ -608,7 +603,6 @@ Target estimand
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0.0094000</td>
-<td style="text-align: right;">0.0096569</td>
 <td style="text-align: right;">0.0000933</td>
 <td style="text-align: right;">22</td>
 </tr>
@@ -617,7 +611,6 @@ Target estimand
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0.4319654</td>
-<td style="text-align: right;">0.2016562</td>
 <td style="text-align: right;">0.0406652</td>
 <td style="text-align: right;">9</td>
 </tr>
@@ -626,7 +619,6 @@ Target estimand
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0.4885359</td>
-<td style="text-align: right;">0.1824803</td>
 <td style="text-align: right;">0.0332991</td>
 <td style="text-align: right;">8</td>
 </tr>
@@ -635,7 +627,6 @@ Target estimand
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0.0511807</td>
-<td style="text-align: right;">0.0368717</td>
 <td style="text-align: right;">0.0013595</td>
 <td style="text-align: right;">26</td>
 </tr>
@@ -742,7 +733,7 @@ Target estimand
 </div>
 </div>
 </div>
-<p>Model-based approaches are designed to address these issues. Area-level models can stabilise noisy direct estimates by borrowing strength from area-level predictors; unit-level models model individual outcomes directly and then aggregate to each small area.</p>
+<p>In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: <strong>Area-level SAE</strong> models stabilise direct area estimates, while <strong>unit-level SAE models</strong> estimate the individual outcome from survey records and aggregate predictions to target area-years.</p>
 
 
 </section>
