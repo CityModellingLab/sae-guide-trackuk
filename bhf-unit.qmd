@@ -20,7 +20,7 @@ library(scales)
 
 base_path <- here::here("data")
 domain_frame <- read_csv(
-  file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
+  file.path(base_path, "clean", "domain_msoayear.csv"),
   show_col_types = FALSE
 )
 
@@ -154,19 +154,13 @@ The respondent model data has one row per sampled person. For this constrained e
 ```{r}
 #| label: prepare-model-data
 
-unit_predictors <- read_csv(
-  file.path(base_path, "clean", "unit_predictors_daily_walking.csv"),
-  show_col_types = FALSE
-)
-
 walking_indicator <- read_csv(
-  file.path(base_path, "clean", "ind_weight_freq_walker.csv"),
+  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
   show_col_types = FALSE
 ) |>
-  select(unit_id, time_id, area_id, indicator)
+  select(unit_id, time_id, area_id, indicator, no_car)
 
 model_data <- walking_indicator |>
-  left_join(unit_predictors, by = "unit_id") |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   filter(
@@ -197,7 +191,7 @@ The aggregation input contains the complete area-time grid we want to estimate, 
 #| label: prepare-aggregation-data
 
 area_predictors <- read_csv(
-  file.path(base_path, "clean", "area_predictors_daily_walking.csv"),
+  file.path(base_path, "clean", "areapred_freqwalk.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -414,7 +408,7 @@ Using M2 as the selected model, we filter the collated BHF results and join the 
 #| label: select-final-bhf-model
 
 direct_estimates <- read_csv(
-  file.path(base_path, "freq_walker_estimates_direct.csv"),
+  file.path(base_path, "freqwalk_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -516,7 +510,7 @@ The scatterplot below shows that BHF estimates are much smoother than the direct
 ```{r}
 #| label: load-comparison-estimates
 fh_final_estimates <- read_csv(
-  file.path(base_path, "freq_walker_estimates_fh.csv"),
+  file.path(base_path, "freqwalk_estimates_fh.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -603,6 +597,6 @@ Adding more unit-level predictors such as age, sex, ethnicity, or employment sta
 
 write_csv(
   final_bhf_results,
-  file.path(base_path, "freq_walker_estimates_bhf.csv")
+  file.path(base_path, "freqwalk_estimates_bhf.csv")
 )
 ```

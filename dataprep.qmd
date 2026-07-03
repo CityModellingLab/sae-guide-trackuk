@@ -17,7 +17,7 @@ library(scales)
 
 base_path <- here::here("data")
 survey_microdata <- read_csv(
-  file.path(base_path, "clean", "survey_microdata_msoa_year.csv"),
+  file.path(base_path, "clean", "survey_microdata_msoayear.csv"),
   show_col_types = FALSE
 )
 
@@ -162,7 +162,7 @@ Since the survey question was administered to all respondents during some survey
 - Use `SampleTravelWeight` in survey periods where this question was asked to a subsample and the weight for this exists, 
 - Use `SampleAdultWeight` in survey periods where this question was asked to the main sample. 
 
-The cleaned survey microdata has *one row per respondent-wave:*
+The walking survey indicator clean file has *one row per respondent-wave* and keeps the unit predictors needed for unit-level SAE:
 
 | Column | Meaning |
 |---|---|
@@ -172,6 +172,9 @@ The cleaned survey microdata has *one row per respondent-wave:*
 | `strata` | Local Authority stratum |
 | `indicator` | Binary walking response |
 | `weight` | Matched weight |
+| `age` | Respondent age |
+| `sex` | Respondent sex (`1` for Male, `2` for Female) |
+| `no_car` | Binary household car access predictor (`1` for no car/van, `0` for car/van available) |
 
 As an overview, the current cleaned data give the following usable observations for the walking estimand:
 
@@ -184,19 +187,6 @@ As an overview, the current cleaned data give the following usable observations 
 Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
-#### Unit Predictors
-
-Unit-level SAE, including MRP workflow, uses respondent-level predictors available in the survey microdata. We keep a small set of predictors that could explain frequent walking behaviour.
-
-The unit-predictor output has *one row per respondent-wave*: 
-
-| Column | Meaning |
-|---|---|
-| `unit_id` | Respondent-wave identifier |
-| `age` | Respondent age |
-| `sex` | Respondent sex (`1` for Male, `2` for Female) |
-| `no_car` | Binary household car access predictor (`1` for no car/van, `0` for car/van available) |
-
 #### Area Predictors
 
 SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.

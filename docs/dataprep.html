@@ -383,7 +383,7 @@ Target estimand
 <li>Use <code>SampleTravelWeight</code> in survey periods where this question was asked to a subsample and the weight for this exists,</li>
 <li>Use <code>SampleAdultWeight</code> in survey periods where this question was asked to the main sample.</li>
 </ul>
-<p>The cleaned survey microdata has <em>one row per respondent-wave:</em></p>
+<p>The walking survey indicator clean file has <em>one row per respondent-wave</em> and keeps the unit predictors needed for unit-level SAE:</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -420,6 +420,18 @@ Target estimand
 <td><code>weight</code></td>
 <td>Matched weight</td>
 </tr>
+<tr class="odd">
+<td><code>age</code></td>
+<td>Respondent age</td>
+</tr>
+<tr class="even">
+<td><code>sex</code></td>
+<td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
+</tr>
+<tr class="odd">
+<td><code>no_car</code></td>
+<td>Binary household car access predictor (<code>1</code> for no car/van, <code>0</code> for car/van available)</td>
+</tr>
 </tbody>
 </table>
 <p>As an overview, the current cleaned data give the following usable observations for the walking estimand:</p>
@@ -453,43 +465,8 @@ Target estimand
 </section>
 <section id="preparing-auxiliary-data" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</h3>
-<section id="unit-predictors" class="level4" data-number="2.3.1">
-<h4 data-number="2.3.1" class="anchored" data-anchor-id="unit-predictors"><span class="header-section-number">2.3.1</span> Unit Predictors</h4>
-<p>Unit-level SAE, including MRP workflow, uses respondent-level predictors available in the survey microdata. We keep a small set of predictors that could explain frequent walking behaviour.</p>
-<p>The unit-predictor output has <em>one row per respondent-wave</em>:</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>unit_id</code></td>
-<td>Respondent-wave identifier</td>
-</tr>
-<tr class="even">
-<td><code>age</code></td>
-<td>Respondent age</td>
-</tr>
-<tr class="odd">
-<td><code>sex</code></td>
-<td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
-</tr>
-<tr class="even">
-<td><code>no_car</code></td>
-<td>Binary household car access predictor (<code>1</code> for no car/van, <code>0</code> for car/van available)</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="area-predictors" class="level4" data-number="2.3.2">
-<h4 data-number="2.3.2" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">2.3.2</span> Area Predictors</h4>
+<section id="area-predictors" class="level4" data-number="2.3.1">
+<h4 data-number="2.3.1" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">2.3.1</span> Area Predictors</h4>
 <p>SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>cov_*</code> variables for modelling.</p>
 <p>These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns.</p>
 <table class="table">
@@ -546,8 +523,8 @@ Target estimand
 </tbody>
 </table>
 </section>
-<section id="poststratification-table" class="level4" data-number="2.3.3">
-<h4 data-number="2.3.3" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.3</span> Poststratification Table</h4>
+<section id="poststratification-table" class="level4" data-number="2.3.2">
+<h4 data-number="2.3.2" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.2</span> Poststratification Table</h4>
 <p>A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics">ONS MSOA quinary age-by-sex population estimates</a> for the corresponding time periods, namely 2021, 2023, and 2025.</p>
 <p>The poststratification output <em>has one row per area-time-age-sex combination, or MSOA–year–age–sex in this example:</em></p>
 <table class="table">

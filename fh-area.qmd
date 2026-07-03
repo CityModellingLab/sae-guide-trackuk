@@ -20,7 +20,7 @@ library(scales)
 
 base_path <- here::here("data")
 domain_frame <- read_csv(
-  file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
+  file.path(base_path, "clean", "domain_msoayear.csv"),
   show_col_types = FALSE
 )
 
@@ -100,7 +100,7 @@ First we import the complete area-time direct-estimate table exported from the d
 ```{r}
 #| label: load-direct-estimates
 direct_walk <- read_csv(
-  file.path(base_path, "freq_walker_estimates_direct.csv"),
+  file.path(base_path, "freqwalk_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
   select(
@@ -119,7 +119,7 @@ head(direct_walk)
 ```{r}
 #| label: load-area-predictors
 area_predictors <- read_csv(
-  file.path(base_path, "clean", "area_predictors_daily_walking.csv"),
+  file.path(base_path, "clean", "areapred_freqwalk.csv"),
   show_col_types = FALSE
 ) |>
   select(
@@ -848,7 +848,7 @@ Even after the direct estimates have been stabilised through the Fay-Herriot mod
 #| echo: false
 write_csv(
   final_fh_results,
-  file.path(base_path, "freq_walker_estimates_fh.csv")
+  file.path(base_path, "freqwalk_estimates_fh.csv")
 )
 ```
 

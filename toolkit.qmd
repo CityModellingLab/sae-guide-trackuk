@@ -4,35 +4,22 @@ subtitle: "Bring your own survey into the workflow"
 number-sections: false
 ---
 
-This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and reusing the same estimation steps.
+This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and apply reusable scripts.
 
 ## 1. Define the estimates you need
 
-Start by writing the estimand in plain language. It should say:
+Start by defining the estimand that covers:
 
 - what outcome is being estimated;
 - who is in the target population;
 - at which spatial scale;
 - over which time periods.
 
-In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an **area-time cell**. In the Wales example, one area-time cell is one MSOA in one survey year.
+In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an **area-time cell**. 
 
 ## 2. Prepare the input tables
 
-The workflow expects a small set of analysis-ready tables. They do not have to come from the same source, but they must use the same `area_id` and `time_id` values.
-
-### Survey indicator
-
-One row per respondent-period for the outcome being estimated.
-
-| Column | Meaning |
-|---|---|
-| `unit_id` | Respondent or respondent-period identifier |
-| `area_id` | Area assigned to the respondent |
-| `time_id` | Survey period |
-| `indicator` | Outcome used in estimation, often binary or continuous |
-| `weight` | Survey or analysis weight |
-| `strata` | Survey stratum, where available |
+The workflow expects a set of datasets, linked by `area_id` and `time_id` values, with `unit_id` as the survey respondent identifier.
 
 ### Domain frame
 
@@ -42,11 +29,25 @@ One row for every area-time cell that should receive an estimate. This table def
 |---|---|
 | `area_id` | Area to estimate |
 | `time_id` | Time period to estimate |
-| labels | Optional area or period labels for reporting |
+| labels | Optional area or period labels |
+
+### Survey indicator
+
+One row per respondent-period for the outcome being estimated, together with the unit-level predictors.
+
+| Column | Meaning |
+|---|---|
+| `unit_id` | Respondent identifier |
+| `area_id` | Area assigned to the respondent |
+| `time_id` | Survey period |
+| `indicator` | Outcome used in estimation (binary or continuous) |
+| `weight` | Survey design weight |
+| `strata` | Survey stratum, if available |
+| predictors | Unit predictors (age, sex, car ownership, etc.) |
 
 ### Area predictors
 
-One row per area, with predictors used to explain spatial differences in the outcome.
+One row per area, with predictors used to explain spatial differences in the outcome. These are used in area-level SAE and can also support unit-level SAE, when they provide the area-level summaries to aggregate predictions.
 
 | Column | Meaning |
 |---|---|
@@ -54,9 +55,9 @@ One row per area, with predictors used to explain spatial differences in the out
 | `cov_*` | Model-ready area predictors |
 | `raw_*` | Optional raw values kept for interpretation |
 
-### Population frame
+### Poststratification table
 
-Needed when the final estimate is produced by aggregating model predictions over population groups, as in MRP.
+Used when model predictions are aggregated over population groups to produce the final estimate in the Multilevel Regression with Poststratification (MRP) workflow.
 
 | Column | Meaning |
 |---|---|
@@ -93,6 +94,7 @@ All method outputs should keep the same identifying columns so estimates can be 
 | `time_id` | Estimated period |
 | `estimate` | Direct or model-based point estimate |
 | `variance` | Sampling or posterior variance |
-| `lower`, `upper` | Interval bounds, where produced |
-| `n` | Usable survey observations, where relevant |
-| `method` | Direct, Fay--Herriot, BHF, MRP, or another method label |
+| `lower`, `upper` | Uncertainty interval bounds |
+| `n` | Sample size |
+| `method` | Direct, Fay--Herriot, etc. |
+| remark | Model specification or other notes |

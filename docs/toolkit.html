@@ -247,10 +247,10 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#define-the-estimates-you-need" id="toc-define-the-estimates-you-need" class="nav-link active" data-scroll-target="#define-the-estimates-you-need">1. Define the estimates you need</a></li>
   <li><a href="#prepare-the-input-tables" id="toc-prepare-the-input-tables" class="nav-link" data-scroll-target="#prepare-the-input-tables">2. Prepare the input tables</a>
   <ul class="collapse">
-  <li><a href="#survey-indicator" id="toc-survey-indicator" class="nav-link" data-scroll-target="#survey-indicator">Survey indicator</a></li>
   <li><a href="#domain-frame" id="toc-domain-frame" class="nav-link" data-scroll-target="#domain-frame">Domain frame</a></li>
+  <li><a href="#survey-indicator" id="toc-survey-indicator" class="nav-link" data-scroll-target="#survey-indicator">Survey indicator</a></li>
   <li><a href="#area-predictors" id="toc-area-predictors" class="nav-link" data-scroll-target="#area-predictors">Area predictors</a></li>
-  <li><a href="#population-frame" id="toc-population-frame" class="nav-link" data-scroll-target="#population-frame">Population frame</a></li>
+  <li><a href="#poststratification-table" id="toc-poststratification-table" class="nav-link" data-scroll-target="#poststratification-table">Poststratification table</a></li>
   </ul></li>
   <li><a href="#choose-the-modelling-route" id="toc-choose-the-modelling-route" class="nav-link" data-scroll-target="#choose-the-modelling-route">3. Choose the modelling route</a></li>
   <li><a href="#use-the-scripts" id="toc-use-the-scripts" class="nav-link" data-scroll-target="#use-the-scripts">4. Use the scripts</a></li>
@@ -279,59 +279,21 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and reusing the same estimation steps.</p>
+<p>This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and apply reusable scripts.</p>
 <section id="define-the-estimates-you-need" class="level2">
 <h2 class="anchored" data-anchor-id="define-the-estimates-you-need">1. Define the estimates you need</h2>
-<p>Start by writing the estimand in plain language. It should say:</p>
+<p>Start by defining the estimand that covers:</p>
 <ul>
 <li>what outcome is being estimated;</li>
 <li>who is in the target population;</li>
 <li>at which spatial scale;</li>
 <li>over which time periods.</li>
 </ul>
-<p>In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an <strong>area-time cell</strong>. In the Wales example, one area-time cell is one MSOA in one survey year.</p>
+<p>In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an <strong>area-time cell</strong>.</p>
 </section>
 <section id="prepare-the-input-tables" class="level2">
 <h2 class="anchored" data-anchor-id="prepare-the-input-tables">2. Prepare the input tables</h2>
-<p>The workflow expects a small set of analysis-ready tables. They do not have to come from the same source, but they must use the same <code>area_id</code> and <code>time_id</code> values.</p>
-<section id="survey-indicator" class="level3">
-<h3 class="anchored" data-anchor-id="survey-indicator">Survey indicator</h3>
-<p>One row per respondent-period for the outcome being estimated.</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>unit_id</code></td>
-<td>Respondent or respondent-period identifier</td>
-</tr>
-<tr class="even">
-<td><code>area_id</code></td>
-<td>Area assigned to the respondent</td>
-</tr>
-<tr class="odd">
-<td><code>time_id</code></td>
-<td>Survey period</td>
-</tr>
-<tr class="even">
-<td><code>indicator</code></td>
-<td>Outcome used in estimation, often binary or continuous</td>
-</tr>
-<tr class="odd">
-<td><code>weight</code></td>
-<td>Survey or analysis weight</td>
-</tr>
-<tr class="even">
-<td><code>strata</code></td>
-<td>Survey stratum, where available</td>
-</tr>
-</tbody>
-</table>
-</section>
+<p>The workflow expects a set of datasets, linked by <code>area_id</code> and <code>time_id</code> values, with <code>unit_id</code> as the survey respondent identifier.</p>
 <section id="domain-frame" class="level3">
 <h3 class="anchored" data-anchor-id="domain-frame">Domain frame</h3>
 <p>One row for every area-time cell that should receive an estimate. This table defines the target grid, including cells with no survey respondents.</p>
@@ -353,14 +315,56 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td>labels</td>
-<td>Optional area or period labels for reporting</td>
+<td>Optional area or period labels</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="survey-indicator" class="level3">
+<h3 class="anchored" data-anchor-id="survey-indicator">Survey indicator</h3>
+<p>One row per respondent-period for the outcome being estimated, together with the unit-level predictors.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>unit_id</code></td>
+<td>Respondent identifier</td>
+</tr>
+<tr class="even">
+<td><code>area_id</code></td>
+<td>Area assigned to the respondent</td>
+</tr>
+<tr class="odd">
+<td><code>time_id</code></td>
+<td>Survey period</td>
+</tr>
+<tr class="even">
+<td><code>indicator</code></td>
+<td>Outcome used in estimation (binary or continuous)</td>
+</tr>
+<tr class="odd">
+<td><code>weight</code></td>
+<td>Survey design weight</td>
+</tr>
+<tr class="even">
+<td><code>strata</code></td>
+<td>Survey stratum, if available</td>
+</tr>
+<tr class="odd">
+<td>predictors</td>
+<td>Unit predictors (age, sex, car ownership, etc.)</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="area-predictors" class="level3">
 <h3 class="anchored" data-anchor-id="area-predictors">Area predictors</h3>
-<p>One row per area, with predictors used to explain spatial differences in the outcome.</p>
+<p>One row per area, with predictors used to explain spatial differences in the outcome. These are used in area-level SAE and can also support unit-level SAE, when they provide the area-level summaries to aggregate predictions.</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -384,9 +388,9 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </section>
-<section id="population-frame" class="level3">
-<h3 class="anchored" data-anchor-id="population-frame">Population frame</h3>
-<p>Needed when the final estimate is produced by aggregating model predictions over population groups, as in MRP.</p>
+<section id="poststratification-table" class="level3">
+<h3 class="anchored" data-anchor-id="poststratification-table">Poststratification table</h3>
+<p>Used when model predictions are aggregated over population groups to produce the final estimate in the Multilevel Regression with Poststratification (MRP) workflow.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -465,15 +469,19 @@ The model-fitting steps are shown in the [direct estimation](direct-estimation.q
 </tr>
 <tr class="odd">
 <td><code>lower</code>, <code>upper</code></td>
-<td>Interval bounds, where produced</td>
+<td>Uncertainty interval bounds</td>
 </tr>
 <tr class="even">
 <td><code>n</code></td>
-<td>Usable survey observations, where relevant</td>
+<td>Sample size</td>
 </tr>
 <tr class="odd">
 <td><code>method</code></td>
-<td>Direct, Fay–Herriot, BHF, MRP, or another method label</td>
+<td>Direct, Fay–Herriot, etc.</td>
+</tr>
+<tr class="even">
+<td>remark</td>
+<td>Model specification or other notes</td>
 </tr>
 </tbody>
 </table>

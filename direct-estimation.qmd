@@ -25,7 +25,7 @@ msoa_boundaries <- st_read(
   filter(str_starts(.data$area_id, "W"))
 
 domain_frame <- read_csv(
-  file.path(base_path, "clean", "msoa_year_domain_frame.csv"),
+  file.path(base_path, "clean", "domain_msoayear.csv"),
   show_col_types = FALSE
 )
 ```
@@ -91,7 +91,7 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 ```{r}
 #| label: load-survey-indicator
 survey_walk <- read_csv(
-  file.path(base_path, "clean", "ind_weight_freq_walker.csv"),
+  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
   show_col_types = FALSE
 ) |>
   filter(
@@ -291,6 +291,6 @@ In case of unstable or unavailable direct estimates at the target area-time scal
 #| echo: false
 write_csv(
   direct_walk,
-  file.path(base_path, "freq_walker_estimates_direct.csv")
+  file.path(base_path, "freqwalk_estimates_direct.csv")
 )
 ```
