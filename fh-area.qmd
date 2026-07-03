@@ -4,7 +4,7 @@ subtitle: "A spatio-temporal extension"
 ---
 
 ```{r}
-#| label: setup-area-level
+#| label: setup-fh
 library(dplyr)
 library(readr)
 library(stringr)
@@ -91,7 +91,7 @@ Here $u_j$ borrows strength across areas while the target remains the area-time 
 
 <div class="method-divider" aria-hidden="true"></div>
 
-{{< include _includes/target-estimand.qmd >}}
+{{< include assets/target-estimand.qmd >}}
 
 ## Prepare modelling data
 
@@ -297,7 +297,7 @@ fit_fh_model <- function(formula) {
       )
     ),
     control.predictor = list(compute = TRUE),
-    control.compute = list(dic = TRUE, waic = TRUE)
+    control.compute = list(waic = TRUE)
   )
 }
 
@@ -305,66 +305,44 @@ fh_fits <- lapply(model_formulas, fit_fh_model)
 ```
 
 :::{.callout-note}
-When configuring `INLA` to fit an area-level FH model, these arguments are required:
+When fitting area-level FH models with `INLA`, these arguments are needed:
 
-- The `scale` argument passes the inverse sampling variance to `INLA`, so direct estimates with larger sampling variance contribute less to the likelihood. 
-- The `control.family` block fixes the Gaussian residual precision because the observation-level uncertainty is already supplied by the direct estimate sampling variances.
+- `control.predictor = list(compute = TRUE)` returns fitted values for every row. In an area-level model, these are the final estimates for each area-time row.
+- `scale` passes the inverse sampling variance to `INLA`, so less precise direct estimates get smoothed more.
+- `control.family` fixes the Gaussian residual precision because the direct-estimate variances already provide the uncertainty.
+- `control.compute = list(waic = TRUE)` requests WAIC for comparing model fit in case of multiple specifications.
 :::
 
-Next, we collate fitted values for all FH model specifications into one results table.
 
 ```{r}
-#| label: collate-fh-results
+#| label: extract-fh-helper
 
-# Main frame to keep from model data
-output_cols <- c(
-  "area_id",
-  "time_id",
-  "msoa_name",
-  "direct_estimate",
-  "variance",
-  "n"
-)
+extract_fh_estimates <- function(fit, area_time_frame, model_name) {
+  fitted_values <- fit$summary.fitted.values |>
+    as_tibble()
 
-model_output_frame <- select(model_data, all_of(output_cols))
-
-# Extract fitted values from each model and bind them to the frame
-fh_result_tables <- map2(
-  fh_fits,
-  names(fh_fits),
-  function(fit, model_name) {
-    fitted_values <- as_tibble(fit$summary.fitted.values)
-
-    model_results <- bind_cols(model_output_frame, fitted_values)
-
+  bind_cols(area_time_frame, fitted_values) |>
     transmute(
-      model_results,
       model = model_name,
-      across(all_of(output_cols)),
-      fh_estimate = .data$mean,
-      fh_variance = .data$sd^2,
+      area_id,
+      time_id,
+      msoa_name,
+      n,
+      direct_estimate,
+      variance,
+      fh_estimate = mean,
+      fh_variance = sd^2,
       fh_lower = .data[["0.025quant"]],
       fh_upper = .data[["0.975quant"]],
-      fh_ci_width = .data[["0.975quant"]] - .data[["0.025quant"]]
+      fh_ci_width = fh_upper - fh_lower
     )
-  }
-)
-
-# Stack model outputs and set display order
-fh_results <- bind_rows(fh_result_tables)
-fh_results <- mutate(
-  fh_results,
-  model = factor(.data$model, levels = names(model_formulas)
-)
-)
-
-head(fh_results)
+}
 ```
 
 To compare the fitted models' overall performance, we use `WAIC` or (Widely Applicable Information Criterion) as a first check. It is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity.
 
 ```{r}
-#| label: waic-comparison
+#| label: compare-fh-waic
 model_waic <- imap_dfr(
   fh_fits,
   \(fit, model_name) {
@@ -381,14 +359,182 @@ model_waic
 
 M4 has the lowest WAIC and M0 is clearly the weakest model, suggesting that the temporal term, area predictors, and spatial structure together give the best overall fit among the FH specifications.
 
+## Report estimates and uncertainty
+
+To extract the estimates for this model, we take the fitted-value summary from the `INLA` object and bind it back to the area-time rows used in the model fit. For transparency, the output also retains the direct estimates, sample sizes, and direct-estimate variances. The final model estimates are reported with uncertainty, shown here using the width of the posterior 95% credible interval.
+
+```{r}
+#| label: extract-fh-final-results
+#| code-fold: false
+
+model_output_frame <- model_data |>
+  select(area_id, time_id, msoa_name, direct_estimate, variance, n)
+
+fitted_values <- fh_fits[["M4 +Spatial"]]$summary.fitted.values |>
+  as_tibble()
+
+final_fh_results <- bind_cols(model_output_frame, fitted_values) |>
+  transmute(
+    area_id,
+    time_id,
+    msoa_name,
+    direct_estimate,
+    variance,
+    n,
+    fh_estimate = mean,
+    fh_variance = sd^2,
+    fh_lower = .data[["0.025quant"]],
+    fh_upper = .data[["0.975quant"]],
+    fh_ci_width = fh_upper - fh_lower,
+    fh_std_resid = (direct_estimate - fh_estimate) /  sqrt(variance + fh_variance)
+  )
+
+head(final_fh_results)
+```
+```{r}
+#| label: map-fh-final-results
+#| echo: false
+#| fig-width: 16
+#| fig-height: 16
+#| out-width: "100%"
+
+final_map_data <- msoa_boundaries |>
+  left_join(final_fh_results, by = "area_id")
+final_estimate_limits <- range(final_fh_results$fh_estimate, na.rm = TRUE)
+final_ci_width_limits <- c(0, max(final_fh_results$fh_ci_width, na.rm = TRUE))
+final_std_resid_limit <- max(abs(final_fh_results$fh_std_resid), na.rm = TRUE)
+final_std_resid_limits <- c(-final_std_resid_limit, final_std_resid_limit)
+final_wave_years <- sort(unique(final_fh_results$time_id))
+
+plot_final_estimate <- function(wave) {
+  final_map_data |>
+    filter(.data$time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
+    scale_fill_viridis_c(
+      option = "magma",
+      limits = final_estimate_limits,
+      labels = share_label,
+      na.value = missing_fill,
+      name = "Share"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+plot_final_ci_width <- function(wave) {
+  final_map_data |>
+    filter(.data$time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$fh_ci_width), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "Oranges",
+      direction = 1,
+      limits = final_ci_width_limits,
+      labels = pp_label,
+      na.value = missing_fill,
+      name = "95% CI width"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+plot_final_std_resid <- function(wave) {
+  final_map_data |>
+    filter(.data$time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$fh_std_resid), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "RdBu",
+      direction = -1,
+      limits = final_std_resid_limits,
+      na.value = missing_fill,
+      name = "Std. residual"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+estimate_maps <- lapply(final_wave_years, plot_final_estimate)
+uncertainty_maps <- lapply(final_wave_years, plot_final_ci_width)
+residual_maps <- lapply(final_wave_years, plot_final_std_resid)
+
+estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
+uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
+residual_maps[[1]] <- residual_maps[[1]] + ylab("Std. residual")
+
+for (i in seq_len(length(final_wave_years) - 1)) {
+  estimate_maps[[i]] <- estimate_maps[[i]] +
+    theme(legend.position = "none")
+  uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
+    theme(legend.position = "none")
+  residual_maps[[i]] <- residual_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(c(estimate_maps, uncertainty_maps, residual_maps), ncol = 3) +
+  plot_annotation(
+    title = "Share of adults who walk for transport daily",
+    subtitle = "Spatio-temporal FH model (M4), 95% CI width and standardised residual",
+    theme = map_annotation_theme
+  )
+```
+
+Here we see that the Fay--Herriot estimates produce a more plausible spatial pattern than the direct estimates, with less jagged variation across neighbouring areas and clearer broad regional structure. At the same time, weaker survey coverage can still leave year-specific patterns in the modelled estimates. The generally higher 2023 estimates are consistent with weaker survey coverage in that wave, so the modelled estimates should be read alongside posterior interval widths and original sample sizes.
+
 ## Further diagnostics
+
+To better understand how the FH results are produced, we can inspect the contribution of each of the model components. The diagnostics below examine how estimates change as predictors, spatial structure, and temporal structure are added, and then review uncertainty and hyperparameters to understand where the model is borrowing strength most strongly.
+
+```{r}
+#| label: collate-fh-model-results
+
+model_output_frame <- model_data |>
+  select(
+    area_id,
+    time_id,
+    msoa_name,
+    direct_estimate,
+    variance,
+    n
+  )
+
+fh_results <- imap_dfr(
+  fh_fits,
+  \(fit, model_name) {
+    bind_cols(
+      model_output_frame,
+      as_tibble(fit$summary.fitted.values)
+    ) |>
+      transmute(
+        model = model_name,
+        area_id,
+        time_id,
+        msoa_name,
+        direct_estimate,
+        variance,
+        n,
+        fh_estimate = mean,
+        fh_variance = sd^2,
+        fh_lower = .data[["0.025quant"]],
+        fh_upper = .data[["0.975quant"]],
+        fh_ci_width = fh_upper - fh_lower,
+        fh_std_resid = (direct_estimate - fh_estimate) /  sqrt(variance + fh_variance)
+      )
+  }
+) |>
+  mutate(model = factor(model, levels = names(model_formulas)))
+```
 
 ### Direct To Baseline Model
 
 We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure to understand how the FH models fundamentally handle noisy direct estimates. 
 
 ```{r}
-#| label: prepare-direct-m0-comparison
+#| label: prepare-fh-baseline-comparison
 
 fh_wide <- fh_results |>
   # One row per area-time cell, with model outputs in separate columns.
@@ -419,7 +565,7 @@ wave_years <- sort(unique(fh_wide$time_id))
 ```
 
 ```{r}
-#| label: plot-direct-m0-comparison
+#| label: plot-fh-baseline-comparison
 #| echo: false
 #| fig-width: 16
 #| fig-height: 12
@@ -541,7 +687,7 @@ direct_to_m0_ranked_plot <- ggplot(
 Area-time cells with high sampling variance contain less reliable local information, so M0 pulls them more strongly toward its baseline prediction. The Bayesian FH fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
 
 ```{r}
-#| label: missing-direct-m0-estimates
+#| label: summarise-fh-missing-direct
 fh_wide |>
   filter(is.na(.data$direct_estimate) | is.na(.data$variance)) |>
   transmute(
@@ -564,7 +710,7 @@ After the WAIC comparison, we inspect local estimate changes to see where the mo
 For example, moving from M2 to M3 adds the occupation and work-pattern predictors. We map where M3 changes the estimates relative to M2, then summarise the predictor profiles of the areas with the largest upward and downward shifts (top and bottom 10%).
 
 ```{r}
-#| label: plot-m2-to-m3-change
+#| label: map-fh-spatial-change
 #| echo: false
 #| fig-width: 16
 #| fig-height: 5
@@ -626,7 +772,7 @@ wrap_plots(m2_to_m3_maps, ncol = 3) +
   )
 ```
 ```{r}
-#| label: summarise-m2-to-m3-drivers
+#| label: summarise-fh-spatial-change
 m2_to_m3_drivers <- model_data |>
   select(
     area_id,
@@ -666,7 +812,7 @@ The contribution of the temporal and spatial effects on the model prediction can
 - `phi` is the BYM2 mixing parameter: it indicates how much of the area random effect is assigned to the structured spatial component versus the unstructured component. A value of `0.5` means the structured and unstructured components contribute roughly equally to the area random effect.
 
 ```{r}
-#| label: tau-phi
+#| label: diagnose-fh-hyperparameters
 
 fh_fits[["M4 +Spatial"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
@@ -677,12 +823,10 @@ fh_fits[["M4 +Spatial"]]$summary.hyperpar |>
   )
 ```
 
-The temporal effect has a high `tau` than the spatial effect, indicating smaller differences between survey waves than between MSOAs. Meanwhile, the low spatial `phi` (less than `0.5`) indicates that only a small share of the remaining between-area variation follows the spatial weights; most of it remains unstructured. 
-
-We can see where that structured spatial component affects the estimates by mapping the change from M3 to M4. In most areas the changes are small, with some clustered adjustments where neighbouring MSOAs share similar estimated walking rates, such as the more urban southern region.
+The temporal effect has a high `tau` than the spatial effect, indicating smaller differences between survey waves than between MSOAs. Meanwhile, the low spatial `phi` (less than `0.5`) indicates that only a small share of the remaining between-area variation follows the spatial weights; most of it remains unstructured. We can see where that structured spatial component affects the estimates by mapping the change from M3 to M4. In most areas the changes are small, with some clustered adjustments where neighbouring MSOAs share similar estimated walking rates, such as the more urban southern region.
 
 ```{r}
-#| label: spatial-change-map
+#| label: map-fh-residual-spatial-effect
 #| echo: false
 #| fig-width: 16
 #| fig-height: 5
@@ -743,105 +887,7 @@ wrap_plots(m3_to_m4_maps, ncol = 3) +
   )
 ```
 
-
-## Report estimates and uncertainty
-
-Choosing the final model requires performance diagnostics, domain knowledge about the estimand, and enough metadata for downstream interpretation. Further benchmarking, such as comparison with related external indicators or sensitivity checks, can strengthen this decision when suitable data are available.
-
-The final model estimates should be reported with their associated uncertainty. In the maps below, uncertainty is shown as the width of the posterior 95% credible interval. For transparency, the output should also retain the direct estimates, sample sizes, and direct-estimate variances.
-
-```{r}
-#| label: select-final-fh-model
-# Keep only the final, most structured model.
-final_fh_results <- fh_results |>
-  filter(.data$model == "M4 +Spatial") |>
-  transmute(
-    area_id,
-    msoa_name,
-    time_id,
-    n,
-    direct_estimate,
-    variance,
-    fh_estimate,
-    fh_variance,
-    fh_lower,
-    fh_upper,
-    fh_ci_width
-  )
-
-head(final_fh_results)
-```
-
-```{r}
-#| label: final-model-map
-#| echo: false
-#| fig-width: 16
-#| fig-height: 12
-#| out-width: "100%"
-
-final_map_data <- msoa_boundaries |>
-  left_join(final_fh_results, by = "area_id")
-final_estimate_limits <- range(final_fh_results$fh_estimate, na.rm = TRUE)
-final_ci_width_limits <- c(0, max(final_fh_results$fh_ci_width, na.rm = TRUE))
-final_wave_years <- sort(unique(final_fh_results$time_id))
-
-plot_final_estimate <- function(wave) {
-  final_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
-    scale_fill_viridis_c(
-      option = "magma",
-      limits = final_estimate_limits,
-      labels = share_label,
-      na.value = missing_fill,
-      name = "Share"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
-
-plot_final_ci_width <- function(wave) {
-  final_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$fh_ci_width), colour = "transparent") +
-    scale_fill_distiller(
-      palette = "Oranges",
-      direction = 1,
-      limits = final_ci_width_limits,
-      labels = pp_label,
-      na.value = missing_fill,
-      name = "95% CI width"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
-
-estimate_maps <- lapply(final_wave_years, plot_final_estimate)
-uncertainty_maps <- lapply(final_wave_years, plot_final_ci_width)
-
-estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
-uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
-
-for (i in seq_len(length(final_wave_years) - 1)) {
-  estimate_maps[[i]] <- estimate_maps[[i]] +
-    theme(legend.position = "none")
-  uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
-    theme(legend.position = "none")
-}
-
-wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 3) +
-  plot_annotation(
-    title = "Share of adults who walk for transport daily",
-    subtitle = "Spatio-temporal FH model (M4), 95% CI width",
-    theme = map_annotation_theme
-  )
-```
-
-Even after the direct estimates have been stabilised through the Fay-Herriot model, weaker survey coverage can still leave year-specific patterns in the modelled estimates. The generally higher 2023 estimates are consistent with weaker survey coverage in that wave, so the modelled estimates should be read alongside posterior interval widths and original sample sizes.
+In practice, choosing an SAE model is a holistic judgement. The final specification should be assessed using model diagnostics, stepwise changes across candidate models, uncertainty patterns, and domain knowledge about the estimand and expected spatial structure. These checks help decide whether the model is already good enough for reporting, or whether it should be further enriched with additional predictors, alternative spatial or temporal structures.
 
 ```{r}
 #| label: export-fh-results

@@ -754,7 +754,7 @@ Note
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M2 +No-car"</span> <span class="ot">=</span> m2_formula</span>
 <span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Conceptually, the workflow has two steps: fit the respondent-level model, then evaluate it on the area-time aggregation rows. But since <code>INLA</code> returns fitted values for every row in the input data, we bind model and aggregation data rows into one before fitting. The aggregation rows represent the area-time cells we want to estimate and have <code>indicator = NA</code>, so <code>INLA</code> returns fitted values for them using the supplied area predictors.</p>
+<p>Conceptually, the workflow has two steps: fit the respondent-level model, then evaluate it for each area-time. We implement this by binding the observed respondent rows and the area-time aggregation rows into a single input table before fitting. The area-time rows to have their estimates predicted have <code>indicator = NA</code>, signalling to <code>INLA</code> to return fitted values for them.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>model_agg_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  model_data <span class="sc">|&gt;</span></span>
@@ -781,170 +781,46 @@ Note
 <span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
 <span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> model_agg_data,</span>
 <span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">dic =</span> <span class="cn">TRUE</span>, <span class="at">waic =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>)</span>
 <span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>bhf_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(model_formulas, fit_bhf_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Next, we collate fitted values for the aggregation rows across the BHF model specifications.</p>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>aggregation_row_ids <span class="ot">&lt;-</span> <span class="fu">which</span>(model_agg_data<span class="sc">$</span>row_type <span class="sc">==</span> <span class="st">"aggregation"</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>aggregation_output_frame <span class="ot">&lt;-</span> aggregation_data <span class="sc">|&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, msoa_name, time_id)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>bhf_results <span class="ot">&lt;-</span> <span class="fu">imap_dfr</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  bhf_fits,</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  \(fit, model_name) {</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    fit<span class="sc">$</span>summary.fitted.values[</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>      aggregation_row_ids,</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>      ,</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>      drop <span class="ot">=</span> <span class="cn">FALSE</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    ] <span class="sc">|&gt;</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>      <span class="fu">bind_cols</span>(aggregation_output_frame) <span class="sc">|&gt;</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>        <span class="at">bhf_estimate =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(.data<span class="sc">$</span>mean, <span class="dv">0</span>), <span class="dv">1</span>),</span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>        <span class="at">bhf_variance =</span> .data<span class="sc">$</span>sd<span class="sc">^</span><span class="dv">2</span>,</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>        <span class="at">bhf_lower =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(.data[[<span class="st">"0.025quant"</span>]], <span class="dv">0</span>), <span class="dv">1</span>),</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>        <span class="at">bhf_upper =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(.data[[<span class="st">"0.975quant"</span>]], <span class="dv">0</span>), <span class="dv">1</span>),</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>        <span class="at">bhf_ci_width =</span> .data<span class="sc">$</span>bhf_upper <span class="sc">-</span> .data<span class="sc">$</span>bhf_lower</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>      ) <span class="sc">|&gt;</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">transmute</span>(</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        area_id,</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        msoa_name,</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>        time_id,</span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        <span class="at">model =</span> model_name,</span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        bhf_estimate,</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>        bhf_variance,</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>        bhf_lower,</span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>        bhf_upper,</span>
-<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>        bhf_ci_width</span>
-<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bhf_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 8%">
-<col style="width: 17%">
-<col style="width: 6%">
-<col style="width: 18%">
-<col style="width: 10%">
-<col style="width: 10%">
-<col style="width: 8%">
-<col style="width: 8%">
-<col style="width: 10%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">area_id</th>
-<th style="text-align: left;">msoa_name</th>
-<th style="text-align: right;">time_id</th>
-<th style="text-align: left;">model</th>
-<th style="text-align: right;">bhf_estimate</th>
-<th style="text-align: right;">bhf_variance</th>
-<th style="text-align: right;">bhf_lower</th>
-<th style="text-align: right;">bhf_upper</th>
-<th style="text-align: right;">bhf_ci_width</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.1066054</td>
-<td style="text-align: right;">0.0006609</td>
-<td style="text-align: right;">0.0552684</td>
-<td style="text-align: right;">0.1563610</td>
-<td style="text-align: right;">0.1010926</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000002</td>
-<td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.1345890</td>
-<td style="text-align: right;">0.0006358</td>
-<td style="text-align: right;">0.0856062</td>
-<td style="text-align: right;">0.1849622</td>
-<td style="text-align: right;">0.0993559</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000003</td>
-<td style="text-align: left;">Isle of Anglesey 003</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.1467685</td>
-<td style="text-align: right;">0.0013845</td>
-<td style="text-align: right;">0.0745599</td>
-<td style="text-align: right;">0.2207836</td>
-<td style="text-align: right;">0.1462238</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000004</td>
-<td style="text-align: left;">Isle of Anglesey 004</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.0900547</td>
-<td style="text-align: right;">0.0007739</td>
-<td style="text-align: right;">0.0342065</td>
-<td style="text-align: right;">0.1431706</td>
-<td style="text-align: right;">0.1089641</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000005</td>
-<td style="text-align: left;">Isle of Anglesey 005</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.1395716</td>
-<td style="text-align: right;">0.0007427</td>
-<td style="text-align: right;">0.0865944</td>
-<td style="text-align: right;">0.1938498</td>
-<td style="text-align: right;">0.1072554</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000006</td>
-<td style="text-align: left;">Isle of Anglesey 006</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">M1 Temporal + Spatial</td>
-<td style="text-align: right;">0.1164169</td>
-<td style="text-align: right;">0.0006023</td>
-<td style="text-align: right;">0.0678013</td>
-<td style="text-align: right;">0.1644578</td>
-<td style="text-align: right;">0.0966565</td>
-</tr>
-</tbody>
-</table>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
 </div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>When fitting unit-level BHF models with <code>INLA</code>, these arguments are needed:</p>
+<ul>
+<li><code>control.predictor = list(compute = TRUE)</code> ensures that fitted values are returned for the full input table, so the predictions for the aggregation rows can be extracted after fitting.</li>
+<li><code>control.compute = list(waic = TRUE)</code> requests WAIC for comparing model fit across candidate specifications.</li>
+</ul>
 </div>
 </div>
 <p>To compare the fitted models’ overall performance, we again use <strong>WAIC</strong> as a first check. WAIC is a global predictive-fit measure returned by <code>INLA</code>; lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M2 shows that adding the no-car predictor improves the model predictive power as expected.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>model_waic <span class="ot">&lt;-</span> <span class="fu">imap_dfr</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  bhf_fits,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  \(fit, model_name) {</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_name,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">waic =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>waic,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">eff_params =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>p.eff</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>waic)</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>model_waic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>model_waic <span class="ot">&lt;-</span> <span class="fu">imap_dfr</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  bhf_fits,</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  \(fit, model_name) {</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_name,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">waic =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>waic,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">eff_params =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>p.eff</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>waic)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>model_waic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -959,8 +835,8 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M2 +No-car</td>
-<td style="text-align: right;">7974.539</td>
-<td style="text-align: right;">64.82726</td>
+<td style="text-align: right;">7974.464</td>
+<td style="text-align: right;">65.03377</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M1 Temporal + Spatial</td>
@@ -976,16 +852,16 @@ Note
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[<span class="st">"M2 +No-car"</span>]]<span class="sc">$</span>summary.fixed <span class="sc">|&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.data<span class="sc">$</span>term <span class="sc">==</span> <span class="st">"no_car"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    term,</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">pp_label</span>(.data<span class="sc">$</span>mean),</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.025quant"</span>]]),</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.975quant"</span>]])</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[<span class="st">"M2 +No-car"</span>]]<span class="sc">$</span>summary.fixed <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.data<span class="sc">$</span>term <span class="sc">==</span> <span class="st">"no_car"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    term,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">pp_label</span>(.data<span class="sc">$</span>mean),</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.025quant"</span>]]),</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.975quant"</span>]])</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -1014,20 +890,20 @@ Note
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[<span class="st">"M2 +No-car"</span>]]<span class="sc">$</span>summary.hyperpar <span class="sc">|&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"parameter"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(.data<span class="sc">$</span>parameter, <span class="st">"time_inla_id|area_inla_id|Phi"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(parameter, mean, sd, <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.5quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>))</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[<span class="st">"M2 +No-car"</span>]]<span class="sc">$</span>summary.hyperpar <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"parameter"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(.data<span class="sc">$</span>parameter, <span class="st">"time_inla_id|area_inla_id|Phi"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(parameter, mean, sd, <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.5quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>))</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 35%">
-<col style="width: 11%">
+<col style="width: 34%">
+<col style="width: 12%">
 <col style="width: 12%">
 <col style="width: 14%">
 <col style="width: 11%">
@@ -1046,27 +922,27 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">7464.395</td>
-<td style="text-align: right;">11324.832</td>
-<td style="text-align: right;">540.441</td>
-<td style="text-align: right;">4132.355</td>
-<td style="text-align: right;">35271.156</td>
+<td style="text-align: right;">11917.530</td>
+<td style="text-align: right;">31581.721</td>
+<td style="text-align: right;">696.400</td>
+<td style="text-align: right;">4493.847</td>
+<td style="text-align: right;">70916.869</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">1116.173</td>
-<td style="text-align: right;">427.259</td>
-<td style="text-align: right;">523.921</td>
-<td style="text-align: right;">1036.496</td>
-<td style="text-align: right;">2178.136</td>
+<td style="text-align: right;">1134.187</td>
+<td style="text-align: right;">448.862</td>
+<td style="text-align: right;">531.265</td>
+<td style="text-align: right;">1045.466</td>
+<td style="text-align: right;">2264.240</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Phi for area_inla_id</td>
-<td style="text-align: right;">0.743</td>
-<td style="text-align: right;">0.226</td>
-<td style="text-align: right;">0.177</td>
-<td style="text-align: right;">0.817</td>
-<td style="text-align: right;">0.987</td>
+<td style="text-align: right;">0.748</td>
+<td style="text-align: right;">0.268</td>
+<td style="text-align: right;">0.082</td>
+<td style="text-align: right;">0.861</td>
+<td style="text-align: right;">0.996</td>
 </tr>
 </tbody>
 </table>
@@ -1077,7 +953,31 @@ Note
 </section>
 <section id="report-estimates-and-uncertainty" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="report-estimates-and-uncertainty"><span class="header-section-number">3</span> Report estimates and uncertainty</h2>
-<p>Using M2 as the selected model, we filter the collated BHF results and join the direct-estimate metadata. The posterior mean is the final BHF estimate, and the posterior 95% credible interval represents its uncertainty. For transparency, the output also retains the direct estimates, sample sizes, and direct-estimate variances.</p>
+<p>Using M2 as the selected model, we extract predictions for the target area-time rows, marked in the <code>INLA</code> input as <code>row_type == "aggregation"</code>. We then report the posterior mean as the final estimate and use the lower and upper bounds of the 95% credible interval to describe uncertainty.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bhf_m2_fitted_values <span class="ot">&lt;-</span> bhf_fits[[<span class="st">"M2 +No-car"</span>]]<span class="sc">$</span>summary.fitted.values <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="fu">which</span>(model_agg_data<span class="sc">$</span>row_type <span class="sc">==</span> <span class="st">"aggregation"</span>))</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>bhf_m2_results <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  aggregation_data <span class="sc">|&gt;</span> <span class="fu">select</span>(area_id, msoa_name, time_id),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  bhf_m2_fitted_values</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_estimate =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(mean, <span class="dv">0</span>), <span class="dv">1</span>),</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_variance =</span> sd<span class="sc">^</span><span class="dv">2</span>,</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_lower =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(.data[[<span class="st">"0.025quant"</span>]], <span class="dv">0</span>), <span class="dv">1</span>), <span class="co"># clipped to [0,1] since estimate is a share</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_upper =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(.data[[<span class="st">"0.975quant"</span>]], <span class="dv">0</span>), <span class="dv">1</span>), <span class="co"># clipped to [0,1] since estimate is a share</span></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_ci_width =</span> bhf_upper <span class="sc">-</span> bhf_lower</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>In practice, modelled estimates should be reported alongside the direct-estimate metadata. This keeps the sample size, direct estimate, and direct-estimate variance in the final output, making it easier to compare the modelled result with the survey evidence it builds on.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1085,48 +985,46 @@ Note
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_direct.csv"</span>),</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
 <span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    n,</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    direct_estimate,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    variance</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>final_bhf_results <span class="ot">&lt;-</span> bhf_results <span class="sc">|&gt;</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(.data<span class="sc">$</span>model <span class="sc">==</span> <span class="st">"M2 +No-car"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    n,</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    direct_estimate,</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>    variance,</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    bhf_estimate,</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>    bhf_variance,</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>    bhf_lower,</span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>    bhf_upper,</span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>    bhf_ci_width</span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_bhf_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, n, direct_estimate, variance)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>final_bhf_results <span class="ot">&lt;-</span> bhf_m2_results <span class="sc">|&gt;</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    n,</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    direct_estimate,</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    variance,</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    bhf_estimate,</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>    bhf_variance,</span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>    bhf_lower,</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>    bhf_upper,</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    bhf_ci_width</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_std_resid =</span> (direct_estimate <span class="sc">-</span> bhf_estimate) <span class="sc">/</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sqrt</span>(variance <span class="sc">+</span> bhf_variance)</span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_bhf_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
 <col style="width: 7%">
-<col style="width: 16%">
-<col style="width: 6%">
+<col style="width: 14%">
+<col style="width: 5%">
 <col style="width: 2%">
-<col style="width: 12%">
+<col style="width: 11%">
 <col style="width: 7%">
-<col style="width: 10%">
-<col style="width: 10%">
+<col style="width: 9%">
+<col style="width: 9%">
 <col style="width: 7%">
 <col style="width: 7%">
-<col style="width: 10%">
+<col style="width: 9%">
+<col style="width: 9%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -1141,6 +1039,7 @@ Note
 <th style="text-align: right;">bhf_lower</th>
 <th style="text-align: right;">bhf_upper</th>
 <th style="text-align: right;">bhf_ci_width</th>
+<th style="text-align: right;">bhf_std_resid</th>
 </tr>
 </thead>
 <tbody>
@@ -1151,11 +1050,12 @@ Note
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.1065775</td>
-<td style="text-align: right;">0.0006450</td>
-<td style="text-align: right;">0.0549925</td>
-<td style="text-align: right;">0.1553551</td>
-<td style="text-align: right;">0.1003626</td>
+<td style="text-align: right;">0.1053190</td>
+<td style="text-align: right;">0.0006490</td>
+<td style="text-align: right;">0.0537316</td>
+<td style="text-align: right;">0.1543929</td>
+<td style="text-align: right;">0.1006614</td>
+<td style="text-align: right;">-4.1340659</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -1164,11 +1064,12 @@ Note
 <td style="text-align: right;">9</td>
 <td style="text-align: right;">0.4319654</td>
 <td style="text-align: right;">0.0406652</td>
-<td style="text-align: right;">0.1309838</td>
-<td style="text-align: right;">0.0006199</td>
-<td style="text-align: right;">0.0829924</td>
-<td style="text-align: right;">0.1813739</td>
-<td style="text-align: right;">0.0983815</td>
+<td style="text-align: right;">0.1301097</td>
+<td style="text-align: right;">0.0006258</td>
+<td style="text-align: right;">0.0820501</td>
+<td style="text-align: right;">0.1809447</td>
+<td style="text-align: right;">0.0988946</td>
+<td style="text-align: right;">1.4854961</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1177,11 +1078,12 @@ Note
 <td style="text-align: right;">11</td>
 <td style="text-align: right;">0.1612313</td>
 <td style="text-align: right;">0.0115984</td>
-<td style="text-align: right;">0.1641578</td>
-<td style="text-align: right;">0.0013648</td>
-<td style="text-align: right;">0.0930462</td>
-<td style="text-align: right;">0.2384091</td>
-<td style="text-align: right;">0.1453628</td>
+<td style="text-align: right;">0.1636343</td>
+<td style="text-align: right;">0.0013751</td>
+<td style="text-align: right;">0.0922858</td>
+<td style="text-align: right;">0.2382431</td>
+<td style="text-align: right;">0.1459573</td>
+<td style="text-align: right;">-0.0210977</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1190,11 +1092,12 @@ Note
 <td style="text-align: right;">14</td>
 <td style="text-align: right;">0.1388181</td>
 <td style="text-align: right;">0.0155708</td>
-<td style="text-align: right;">0.0881658</td>
-<td style="text-align: right;">0.0007721</td>
-<td style="text-align: right;">0.0311024</td>
-<td style="text-align: right;">0.1404557</td>
-<td style="text-align: right;">0.1093533</td>
+<td style="text-align: right;">0.0867616</td>
+<td style="text-align: right;">0.0007753</td>
+<td style="text-align: right;">0.0296845</td>
+<td style="text-align: right;">0.1391722</td>
+<td style="text-align: right;">0.1094876</td>
+<td style="text-align: right;">0.4071621</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1203,11 +1106,12 @@ Note
 <td style="text-align: right;">17</td>
 <td style="text-align: right;">0.2357801</td>
 <td style="text-align: right;">0.0157031</td>
-<td style="text-align: right;">0.1372590</td>
-<td style="text-align: right;">0.0007285</td>
-<td style="text-align: right;">0.0850881</td>
-<td style="text-align: right;">0.1914970</td>
-<td style="text-align: right;">0.1064088</td>
+<td style="text-align: right;">0.1364961</td>
+<td style="text-align: right;">0.0007335</td>
+<td style="text-align: right;">0.0842047</td>
+<td style="text-align: right;">0.1909975</td>
+<td style="text-align: right;">0.1067928</td>
+<td style="text-align: right;">0.7744141</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1216,11 +1120,12 @@ Note
 <td style="text-align: right;">19</td>
 <td style="text-align: right;">0.1008805</td>
 <td style="text-align: right;">0.0055383</td>
-<td style="text-align: right;">0.1199145</td>
-<td style="text-align: right;">0.0005832</td>
-<td style="text-align: right;">0.0717321</td>
-<td style="text-align: right;">0.1671462</td>
-<td style="text-align: right;">0.0954142</td>
+<td style="text-align: right;">0.1188869</td>
+<td style="text-align: right;">0.0005861</td>
+<td style="text-align: right;">0.0706833</td>
+<td style="text-align: right;">0.1663678</td>
+<td style="text-align: right;">0.0956844</td>
+<td style="text-align: right;">-0.2300891</td>
 </tr>
 </tbody>
 </table>
@@ -1229,10 +1134,10 @@ Note
 </div>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="bhf-unit_files/figure-html/final-bhf-estimate-map-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="bhf-unit_files/figure-html/map-bhf-final-results-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>The scatterplot below shows that BHF estimates are much smoother than the direct estimates and closer to the Fay–Herriot estimates, as expected for a model-based approach that borrows strength across area-time cells.</p>
+<p>Compared with the mapped direct estimates, the modelled estimates show a more plausible spatial pattern: more urban areas in south Wales have higher rates of daily walking among adults, while the sporadic jaggedness seen in low-sample regions is smoothed. The scatterplot below shows that the BHF estimates are in fact much smoother than the direct estimates and closer to the Fay–Herriot estimates, as expected from a model-based approach that borrows strength across area-time cells.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1253,10 +1158,10 @@ Note
 </div>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="bhf-unit_files/figure-html/bhf-comparison-scatter-1.png" class="img-fluid" width="1152"></p>
+<p><img src="bhf-unit_files/figure-html/plot-bhf-comparison-scatter-1.png" class="img-fluid" width="1152"></p>
 </div>
 </div>
-<p>The BHF and Fay–Herriot estimates differ because the two models use the survey information differently. This simple BHF example is fitted to unweighted respondent records and uses only one respondent-level predictor. The final Fay–Herriot model starts from weighted direct estimates, uses their sampling variances, and includes a richer set of area-level predictors and spatio-temporal effects.</p>
+<p>However, the BHF and Fay–Herriot estimates could still differ because the two models use the survey information differently. This simple BHF example is fitted to unweighted respondent records and uses only one respondent-level predictor. The final Fay–Herriot model starts from weighted direct estimates, uses their sampling variances, and includes a richer set of area-level predictors and spatio-temporal effects.</p>
 <p>Adding more unit-level predictors such as age, sex, ethnicity, or employment status can help; aggregation then requires a population table with the joint distribution of those predictors for every area-time cell. This requirement leads to <strong>multilevel regression with poststratification</strong>: MRP fits a richer unit-level model and averages predicted outcomes over a poststratification table representing the target population.</p>
 
 

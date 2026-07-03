@@ -4,7 +4,7 @@ subtitle: "Survey design-based estimates and uncertainty"
 ---
 
 ```{r}
-#| label: setup-direct-estimation
+#| label: setup-direct
 library(dplyr)
 library(readr)
 library(stringr)
@@ -75,7 +75,7 @@ $$
 
 <div class="method-divider" aria-hidden="true"></div>
 
-{{< include _includes/target-estimand.qmd >}}
+{{< include assets/target-estimand.qmd >}}
 
 ## Prepare survey data
 
@@ -108,7 +108,7 @@ head(survey_walk)
 We use `svyby()` from the `survey` package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.
 
 ```{r}
-#| label: direct-estimates-walking
+#| label: estimate-direct
 #| code-fold: false
 
 # Define survey design
@@ -287,7 +287,7 @@ direct_summary_by_wave
 In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE** models stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
 
 ```{r}
-#| label: save-direct-estimates
+#| label: export-direct-results
 #| echo: false
 write_csv(
   direct_walk,

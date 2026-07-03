@@ -91,7 +91,7 @@ where $f_{jt}=n_{jt}/N_{jt}$, $\bar{y}_{jtS}$ and $\bar{\mathbf{x}}_{jtS}$ are s
 
 <div class="method-divider" aria-hidden="true"></div>
 
-{{< include _includes/target-estimand.qmd >}}
+{{< include assets/target-estimand.qmd >}}
 
 ## Prepare model and aggregation data
 
@@ -266,7 +266,7 @@ model_formulas <- list(
 
 ```
 
-Conceptually, the workflow has two steps: fit the respondent-level model, then evaluate it on the area-time aggregation rows. But since `INLA` returns fitted values for every row in the input data, we bind model and aggregation data rows into one before fitting. The aggregation rows represent the area-time cells we want to estimate and have `indicator = NA`, so `INLA` returns fitted values for them using the supplied area predictors.
+Conceptually, the workflow has two steps: fit the respondent-level model, then evaluate it for each area-time. We implement this by binding the observed respondent rows and the area-time aggregation rows into a single input table before fitting. The area-time rows to have their estimates predicted have `indicator = NA`, signalling to `INLA` to return fitted values for them.
 
 ```{r}
 #| label: fit-bhf-models
@@ -297,61 +297,24 @@ fit_bhf_model <- function(formula) {
     family = "gaussian",
     data = model_agg_data,
     control.predictor = list(compute = TRUE),
-    control.compute = list(dic = TRUE, waic = TRUE)
+    control.compute = list(waic = TRUE)
   )
 }
 
 bhf_fits <- lapply(model_formulas, fit_bhf_model)
 ```
 
-Next, we collate fitted values for the aggregation rows across the BHF model specifications.
+:::{.callout-note}
+When fitting unit-level BHF models with `INLA`, these arguments are needed:
 
-```{r}
-#| label: collate-bhf-results
-
-aggregation_row_ids <- which(model_agg_data$row_type == "aggregation")
-
-aggregation_output_frame <- aggregation_data |>
-  select(area_id, msoa_name, time_id)
-
-bhf_results <- imap_dfr(
-  bhf_fits,
-  \(fit, model_name) {
-    fit$summary.fitted.values[
-      aggregation_row_ids,
-      ,
-      drop = FALSE
-    ] |>
-      as_tibble() |>
-      bind_cols(aggregation_output_frame) |>
-      mutate(
-        bhf_estimate = pmin(pmax(.data$mean, 0), 1),
-        bhf_variance = .data$sd^2,
-        bhf_lower = pmin(pmax(.data[["0.025quant"]], 0), 1),
-        bhf_upper = pmin(pmax(.data[["0.975quant"]], 0), 1),
-        bhf_ci_width = .data$bhf_upper - .data$bhf_lower
-      ) |>
-      transmute(
-        area_id,
-        msoa_name,
-        time_id,
-        model = model_name,
-        bhf_estimate,
-        bhf_variance,
-        bhf_lower,
-        bhf_upper,
-        bhf_ci_width
-      )
-  }
-)
-
-head(bhf_results)
-```
+- `control.predictor = list(compute = TRUE)` ensures that fitted values are returned for the full input table, so the predictions for the aggregation rows can be extracted after fitting.
+- `control.compute = list(waic = TRUE)` requests WAIC for comparing model fit across candidate specifications.
+:::
 
 To compare the fitted models' overall performance, we again use **WAIC** as a first check. WAIC is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M2 shows that adding the no-car predictor improves the model predictive power as expected.
 
 ```{r}
-#| label: bhf-waic-comparison
+#| label: compare-bhf-waic
 
 model_waic <- imap_dfr(
   bhf_fits,
@@ -388,7 +351,7 @@ bhf_fits[["M2 +No-car"]]$summary.fixed |>
 Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `phi` help show what the temporal and spatial terms are doing in the selected model. 
 
 ```{r}
-#| label: bhf-random-effect-hyperparameters
+#| label: diagnose-bhf-hyperparameters
 
 bhf_fits[["M2 +No-car"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
@@ -398,31 +361,48 @@ bhf_fits[["M2 +No-car"]]$summary.hyperpar |>
     across(where(is.numeric), ~ round(.x, 3))
   )
 ```
+
 The temporal `tau` is high, suggesting that the survey-wave adjustments are relatively small. By contrast, the spatial `tau` is lower, indicating more remaining variation between MSOAs than between survey waves. The BYM2 `phi` is above `0.5`, so in this simple BHF model specification much of the remaining between-MSOA variation is spatially structured. By contrast, the lower `phi` in the Fay--Herriot model may reflect its richer specification: with more area-level predictors included, less residual between-MSOA variation is left for the spatial random effect to explain.
 
 ## Report estimates and uncertainty
 
-Using M2 as the selected model, we filter the collated BHF results and join the direct-estimate metadata. The posterior mean is the final BHF estimate, and the posterior 95% credible interval represents its uncertainty. For transparency, the output also retains the direct estimates, sample sizes, and direct-estimate variances.
+Using M2 as the selected model, we extract predictions for the target area-time rows, marked in the `INLA` input as `row_type == "aggregation"`. We then report the posterior mean as the final estimate and use the lower and upper bounds of the 95% credible interval to describe uncertainty.
 
 ```{r}
-#| label: select-final-bhf-model
+#| label: extract-bhf-final-predictions
+
+bhf_m2_fitted_values <- bhf_fits[["M2 +No-car"]]$summary.fitted.values |>
+  as_tibble() |>
+  slice(which(model_agg_data$row_type == "aggregation"))
+
+bhf_m2_results <- bind_cols(
+  aggregation_data |> select(area_id, msoa_name, time_id),
+  bhf_m2_fitted_values
+) |>
+  transmute(
+    area_id,
+    msoa_name,
+    time_id,
+    bhf_estimate = pmin(pmax(mean, 0), 1),
+    bhf_variance = sd^2,
+    bhf_lower = pmin(pmax(.data[["0.025quant"]], 0), 1), # clipped to [0,1] since estimate is a share
+    bhf_upper = pmin(pmax(.data[["0.975quant"]], 0), 1), # clipped to [0,1] since estimate is a share
+    bhf_ci_width = bhf_upper - bhf_lower
+  )
+```
+In practice, modelled estimates should be reported alongside the direct-estimate metadata. This keeps the sample size, direct estimate, and direct-estimate variance in the final output, making it easier to compare the modelled result with the survey evidence it builds on.
+```{r}
+#| label: extract-bhf-final-results
 
 direct_estimates <- read_csv(
   file.path(base_path, "freqwalk_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
-  transmute(
-    area_id,
-    time_id,
-    n,
-    direct_estimate,
-    variance
-  )
+  select(area_id, time_id, n, direct_estimate, variance)
 
-final_bhf_results <- bhf_results |>
-  filter(.data$model == "M2 +No-car") |>
+final_bhf_results <- bhf_m2_results |>
   left_join(direct_estimates, by = c("area_id", "time_id")) |>
-  transmute(
+  select(
     area_id,
     msoa_name,
     time_id,
@@ -434,21 +414,28 @@ final_bhf_results <- bhf_results |>
     bhf_lower,
     bhf_upper,
     bhf_ci_width
+  ) |>
+  mutate(
+    bhf_std_resid = (direct_estimate - bhf_estimate) /
+      sqrt(variance + bhf_variance)
   )
 
 head(final_bhf_results)
 ```
+
 ```{r}
-#| label: final-bhf-estimate-map
+#| label: map-bhf-final-results
 #| echo: false
 #| fig-width: 16
-#| fig-height: 12
+#| fig-height: 16
 #| out-width: "100%"
 
 final_bhf_map_data <- msoa_boundaries |>
   left_join(final_bhf_results, by = "area_id")
 bhf_estimate_limits <- range(final_bhf_results$bhf_estimate, na.rm = TRUE)
 bhf_ci_width_limits <- c(0, max(final_bhf_results$bhf_ci_width, na.rm = TRUE))
+bhf_std_resid_limit <- max(abs(final_bhf_results$bhf_std_resid), na.rm = TRUE)
+bhf_std_resid_limits <- c(-bhf_std_resid_limit, bhf_std_resid_limit)
 bhf_wave_years <- sort(unique(final_bhf_results$time_id))
 
 plot_bhf_estimate <- function(wave) {
@@ -486,29 +473,52 @@ plot_bhf_ci_width <- function(wave) {
     map_text_theme
 }
 
+plot_bhf_std_resid <- function(wave) {
+  final_bhf_map_data |>
+    filter(.data$time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = .data$bhf_std_resid), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "RdBu",
+      direction = -1,
+      limits = bhf_std_resid_limits,
+      na.value = missing_fill,
+      name = "Std. residual"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
 estimate_maps <- lapply(bhf_wave_years, plot_bhf_estimate)
 uncertainty_maps <- lapply(bhf_wave_years, plot_bhf_ci_width)
+residual_maps <- lapply(bhf_wave_years, plot_bhf_std_resid)
 
 estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
 uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
+residual_maps[[1]] <- residual_maps[[1]] + ylab("Std. residual")
 
 for (i in seq_len(length(bhf_wave_years) - 1)) {
   estimate_maps[[i]] <- estimate_maps[[i]] +
     theme(legend.position = "none")
   uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
     theme(legend.position = "none")
+  residual_maps[[i]] <- residual_maps[[i]] +
+    theme(legend.position = "none")
 }
 
-wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 3) +
+wrap_plots(c(estimate_maps, uncertainty_maps, residual_maps), ncol = 3) +
   plot_annotation(
     title = "Share of adults who walk for transport daily",
-    subtitle = "Spatio-temporal BHF model (M2), 95% CI width",
+    subtitle = "Spatio-temporal BHF model (M2), 95% CI width and standardised residual",
     theme = map_annotation_theme
   )
 ```
-The scatterplot below shows that BHF estimates are much smoother than the direct estimates and closer to the Fay--Herriot estimates, as expected for a model-based approach that borrows strength across area-time cells.
+
+Compared with the mapped direct estimates, the modelled estimates show a more plausible spatial pattern: more urban areas in south Wales have higher rates of daily walking among adults, while the sporadic jaggedness seen in low-sample regions is smoothed. The scatterplot below shows that the BHF estimates are in fact much smoother than the direct estimates and closer to the Fay--Herriot estimates, as expected from a model-based approach that borrows strength across area-time cells.
+
 ```{r}
-#| label: load-comparison-estimates
+#| label: load-bhf-comparison-results
 fh_final_estimates <- read_csv(
   file.path(base_path, "freqwalk_estimates_fh.csv"),
   show_col_types = FALSE
@@ -524,7 +534,7 @@ bhf_estimates <- final_bhf_results |>
   relocate(direct_estimate, n, .after = time_id)
 ```
 ```{r}
-#| label: bhf-comparison-scatter
+#| label: plot-bhf-comparison-scatter
 #| echo: false
 #| fig-height: 6
 #| fig-width: 12
@@ -587,12 +597,12 @@ bhf_scatter_comparison |>
   )
 ```
 
-The BHF and Fay--Herriot estimates differ because the two models use the survey information differently. This simple BHF example is fitted to unweighted respondent records and uses only one respondent-level predictor. The final Fay--Herriot model starts from weighted direct estimates, uses their sampling variances, and includes a richer set of area-level predictors and spatio-temporal effects.
+However, the BHF and Fay--Herriot estimates could still differ because the two models use the survey information differently. This simple BHF example is fitted to unweighted respondent records and uses only one respondent-level predictor. The final Fay--Herriot model starts from weighted direct estimates, uses their sampling variances, and includes a richer set of area-level predictors and spatio-temporal effects.
 
 Adding more unit-level predictors such as age, sex, ethnicity, or employment status can help; aggregation then requires a population table with the joint distribution of those predictors for every area-time cell. This requirement leads to **multilevel regression with poststratification**: MRP fits a richer unit-level model and averages predicted outcomes over a poststratification table representing the target population.
 
 ```{r}
-#| label: save-bhf-outputs
+#| label: export-bhf-results
 #| echo: false
 
 write_csv(
