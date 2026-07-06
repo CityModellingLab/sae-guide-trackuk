@@ -405,10 +405,8 @@ Target estimand
 </div>
 <section id="prepare-model-and-aggregation-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-model-and-aggregation-data"><span class="header-section-number">1</span> Prepare model and aggregation data</h2>
-<p>Before preparing the model inputs, we create a consistent numeric index for each area and survey year in the complete area-time domain. These indices are used by <code>INLA</code> to attach random effects to the correct area and period.</p>
+<p>Before preparing the model inputs, we create consistent numeric indices for each area and survey year so that <code>INLA</code> can attach random effects to the correct area and period, as well as a Queen-contiguity adjacency graph <code>.adj</code> as input, similar to what we did in the previous FH model workbook.</p>
 <div class="cell">
-<details>
-<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>area_levels <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(domain_frame[[<span class="st">"area_id"</span>]]))</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>time_levels <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(domain_frame[[<span class="st">"time_id"</span>]]))</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -421,12 +419,8 @@ Target estimand
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_id =</span> time_levels,</span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_inla_id =</span> <span class="fu">seq_along</span>(time_levels)</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
 </div>
-<p>To include a spatial random effect, we also need an adjacency graph <code>.adj</code> as input. We again use Queen contiguity.</p>
 <div class="cell">
-<details>
-<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>msoa_boundaries_sorted <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>area_inla_id)</span>
@@ -443,7 +437,6 @@ Target estimand
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> spatial_graph_file,</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">nb =</span> msoa_neighbours</span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
 </div>
 <p>We now prepare the two datasets needed for the unit-level <code>INLA</code> workflow:</p>
 <ul>
@@ -471,24 +464,19 @@ Target estimand
 <span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>model_data <span class="ot">&lt;-</span> walking_indicator <span class="sc">|&gt;</span></span>
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(time_index, <span class="at">by =</span> <span class="st">"time_id"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>indicator),</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>area_id),</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>time_id),</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="sc">!</span><span class="fu">is.na</span>(.data<span class="sc">$</span>no_car)</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    unit_id,</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    indicator,</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    no_car,</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    time_inla_id,</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    area_inla_id</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>time_id, .data<span class="sc">$</span>area_inla_id)</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(model_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(indicator, area_id, time_id, no_car) <span class="sc">|&gt;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    unit_id,</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    indicator,</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    no_car,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    time_inla_id,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    area_inla_id</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.data<span class="sc">$</span>time_id, .data<span class="sc">$</span>area_inla_id)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(model_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -835,8 +823,8 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M2 +No-car</td>
-<td style="text-align: right;">7974.464</td>
-<td style="text-align: right;">65.03377</td>
+<td style="text-align: right;">7974.604</td>
+<td style="text-align: right;">64.75682</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M1 Temporal + Spatial</td>
@@ -902,8 +890,8 @@ Note
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 34%">
-<col style="width: 12%">
+<col style="width: 35%">
+<col style="width: 11%">
 <col style="width: 12%">
 <col style="width: 14%">
 <col style="width: 11%">
@@ -922,27 +910,27 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">11917.530</td>
-<td style="text-align: right;">31581.721</td>
-<td style="text-align: right;">696.400</td>
-<td style="text-align: right;">4493.847</td>
-<td style="text-align: right;">70916.869</td>
+<td style="text-align: right;">8359.049</td>
+<td style="text-align: right;">15341.055</td>
+<td style="text-align: right;">584.548</td>
+<td style="text-align: right;">4125.466</td>
+<td style="text-align: right;">43150.074</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">1134.187</td>
-<td style="text-align: right;">448.862</td>
-<td style="text-align: right;">531.265</td>
-<td style="text-align: right;">1045.466</td>
-<td style="text-align: right;">2264.240</td>
+<td style="text-align: right;">1122.805</td>
+<td style="text-align: right;">433.356</td>
+<td style="text-align: right;">525.728</td>
+<td style="text-align: right;">1041.012</td>
+<td style="text-align: right;">2202.715</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Phi for area_inla_id</td>
-<td style="text-align: right;">0.748</td>
-<td style="text-align: right;">0.268</td>
-<td style="text-align: right;">0.082</td>
-<td style="text-align: right;">0.861</td>
-<td style="text-align: right;">0.996</td>
+<td style="text-align: right;">0.749</td>
+<td style="text-align: right;">0.248</td>
+<td style="text-align: right;">0.125</td>
+<td style="text-align: right;">0.843</td>
+<td style="text-align: right;">0.993</td>
 </tr>
 </tbody>
 </table>
@@ -1050,12 +1038,12 @@ Note
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.1053190</td>
-<td style="text-align: right;">0.0006490</td>
-<td style="text-align: right;">0.0537316</td>
-<td style="text-align: right;">0.1543929</td>
-<td style="text-align: right;">0.1006614</td>
-<td style="text-align: right;">-4.1340659</td>
+<td style="text-align: right;">0.1060393</td>
+<td style="text-align: right;">0.0006482</td>
+<td style="text-align: right;">0.0544110</td>
+<td style="text-align: right;">0.1550287</td>
+<td style="text-align: right;">0.1006177</td>
+<td style="text-align: right;">-4.1650551</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -1064,12 +1052,12 @@ Note
 <td style="text-align: right;">9</td>
 <td style="text-align: right;">0.4319654</td>
 <td style="text-align: right;">0.0406652</td>
-<td style="text-align: right;">0.1301097</td>
-<td style="text-align: right;">0.0006258</td>
-<td style="text-align: right;">0.0820501</td>
-<td style="text-align: right;">0.1809447</td>
-<td style="text-align: right;">0.0988946</td>
-<td style="text-align: right;">1.4854961</td>
+<td style="text-align: right;">0.1306149</td>
+<td style="text-align: right;">0.0006249</td>
+<td style="text-align: right;">0.0825303</td>
+<td style="text-align: right;">0.1813172</td>
+<td style="text-align: right;">0.0987869</td>
+<td style="text-align: right;">1.4830264</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1078,12 +1066,12 @@ Note
 <td style="text-align: right;">11</td>
 <td style="text-align: right;">0.1612313</td>
 <td style="text-align: right;">0.0115984</td>
-<td style="text-align: right;">0.1636343</td>
-<td style="text-align: right;">0.0013751</td>
-<td style="text-align: right;">0.0922858</td>
-<td style="text-align: right;">0.2382431</td>
-<td style="text-align: right;">0.1459573</td>
-<td style="text-align: right;">-0.0210977</td>
+<td style="text-align: right;">0.1638939</td>
+<td style="text-align: right;">0.0013700</td>
+<td style="text-align: right;">0.0926874</td>
+<td style="text-align: right;">0.2383496</td>
+<td style="text-align: right;">0.1456622</td>
+<td style="text-align: right;">-0.0233810</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1092,12 +1080,12 @@ Note
 <td style="text-align: right;">14</td>
 <td style="text-align: right;">0.1388181</td>
 <td style="text-align: right;">0.0155708</td>
-<td style="text-align: right;">0.0867616</td>
-<td style="text-align: right;">0.0007753</td>
-<td style="text-align: right;">0.0296845</td>
-<td style="text-align: right;">0.1391722</td>
-<td style="text-align: right;">0.1094876</td>
-<td style="text-align: right;">0.4071621</td>
+<td style="text-align: right;">0.0875389</td>
+<td style="text-align: right;">0.0007740</td>
+<td style="text-align: right;">0.0304413</td>
+<td style="text-align: right;">0.1399074</td>
+<td style="text-align: right;">0.1094661</td>
+<td style="text-align: right;">0.4010991</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1106,12 +1094,12 @@ Note
 <td style="text-align: right;">17</td>
 <td style="text-align: right;">0.2357801</td>
 <td style="text-align: right;">0.0157031</td>
-<td style="text-align: right;">0.1364961</td>
-<td style="text-align: right;">0.0007335</td>
-<td style="text-align: right;">0.0842047</td>
-<td style="text-align: right;">0.1909975</td>
-<td style="text-align: right;">0.1067928</td>
-<td style="text-align: right;">0.7744141</td>
+<td style="text-align: right;">0.1368928</td>
+<td style="text-align: right;">0.0007327</td>
+<td style="text-align: right;">0.0846226</td>
+<td style="text-align: right;">0.1913472</td>
+<td style="text-align: right;">0.1067246</td>
+<td style="text-align: right;">0.7713378</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1120,12 +1108,12 @@ Note
 <td style="text-align: right;">19</td>
 <td style="text-align: right;">0.1008805</td>
 <td style="text-align: right;">0.0055383</td>
-<td style="text-align: right;">0.1188869</td>
+<td style="text-align: right;">0.1194675</td>
 <td style="text-align: right;">0.0005861</td>
-<td style="text-align: right;">0.0706833</td>
-<td style="text-align: right;">0.1663678</td>
-<td style="text-align: right;">0.0956844</td>
-<td style="text-align: right;">-0.2300891</td>
+<td style="text-align: right;">0.0712315</td>
+<td style="text-align: right;">0.1668999</td>
+<td style="text-align: right;">0.0956684</td>
+<td style="text-align: right;">-0.2375096</td>
 </tr>
 </tbody>
 </table>

@@ -95,10 +95,11 @@ where $f_{jt}=n_{jt}/N_{jt}$, $\bar{y}_{jtS}$ and $\bar{\mathbf{x}}_{jtS}$ are s
 
 ## Prepare model and aggregation data
 
-Before preparing the model inputs, we create a consistent numeric index for each area and survey year in the complete area-time domain. These indices are used by `INLA` to attach random effects to the correct area and period.
+Before preparing the model inputs, we create consistent numeric indices for each area and survey year so that `INLA` can attach random effects to the correct area and period, as well as a Queen-contiguity adjacency graph `.adj` as input, similar to what we did in the previous FH model workbook.
 
 ```{r}
 #| label: define-model-index
+#| code-fold: false
 
 area_levels <- sort(unique(domain_frame[["area_id"]]))
 time_levels <- sort(unique(domain_frame[["time_id"]]))
@@ -113,11 +114,9 @@ time_index <- tibble(
   time_inla_id = seq_along(time_levels)
 )
 ```
-
-To include a spatial random effect, we also need an adjacency graph `.adj` as input. We again use Queen contiguity.
-
 ```{r}
 #| label: build-spatial-graph
+#| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
@@ -163,12 +162,7 @@ walking_indicator <- read_csv(
 model_data <- walking_indicator |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
-  filter(
-    !is.na(.data$indicator),
-    !is.na(.data$area_id),
-    !is.na(.data$time_id),
-    !is.na(.data$no_car)
-  ) |>
+  drop_na(indicator, area_id, time_id, no_car) |>
   select(
     unit_id,
     area_id,
@@ -560,7 +554,7 @@ bhf_scatter_comparison <- bhf_estimates |>
       fh_estimate = "Fay-Herriot estimates (M4)"
     )
   ) |>
-  filter(!is.na(.data$comparison_estimate))
+  drop_na(comparison_estimate)
 
 bhf_scatter_x_limits <- c(
   0,

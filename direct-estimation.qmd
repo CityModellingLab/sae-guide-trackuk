@@ -94,12 +94,8 @@ survey_walk <- read_csv(
   file.path(base_path, "clean", "surveyind_freqwalk.csv"),
   show_col_types = FALSE
 ) |>
-  filter(
-    !is.na(.data$indicator),
-    !is.na(.data$weight),
-    !is.na(.data$area_id),
-    !is.na(.data$strata)
-  )
+  drop_na(indicator, weight, area_id, strata)
+  
 head(survey_walk)
 ```
 

@@ -135,12 +135,36 @@ area_predictors <- read_csv(
 head(area_predictors)
 ```
 
-Before fitting the models, we create a consistent numeric index for each MSOA and survey year. `INLA` uses these indices to attach random effects to the correct area and period.
+The missing or zero sampling variances of direct estimates need to be handled, because it controls how much weight each direct estimate receives in the FH model.
 
-The FH specifications include two area-effect structures: an unstructured independent effect and a structured spatial effect. The spatial effect uses `area_inla_id` together with the adjacency graph. The independent effect uses a separate column, `area_iid_id` with the same indices so `INLA` treats the two area effects as separate model terms.
+- For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
+- Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
+
+```{r}
+#| label: prepare-sampling-variance
+#| code-fold: false
+
+max_variance <- max(
+  direct_walk$variance[direct_walk$variance > 0],
+  na.rm = TRUE
+)
+
+direct_walk_model <- direct_walk |>
+  mutate(
+    adj_variance = case_when(
+      is.na(.data$direct_estimate) ~ max_variance,
+      is.na(.data$variance) ~ max_variance,
+      .data$variance <= 1e-8 ~ max_variance,
+      TRUE ~ .data$variance
+    )
+  )
+```
+
+`INLA` uses numeric indices to encode space and time, so we create `time_inla_id` and `area_inla_id` to index survey years and MSOAs. We also provide an adjacency graph for the structured spatial effect. Here, we use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
 
 ```{r}
 #| label: define-model-index
+#| code-fold: false
 
 area_levels <- sort(unique(domain_frame[["area_id"]]))
 time_levels <- sort(unique(domain_frame[["time_id"]]))
@@ -148,7 +172,6 @@ time_levels <- sort(unique(domain_frame[["time_id"]]))
 area_index <- tibble(
   area_id = area_levels,
   area_inla_id = seq_along(area_levels),
-  area_iid_id =seq_along(area_levels)
 )
 
 time_index <- tibble(
@@ -156,13 +179,9 @@ time_index <- tibble(
   time_inla_id = seq_along(time_levels)
 )
 ```
-
-To include a spatial random effect, we also need an adjacency graph `.adj` as input. We use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point. 
-
-![](assets/spatial_weights_example.png)
-
 ```{r}
 #| label: build-spatial-graph
+#| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
@@ -182,31 +201,9 @@ nb2INLA(
 )
 ```
 
-The missing or zero sampling variances need to be handled before the modelling data are assembled, because it controls how much weight each direct estimate receives in the FH model.
+![](assets/spatial_weights_example.png)
 
-- For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly model predictions.
-- Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
-
-```{r}
-#| label: prepare-sampling-variance
-
-max_variance <- max(
-  direct_walk$variance[direct_walk$variance > 0],
-  na.rm = TRUE
-)
-
-direct_walk_model <- direct_walk |>
-  mutate(
-    adj_variance = case_when(
-      is.na(.data$direct_estimate) ~ max_variance,
-      is.na(.data$variance) ~ max_variance,
-      .data$variance <= 1e-8 ~ max_variance,
-      TRUE ~ .data$variance
-    )
-  )
-```
-
-Now, we assemble the modelling data for `INLA` by adding the area predictors and the numeric indices for the temporal and area effects.
+Finally, we assemble the modelling data for `INLA` by comining the direct estimates with the area predictors and the numeric indices for the temporal and spatial effects.
 
 ```{r}
 #| label: prepare-model-data
@@ -222,9 +219,7 @@ head(model_data)
 
 ## Fit and evaluate models
 
-Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight.
-
-We define these model specifications and fit each one to the direct estimates using `INLA`. 
+Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight. We define these model specifications and fit each one to the direct estimates using `INLA`. 
 
 | Model | Name | Specifications |
 |---|---|---|
@@ -234,23 +229,38 @@ We define these model specifications and fit each one to the direct estimates us
 | M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
 | M4 | +Spatial | M3 plus spatial structure among MSOA adjacency |
 
+The choice of spatial and temporal models should reflect assumptions about how residual variation is structured across space and time.
+
+| Temporal model | Description |
+|---|---|
+| `rw1` | First-order random walk: smooths neighbouring time periods. |
+| `rw2` | Second-order random walk: smooths changes in the trend over longer time series. |
+| `ar1` | Autoregressive effect: assumes correlation decays with time distance, so closer years are more similar than distant years. |
+
+| Spatial model | Description |
+|---|---|
+| `besag` | Smooths estimates across neighbouring areas, capturing spatially structured residual variation. |
+| `bym2` | Updated BYM model with a mixing parameter, `phi`, which indicates how much residual variation is spatially structured. |
+
+With only three survey years, `rw1` is suitable because it smooths neighbouring waves. Spatially, `bym2` is appropriate because it allows the model to borrow strength from neighbouring MSOAs while still capturing unstructured local variability.
+
 ```{r}
 #| label: fit-fh-models
 #| code-fold: false
 
 m0_formula <- direct_estimate ~
   1 +
-  f(area_iid_id, model = "iid")
+  f(area_inla_id, model = "iid")
 
 m1_formula <- direct_estimate ~
   1 +
-  f(area_iid_id, model = "iid") +
+  f(area_inla_id, model = "iid") +
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 m2_formula <- direct_estimate ~
   cov_population_density +
   cov_share_no_car_households +
-  f(area_iid_id, model = "iid") +
+  f(area_inla_id, model = "iid") +
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 m3_formula <- direct_estimate ~
@@ -259,7 +269,7 @@ m3_formula <- direct_estimate ~
   cov_share_work_from_home +
   cov_share_students +
   cov_share_routine_semiroutine +
-  f(area_iid_id, model = "iid") +
+  f(area_inla_id, model = "iid") +
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 m4_formula <- direct_estimate ~
@@ -312,32 +322,6 @@ When fitting area-level FH models with `INLA`, these arguments are needed:
 - `control.family` fixes the Gaussian residual precision because the direct-estimate variances already provide the uncertainty.
 - `control.compute = list(waic = TRUE)` requests WAIC for comparing model fit in case of multiple specifications.
 :::
-
-
-```{r}
-#| label: extract-fh-helper
-
-extract_fh_estimates <- function(fit, area_time_frame, model_name) {
-  fitted_values <- fit$summary.fitted.values |>
-    as_tibble()
-
-  bind_cols(area_time_frame, fitted_values) |>
-    transmute(
-      model = model_name,
-      area_id,
-      time_id,
-      msoa_name,
-      n,
-      direct_estimate,
-      variance,
-      fh_estimate = mean,
-      fh_variance = sd^2,
-      fh_lower = .data[["0.025quant"]],
-      fh_upper = .data[["0.975quant"]],
-      fh_ci_width = fh_upper - fh_lower
-    )
-}
-```
 
 To compare the fitted models' overall performance, we use `WAIC` or (Widely Applicable Information Criterion) as a first check. It is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity.
 
@@ -632,7 +616,7 @@ for (i in seq_len(length(wave_years) - 1)) {
 }
 
 direct_to_m0_ranked <- direct_to_m0 |>
-  filter(!is.na(variance_change)) |>
+  drop_na(variance_change) |>
   group_by(time_id) |>
   # Rank within each wave by the original direct-estimate variance.
   arrange(direct_variance, .by_group = TRUE) |>
@@ -785,15 +769,15 @@ m2_to_m3_drivers <- model_data |>
   mutate(
     change_group = case_when(
       estimate_change >= quantile(estimate_change, 0.9, na.rm = TRUE) ~
-        "Raised most by M3",
+        "Raised most with M3",
       estimate_change <= quantile(estimate_change, 0.1, na.rm = TRUE) ~
-        "Lowered most by M3",
+        "Lowered most with M3",
       TRUE ~ NA_character_
     )
   )
 
 m2_to_m3_drivers |>
-  filter(!is.na(.data$change_group)) |>
+  drop_na(change_group) |>
   group_by(.data$change_group) |>
   summarise(
     `Work from home` = mean(.data$work_from_home, na.rm = TRUE),
@@ -887,7 +871,7 @@ wrap_plots(m3_to_m4_maps, ncol = 3) +
   )
 ```
 
-In practice, choosing an SAE model is a holistic judgement. The final specification should be assessed using model diagnostics, stepwise changes across candidate models, uncertainty patterns, and domain knowledge about the estimand and expected spatial structure. These checks help decide whether the model is already good enough for reporting, or whether it should be further enriched with additional predictors, alternative spatial or temporal structures.
+In practice, the decision to pick the right SAE model specification should be assessed holistically using model diagnostics, stepwise changes across models, and domain knowledge. These checks help decide whether it should be further enriched with additional predictors, or alternative spatial or temporal structures.
 
 ```{r}
 #| label: export-fh-results
