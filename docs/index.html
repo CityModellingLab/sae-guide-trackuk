@@ -105,15 +105,19 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level model (FH)</span></a>
+ <span class="dropdown-text">Area-level (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level model (BHF)</span></a>
+ <span class="dropdown-text">Unit-level (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">MRP</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./mrp-unit.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
     </ul>
   </li>
@@ -193,19 +197,25 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level model (FH)</span></a>
+ <span class="menu-text">Area-level (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level model (BHF)</span></a>
+ <span class="menu-text">Unit-level (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">MRP</span></a>
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mrp-unit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
   </div>
 </li>
       </ul>
@@ -289,8 +299,7 @@ Start by specifying the estimand: outcome, target population, areas, and time pe
 Compute survey design-based estimates and sampling variances for observed area-time cells. If these estimates are precise enough and have adequate coverage, direct estimation may be sufficient.</p></li>
 <li><p><strong><a href="./fh-area.html">Fay–Herriot area-level model</a></strong><br>
 Use this route when direct estimates exist but are too noisy or incomplete, and the available auxiliary data are area-level predictors. The model smooths direct estimates across predictors, neighbouring areas, and time periods.</p></li>
-<li><p><strong><a href="./bhf-unit.html">Battese–Harter–Fuller unit-level model</a></strong><br>
-Use this route when survey microdata are available and the outcome can be modelled at respondent or household level. The fitted unit-level relationship is then aggregated to area-time estimates using area-level summaries of the predictors.</p></li>
+<li><p><strong><a href="./bhf-unit.html">Battese–Harter–Fuller unit-level model</a></strong> Use this route when survey microdata are available and the outcome can be modelled at respondent or household level. The fitted unit-level relationship is then aggregated to area-time estimates using area-level summaries of the predictors.</p></li>
 <li><p><strong><a href="./mrp.html">Multilevel Regression with Poststratification (MRP)</a></strong><br>
 Use this route when population counts are available for poststratification cells, such as area by age by sex. The model predicts outcomes for each population cell and weights those predictions back to area-time estimates.</p></li>
 </ol>

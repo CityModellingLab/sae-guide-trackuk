@@ -126,10 +126,7 @@ model_rows <- unit_data |>
   filter(if_all(all_of(config$predictor_cols), \(x) !is.na(x))) |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
-  mutate(
-    row_type = "model",
-    area_spatial_id = area_inla_id
-  ) |>
+  mutate(row_type = "model", area_spatial_id = area_inla_id) |>
   select(
     row_type,
     indicator,
@@ -141,11 +138,7 @@ model_rows <- unit_data |>
 aggregation_rows <- aggregation_frame |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
-  mutate(
-    row_type = "aggregation",
-    indicator = NA_real_,
-    area_spatial_id = area_inla_id
-  ) |>
+  mutate(row_type = "aggregation", indicator = NA_real_, area_spatial_id = area_inla_id) |>
   select(
     row_type,
     indicator,
@@ -187,12 +180,6 @@ estimates <- aggregation_frame |>
 
 dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)
 
-write_csv(
-  model_comparison,
-  file.path(config$output_dir, "bhf_inla_model_comparison.csv")
-)
+write_csv(model_comparison, file.path(config$output_dir, "bhf_inla_model_comparison.csv"))
 
-write_csv(
-  estimates,
-  file.path(config$output_dir, "bhf_inla_estimates.csv")
-)
+write_csv(estimates, file.path(config$output_dir, "bhf_inla_estimates.csv"))

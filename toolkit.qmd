@@ -52,7 +52,7 @@ One row per area, with predictors used to explain spatial differences in the out
 | Column | Meaning |
 |---|---|
 | `area_id` | Area identifier |
-| `cov_*` | Predictors (transformed) for modelling |
+| `scaled_*` | Predictors (transformed) for modelling |
 | `raw_*` | Predictors (original) for interpretation and aggregation |
 
 ### Poststratification table
@@ -77,7 +77,7 @@ Used when model predictions are aggregated over population groups to produce the
 
 | Workflow step | Script | Use it for |
 |---|---|---|
-| Direct estimation | [`calculate_direct_estimates.R`](toolkit-scripts/direct_estimates.R) | Produce area-time direct estimates, sampling variances, and sample counts |
+| Direct estimation | [`direct_estimates.R`](toolkit-scripts/direct_estimates.R) | Produce area-time direct estimates, sampling variances, and sample counts |
 | Area-level SAE | [`fit_fh_inla_area_level.R`](toolkit-scripts/fit_fh_inla_area_level.R) | Fit a spatio-temporal Fay--Herriot area-level model with `R-INLA` |
 | Unit-level SAE | [`fit_bhf_inla_unit_level.R`](toolkit-scripts/fit_bhf_inla_unit_level.R) | Fit a BHF-style unit-level model and aggregate predictions to area-time cells |
 | MRP | Forthcoming | Fit a multilevel model and poststratify over population cells |

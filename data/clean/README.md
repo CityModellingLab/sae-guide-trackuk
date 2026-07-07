@@ -20,7 +20,7 @@ Notes:
 
 ## Walking Auxiliary Files
 
-- `areapred_freqwalk.csv`: one row per MSOA with raw and z-scored area predictors for daily walking models.
+- `areapred_freqwalk.csv`: one row per MSOA with raw and z-scored area predictors for daily walking models, including Census 2021 mean age among usual residents aged 16+ and proportion female from Nomis bulk tables.
 - `poststrat_freqwalk.csv`: one row per MSOA-year-age-sex cell with `pop_count` for poststratification.
 
 The 2025 survey wave uses the latest supplied mid-2024 population denominator and records it in `source_population_year`.

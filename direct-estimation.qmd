@@ -3,6 +3,22 @@ title: "Direct Estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
 
+::: {.callout-note title="Theory in brief"}
+For an area-time cell $(j,t)$, the target is the population mean or proportion:
+
+$$
+\mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
+$$
+
+If respondent $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio estimate is:
+
+$$
+\hat{\mu}^{w}_{jt} =
+\frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
+{\sum_{i \in S_{jt}} w_{ijt}}.
+$$
+:::
+
 ```{r}
 #| label: setup-direct
 library(dplyr)
@@ -22,12 +38,9 @@ msoa_boundaries <- st_read(
   quiet = TRUE
 ) |>
   rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$area_id, "W"))
+  filter(str_starts(area_id, "W"))
 
-domain_frame <- read_csv(
-  file.path(base_path, "clean", "domain_msoayear.csv"),
-  show_col_types = FALSE
-)
+domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), show_col_types = FALSE)
 ```
 
 ```{r}
@@ -55,27 +68,13 @@ map_annotation_theme <- theme(
 )
 ```
 
-Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or an *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave, using the matched survey weight. This gives us a transparent baseline before any model-based smoothing is introduced and shows where direct estimates are unstable, missing, or based on very small samples, helping us decide whether model-based small area estimation is needed.
-
-::: {.callout-note title="Theory in brief"}
-For an area-time cell $(j,t)$, the target is the population mean or proportion:
-
-$$
-\mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
-$$
-
-If respondent $i$ has inclusion probability $\pi_{ijt}$ and survey weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio estimator is:
-
-$$
-\hat{\mu}^{w}_{jt} =
-\frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
-{\sum_{i \in S_{jt}} w_{ijt}}.
-$$
-:::
-
-<div class="method-divider" aria-hidden="true"></div>
+## Estimation approach {.unnumbered}
 
 {{< include assets/target-estimand.qmd >}}
+
+Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave. For each *MSOA-year cell*, we calculate a Horvitz--Thompson weighted proportion using the respondent walking outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.
+
+The output is a transparent survey-based baseline: a direct estimate, sampling variance, and usable sample size for each observed *MSOA-year cell*. These estimates show where the survey evidence is strong, sparse, missing, or unstable, helping us decide whether model-based small area estimation is needed.
 
 ## Prepare survey data
 
@@ -90,10 +89,7 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 | `strata` | Local Authority code |
 ```{r}
 #| label: load-survey-indicator
-survey_walk <- read_csv(
-  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
-  show_col_types = FALSE
-) |>
+survey_walk <- read_csv(file.path(base_path, "clean", "surveyind_freqwalk.csv"), show_col_types = FALSE) |>
   drop_na(indicator, weight, area_id, strata)
   
 head(survey_walk)
@@ -129,8 +125,8 @@ direct_walk_estimates <- svyby(
   transmute(
     area_id,
     time_id,
-    direct_estimate = .data$indicator,
-    variance = .data$se^2
+    direct_estimate = indicator,
+    variance = se^2
   )
 
 # Calculate sample size per area-time cell
@@ -140,13 +136,9 @@ direct_walk_counts <- survey_walk |>
 
 # Join
 direct_walk <- domain_frame |>
-  left_join(direct_walk_estimates, by = c(
-    "area_id", "time_id"
-  )) |>
-  left_join(direct_walk_counts, by = c(
-    "area_id", "time_id"
-  )) |>
-  mutate(n = replace_na(.data$n, 0L))
+  left_join(direct_walk_estimates, by = c("area_id", "time_id")) |>
+  left_join(direct_walk_counts, by = c("area_id", "time_id")) |>
+  mutate(n = replace_na(n, 0L))
 
 head(direct_walk)
 ```
@@ -181,7 +173,7 @@ base_map <- function(wave) {
 
 plot_estimate <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = .data$direct_estimate), colour = "transparent") +
+    geom_sf(aes(fill = direct_estimate), colour = "transparent") +
     scale_fill_viridis_c(
       option = "magma",
       limits = c(0, 1),
@@ -193,7 +185,7 @@ plot_estimate <- function(wave) {
 
 plot_uncertainty <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = .data$variance), colour = "transparent") +
+    geom_sf(aes(fill = variance), colour = "transparent") +
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
@@ -206,7 +198,7 @@ plot_uncertainty <- function(wave) {
 
 plot_sample <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = .data$n), colour = "transparent") +
+    geom_sf(aes(fill = n), colour = "transparent") +
     scale_fill_gradient(
       low = "#fff8e1",
       high = "#4f3b10",
@@ -259,18 +251,18 @@ diagnostic_panel
 ```{r}
 #| label: summarise-direct-estimates
 direct_summary_by_wave <- direct_walk |>
-  group_by(.data$time_id) |>
+  group_by(time_id) |>
   summarise(
-    `Usable observations` = sum(.data$n),
-    `MSOAs without direct estimates` = sum(is.na(.data$direct_estimate)),
-    `MSOAs with zero variance` = sum(.data$variance == 0, na.rm = TRUE),
-    `Median sample size` = median(.data$n),
+    `Usable observations` = sum(n),
+    `MSOAs without direct estimates` = sum(is.na(direct_estimate)),
+    `MSOAs with zero variance` = sum(variance == 0, na.rm = TRUE),
+    `Median sample size` = median(n),
     `Median direct estimate` = round(
-      median(.data$direct_estimate, na.rm = TRUE),
+      median(direct_estimate, na.rm = TRUE),
       3
     ),
     `Median variance` = round(
-      median(.data$variance, na.rm = TRUE),
+      median(variance, na.rm = TRUE),
       5
     ),
     .groups = "drop"
@@ -280,13 +272,10 @@ direct_summary_by_wave <- direct_walk |>
 direct_summary_by_wave
 ```
 
-In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE** models stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
+In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE models** stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
 
 ```{r}
 #| label: export-direct-results
-#| echo: false
-write_csv(
-  direct_walk,
-  file.path(base_path, "freqwalk_estimates_direct.csv")
-)
+#| code-fold: true
+write_csv(direct_walk, file.path(base_path, "freqwalk_estimates_direct.csv"))
 ```

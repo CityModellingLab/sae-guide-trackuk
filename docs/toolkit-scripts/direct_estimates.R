@@ -117,10 +117,7 @@ sample_counts <- survey_data |>
 results <- domain_frame |>
   left_join(direct_estimates, by = c("area_id", "time_id")) |>
   left_join(sample_counts, by = c("area_id", "time_id")) |>
-  mutate(
-    n = replace_na(n, 0L),
-    method = "direct"
-  )
+  mutate(n = replace_na(n, 0L), method = "direct")
 
 dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)
 

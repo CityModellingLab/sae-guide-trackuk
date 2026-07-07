@@ -1,0 +1,188 @@
+---
+title: "Temporary Standardised Residual Maps"
+subtitle: "Model estimates compared with direct estimates"
+---
+
+This temporary workbook gathers the existing direct, FH, BHF, and MRP outputs and computes standardised residuals in one place. These residuals compare each model estimate with the corresponding direct survey estimate, so they are useful diagnostics rather than ground-truth validation.
+
+```{r}
+#| label: setup-standardised-residual-maps
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(patchwork)
+library(scales)
+
+base_path <- if (dir.exists("data")) {
+  normalizePath("data")
+} else {
+  normalizePath(file.path("..", "data"))
+}
+share_label <- label_percent(accuracy = 0.1)
+residual_label <- label_number(accuracy = 0.1)
+missing_fill <- "grey85"
+
+msoa_boundaries <- st_read(
+  file.path(base_path, "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(area_id = all_of("MSOA21CD")) |>
+  filter(str_starts(area_id, "W"))
+
+map_text_theme <- theme(
+  plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(
+    size = 12,
+    face = "bold",
+    angle = 90,
+    margin = margin(r = 15)
+  ),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 9)
+)
+
+map_annotation_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
+```
+
+```{r}
+#| label: import-method-estimates
+
+direct_estimates <- read_csv(
+  file.path(base_path, "freqwalk_estimates_direct.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, time_id, msoa_name, direct_estimate, variance, n)
+
+read_method_estimates <- function(path, method_name, estimate_col, variance_col) {
+  read_csv(path, show_col_types = FALSE) |>
+    transmute(
+      method = method_name,
+      area_id,
+      time_id,
+      model_estimate = .data[[estimate_col]],
+      model_variance = .data[[variance_col]]
+    )
+}
+
+method_estimates <- bind_rows(
+  read_method_estimates(
+    file.path(base_path, "freqwalk_estimates_fh.csv"),
+    "FH",
+    "fh_estimate",
+    "fh_variance"
+  ),
+  read_method_estimates(
+    file.path(base_path, "freqwalk_estimates_bhf.csv"),
+    "BHF",
+    "bhf_estimate",
+    "bhf_variance"
+  ),
+  read_method_estimates(
+    file.path(base_path, "freqwalk_estimates_mrp.csv"),
+    "MRP",
+    "mrp_estimate",
+    "mrp_variance"
+  )
+)
+
+standardised_residuals <- method_estimates |>
+  left_join(direct_estimates, by = c("area_id", "time_id")) |>
+  mutate(
+    method = factor(method, levels = c("FH", "BHF", "MRP")),
+    std_resid = (direct_estimate - model_estimate) /
+      sqrt(variance + model_variance),
+    abs_std_resid = abs(std_resid)
+  )
+```
+
+```{r}
+#| label: summarise-standardised-residuals
+
+standardised_residuals |>
+  group_by(method) |>
+  summarise(
+    area_time_cells = n(),
+    mean_abs_std_resid = mean(abs_std_resid, na.rm = TRUE),
+    median_abs_std_resid = median(abs_std_resid, na.rm = TRUE),
+    p90_abs_std_resid = quantile(abs_std_resid, 0.9, na.rm = TRUE, names = FALSE),
+    cells_abs_gt_2 = sum(abs_std_resid > 2, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+```{r}
+#| label: map-standardised-residuals
+#| echo: false
+#| fig-width: 18
+#| fig-height: 12
+#| out-width: "100%"
+
+residual_map_data <- msoa_boundaries |>
+  left_join(standardised_residuals, by = "area_id")
+
+std_resid_limit <- quantile(
+  abs(standardised_residuals$std_resid),
+  0.95,
+  na.rm = TRUE,
+  names = FALSE
+)
+if (!is.finite(std_resid_limit) || std_resid_limit == 0) {
+  std_resid_limit <- 1
+}
+std_resid_limits <- c(-std_resid_limit, std_resid_limit)
+
+method_levels <- levels(standardised_residuals$method)
+wave_years <- sort(unique(standardised_residuals$time_id))
+
+plot_standardised_residual <- function(method_name, wave) {
+  plot_data <- residual_map_data |>
+    filter(method == method_name, time_id == wave)
+
+  residual_map <- plot_data |>
+    ggplot() +
+    geom_sf(aes(fill = std_resid), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "RdBu",
+      direction = -1,
+      limits = std_resid_limits,
+      oob = squish,
+      labels = residual_label,
+      na.value = missing_fill,
+      name = "Std. residual"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+
+  if (wave == wave_years[1]) {
+    residual_map <- residual_map + ylab(method_name)
+  }
+
+  if (!(method_name == method_levels[length(method_levels)] && wave == wave_years[length(wave_years)])) {
+    residual_map <- residual_map + theme(legend.position = "none")
+  }
+
+  residual_map
+}
+
+residual_maps <- list()
+for (method_name in method_levels) {
+  for (wave in wave_years) {
+    residual_maps[[length(residual_maps) + 1]] <- plot_standardised_residual(method_name, wave)
+  }
+}
+
+wrap_plots(residual_maps, ncol = length(wave_years)) +
+  plot_annotation(
+    title = "Standardised residuals by method and wave",
+    subtitle = "Residual = (direct estimate - model estimate) / sqrt(direct variance + model variance)",
+    theme = map_annotation_theme
+  )
+```

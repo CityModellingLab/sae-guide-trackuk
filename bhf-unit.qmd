@@ -1,7 +1,25 @@
 ---
-title: "Bayesian Battese-Harter-Fuller Unit-Level Model"
-subtitle: "A spatio-temporal extension"
+title: "Unit-Level SAE Modelling (Battese--Harter--Fuller)"
+subtitle: "A Bayesian spatio-temporal extension"
 ---
+
+::: {.callout-note title="Theory in brief"}
+The unit-level route models respondent outcomes directly. For the area-time target $\mu_{jt}$, a simple mixed-model form is:
+
+$$
+Y_{ijt} = \alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt},
+$$
+
+where $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. 
+To estimate the target for an area-time cell, the fitted model is evaluated using the corresponding population-level auxiliary summaries $\bar{x}_{jt}$:
+
+$$
+\hat{\mu}_{jt}^{\mathrm{BHF}}
+=
+\widehat{\mathbb{E}}(Y \mid j,t,\bar{x}_{jt}).
+$$
+:::
+
 
 ```{r}
 #| label: setup-bhf
@@ -19,24 +37,21 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
-domain_frame <- read_csv(
-  file.path(base_path, "clean", "domain_msoayear.csv"),
-  show_col_types = FALSE
-)
+domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), show_col_types = FALSE)
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
   rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$area_id, "W"))
+  filter(str_starts(area_id, "W"))
 ```
 
 ```{r}
 #| label: plotting-config
 #| echo: false
-share_label <- label_percent(accuracy = 0.1)
-pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
 
@@ -67,35 +82,17 @@ chart_text_theme <- theme(
 )
 ```
 
-Unit-level SAE models respondent records directly. The Battese--Harter--Fuller model first estimates the individual outcome with a nested error regression using unit-level predictors form the survey together with spatial and temporal effects, and then aggregates the predictions for each *MSOA-year cell*.
-
-::: {.callout-note title="Theory in brief"}
-The unit-level route models respondent outcomes directly. For the area-time target $\mu_{jt}$, a simple nested-error form is:
-
-$$
-y_{ijt} = \alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt},
-$$
-
-where $\mathbf{x}_{ijt}$ are unit-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The classical Battese--Harter--Fuller estimator can be applied to each area-time target:
-
-$$
-\hat{\mu}_{jt}^{\mathrm{EBLUP}} =
-f_{jt} \bar{y}_{jtS}
-+ \left(\bar{\mathbf{X}}_{jt} - f_{jt} \bar{\mathbf{x}}_{jtS}\right)^T
-\hat{\boldsymbol{\beta}}
-+ (1 - f_{jt})(\hat{u}_j + \hat{v}_t),
-$$
-
-where $f_{jt}=n_{jt}/N_{jt}$, $\bar{y}_{jtS}$ and $\bar{\mathbf{x}}_{jtS}$ are sample means in area $j$ and time period $t$, $\bar{\mathbf{X}}_{jt}$ is the corresponding population mean of the predictors, and $\hat{u}_j$ and $\hat{v}_t$ are fitted area and time effects. The area effect can also be replaced by a structured spatial effect.
-:::
-
-<div class="method-divider" aria-hidden="true"></div>
+## Estimation approach {.unnumbered}
 
 {{< include assets/target-estimand.qmd >}}
 
+Unit-level SAE models respondent records directly instead of modelling pre-aggregated direct estimates. For our estimand, the Battese--Harter--Fuller model estimates the binary frequent-walking indicator from survey records using unit-level `age`, `sex`, and `no_car` predictors, together with spatial and temporal random effects.
+
+The fitted model is then used to predict the target *MSOA-year* estimates using MSOA-level summaries of age, sex, and car ownership, obtained from ONS UK Census 2021. This avoids relying directly on unstable area-level direct estimates, but introduces new assumptions about how adequately or inadequately area-level summaries represent the population composition.
+
 ## Prepare model and aggregation data
 
-Before preparing the model inputs, we create consistent numeric indices for each area and survey year so that `INLA` can attach random effects to the correct area and period, as well as a Queen-contiguity adjacency graph `.adj` as input, similar to what we did in the previous FH model workbook.
+Before preparing the model inputs, we create consistent numeric indices for each area and survey year so that `INLA` can attach random effects to the correct area and period, as well as a Queen-contiguity adjacency graph `.adj` as input, similar to what we did in the previous FH model estimation.
 
 ```{r}
 #| label: define-model-index
@@ -120,7 +117,7 @@ time_index <- tibble(
 
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
-  arrange(.data$area_inla_id)
+  arrange(area_inla_id)
 
 msoa_neighbours <- poly2nb(
   msoa_boundaries_sorted,
@@ -143,36 +140,38 @@ We now prepare the two datasets needed for the unit-level `INLA` workflow:
 
 ### Respondent model data
 
-The respondent model data has one row per sampled person. For this constrained example we use:
+The respondent model data has one row per sampled person. For this example we use:
 
 - `indicator` as the binary response, our target;
-- `no_car` as the unit-level auxiliary variable, our predictor;
+- `age` as a unit-level predictor;
+- `female` as a binary unit-level predictor;
+- `no_car` as a unit-level predictor;
 - `time_id` as the survey wave year identifier;
 - `area_id` as the area identifier;
 
 ```{r}
 #| label: prepare-model-data
 
-walking_indicator <- read_csv(
-  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
-  show_col_types = FALSE
-) |>
-  select(unit_id, time_id, area_id, indicator, no_car)
+walking_indicator <- read_csv(file.path(base_path, "clean", "surveyind_freqwalk.csv"), show_col_types = FALSE) |>
+  select(unit_id, time_id, area_id, indicator, age, sex, no_car) |>
+  mutate(female = as.integer(sex == 2))
 
 model_data <- walking_indicator |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
-  drop_na(indicator, area_id, time_id, no_car) |>
+  drop_na(indicator, area_id, time_id, age, female, no_car) |>
   select(
     unit_id,
     area_id,
     time_id,
     indicator,
+    age,
+    female,
     no_car,
     time_inla_id,
     area_inla_id
   ) |>
-  arrange(.data$time_id, .data$area_inla_id)
+  arrange(time_id, area_inla_id)
 
 head(model_data)
 ```
@@ -184,12 +183,11 @@ The aggregation input contains the complete area-time grid we want to estimate, 
 ```{r}
 #| label: prepare-aggregation-data
 
-area_predictors <- read_csv(
-  file.path(base_path, "clean", "areapred_freqwalk.csv"),
-  show_col_types = FALSE
-) |>
+area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv"), show_col_types = FALSE) |>
   transmute(
     area_id,
+    age = raw_mean_age_16plus,
+    female = raw_prob_female,
     no_car = raw_share_no_car_households
   )
 
@@ -201,31 +199,32 @@ aggregation_data <- domain_frame |>
     area_id,
     msoa_name,
     time_id,
+    age,
+    female,
     no_car,
     time_inla_id,
     area_inla_id
   ) |>
-  arrange(.data$time_id, .data$area_inla_id)
+  arrange(time_id, area_inla_id)
 
 head(aggregation_data)
 ```
 
 ::: {.callout-note}
-This area mean comes from Census 2021 and is used as a time-stable MSOA predictor across the three survey waves. This is reasonable only if auxiliary variables are unlikely to change quickly.
-
-Note that the variable name `no_car` is used for both the respondent-level predictor and the area-level mean predictor for simplicity in later steps. 
+These area means come from Census 2021 and is used as a time-stable MSOA predictor across the three survey waves. This is reasonable only if auxiliary variables are unlikely to change quickly.
 :::
 
 ## Fit and evaluate models
 
 We fit linear mixed models to respondent-level records, then use them to predict area-time means. Because the response variable is binary, the fitted values are interpreted as predicted probabilities.
 
-We specify two unit-level models to evaluate at the next step:
+We specify three unit-level models to evaluate at the next step:
 
 | Model | Name | Specifications |
 |---|---|---|
-| M1 | Temporal + spatial | Respondent outcome with a temporal random walk and BYM2 spatial MSOA effect |
-| M2 | +No-car | M1 plus respondent-level no-car access |
+| M1 | +TempSpatial | Respondent outcome with a temporal random walk and BYM2 spatial MSOA effect |
+| M2 | +Demographic | M1 plus respondent age and sex |
+| M3 | +No-car | M2 plus respondent-level no-car access |
 
 ```{r}
 #| label: define-bhf-models
@@ -243,6 +242,20 @@ m1_formula <- indicator ~
   )
 
 m2_formula <- indicator ~
+  age +
+  female +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    area_inla_id,
+    model = "bym2",
+    graph = spatial_graph_file,
+    scale.model = TRUE,
+    constr = TRUE
+  )
+
+m3_formula <- indicator ~
+  age +
+  female +
   no_car +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -254,8 +267,9 @@ m2_formula <- indicator ~
   )
 
 model_formulas <- list(
-  "M1 Temporal + Spatial" = m1_formula,
-  "M2 +No-car" = m2_formula
+  "M1 +TempSpatial" = m1_formula,
+  "M2 +Demographic" = m2_formula,
+  "M3 +Nocar" = m3_formula
 )
 
 ```
@@ -271,6 +285,8 @@ model_agg_data <- bind_rows(
     transmute(
       row_type = "model",
       indicator,
+      age,
+      female,
       no_car,
       time_inla_id,
       area_inla_id
@@ -279,6 +295,8 @@ model_agg_data <- bind_rows(
     transmute(
       row_type = "aggregation",
       indicator = NA_real_,
+      age,
+      female,
       no_car,
       time_inla_id,
       area_inla_id
@@ -291,7 +309,7 @@ fit_bhf_model <- function(formula) {
     family = "gaussian",
     data = model_agg_data,
     control.predictor = list(compute = TRUE),
-    control.compute = list(waic = TRUE)
+    control.compute = list(waic = TRUE, config = TRUE)
   )
 }
 
@@ -305,7 +323,7 @@ When fitting unit-level BHF models with `INLA`, these arguments are needed:
 - `control.compute = list(waic = TRUE)` requests WAIC for comparing model fit across candidate specifications.
 :::
 
-To compare the fitted models' overall performance, we again use **WAIC** as a first check. WAIC is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M2 shows that adding the no-car predictor improves the model predictive power as expected.
+To compare the fitted models' overall performance, we again use `WAIC` as a first check, a global predictive-fit measure returned by `INLA`. Lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M3 shows that adding the no-car predictor improves the model predictive power as expected.
 
 ```{r}
 #| label: compare-bhf-waic
@@ -320,23 +338,22 @@ model_waic <- imap_dfr(
     )
   }
 ) |>
-  arrange(.data$waic)
+  arrange(waic)
 
 model_waic
 ```
 
-A look into the fitted coefficients for `no_car` sheds more light about its predictive power. The positive coefficient of `9.1pp` means respondents without access to a car or van are predicted to have a higher probability of walking for transport daily, after accounting for temporal and spatial structure.
+A look into the fitted coefficients for the fixed effect terms sheds more light about its predictive power. For example, a coefficient of `no_car | 7.4pp` and `female | -3.4pp` and  means respondents without access to a car and male respondents are predicted to have a higher probability of walking for transport daily, after accounting for temporal and spatial structure.
 
 ```{r}
 #| label: bhf-no-car-coefficient
 
-bhf_fits[["M2 +No-car"]]$summary.fixed |>
+bhf_fits[["M3 +Nocar"]]$summary.fixed |>
   as.data.frame() |>
   rownames_to_column("term") |>
-  filter(.data$term == "no_car") |>
   transmute(
     term,
-    mean = pp_label(.data$mean),
+    mean = pp_label(mean),
     lower = pp_label(.data[["0.025quant"]]),
     upper = pp_label(.data[["0.975quant"]])
   )
@@ -347,31 +364,31 @@ Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `p
 ```{r}
 #| label: diagnose-bhf-hyperparameters
 
-bhf_fits[["M2 +No-car"]]$summary.hyperpar |>
+bhf_fits[["M3 +Nocar"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
-  filter(str_detect(.data$parameter, "time_inla_id|area_inla_id|Phi")) |>
+  filter(str_detect(parameter, "time_inla_id|area_inla_id|Phi")) |>
   select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
-  mutate(
-    across(where(is.numeric), ~ round(.x, 3))
-  )
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
 ```
 
-The temporal `tau` is high, suggesting that the survey-wave adjustments are relatively small. By contrast, the spatial `tau` is lower, indicating more remaining variation between MSOAs than between survey waves. The BYM2 `phi` is above `0.5`, so in this simple BHF model specification much of the remaining between-MSOA variation is spatially structured. By contrast, the lower `phi` in the Fay--Herriot model may reflect its richer specification: with more area-level predictors included, less residual between-MSOA variation is left for the spatial random effect to explain.
+The temporal `tau` is high, suggesting that the survey-wave adjustments are relatively small. By contrast, the spatial `tau` is lower, indicating more remaining variation between MSOAs than between survey waves. The BYM2 `phi` is above `0.5`, so in this simple BHF model specification much of the remaining between-MSOA variation is spatially structured.
 
-## Report estimates and uncertainty
+## Final estimates and uncertainty
 
-Using M2 as the selected model, we extract predictions for the target area-time rows, marked in the `INLA` input as `row_type == "aggregation"`. We then report the posterior mean as the final estimate and use the lower and upper bounds of the 95% credible interval to describe uncertainty.
+Using M3 as the selected model, we extract predictions for the target area-time rows, marked in the `INLA` input as `row_type == "aggregation"`. We then report the posterior mean as the final estimate and use the lower and upper bounds of the 95% credible interval to describe uncertainty.
+
+In practice, modelled estimates should always be reported alongside the direct-estimate metadata. This keeps the sample size, direct estimate, and direct-estimate variance in the final output, making it easier to compare the modelled result with the survey evidence it builds on.
 
 ```{r}
 #| label: extract-bhf-final-predictions
-
-bhf_m2_fitted_values <- bhf_fits[["M2 +No-car"]]$summary.fitted.values |>
+#| code-fold: false
+bhf_m3_fitted_values <- bhf_fits[["M3 +Nocar"]]$summary.fitted.values |>
   as_tibble() |>
   slice(which(model_agg_data$row_type == "aggregation"))
 
-bhf_m2_results <- bind_cols(
+bhf_m3_results <- bind_cols(
   aggregation_data |> select(area_id, msoa_name, time_id),
-  bhf_m2_fitted_values
+  bhf_m3_fitted_values
 ) |>
   transmute(
     area_id,
@@ -384,17 +401,14 @@ bhf_m2_results <- bind_cols(
     bhf_ci_width = bhf_upper - bhf_lower
   )
 ```
-In practice, modelled estimates should be reported alongside the direct-estimate metadata. This keeps the sample size, direct estimate, and direct-estimate variance in the final output, making it easier to compare the modelled result with the survey evidence it builds on.
+
 ```{r}
 #| label: extract-bhf-final-results
 
-direct_estimates <- read_csv(
-  file.path(base_path, "freqwalk_estimates_direct.csv"),
-  show_col_types = FALSE
-) |>
+direct_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_direct.csv"), show_col_types = FALSE) |>
   select(area_id, time_id, n, direct_estimate, variance)
 
-final_bhf_results <- bhf_m2_results |>
+final_bhf_results <- bhf_m3_results |>
   left_join(direct_estimates, by = c("area_id", "time_id")) |>
   select(
     area_id,
@@ -408,10 +422,6 @@ final_bhf_results <- bhf_m2_results |>
     bhf_lower,
     bhf_upper,
     bhf_ci_width
-  ) |>
-  mutate(
-    bhf_std_resid = (direct_estimate - bhf_estimate) /
-      sqrt(variance + bhf_variance)
   )
 
 head(final_bhf_results)
@@ -428,15 +438,13 @@ final_bhf_map_data <- msoa_boundaries |>
   left_join(final_bhf_results, by = "area_id")
 bhf_estimate_limits <- range(final_bhf_results$bhf_estimate, na.rm = TRUE)
 bhf_ci_width_limits <- c(0, max(final_bhf_results$bhf_ci_width, na.rm = TRUE))
-bhf_std_resid_limit <- max(abs(final_bhf_results$bhf_std_resid), na.rm = TRUE)
-bhf_std_resid_limits <- c(-bhf_std_resid_limit, bhf_std_resid_limit)
 bhf_wave_years <- sort(unique(final_bhf_results$time_id))
 
 plot_bhf_estimate <- function(wave) {
   final_bhf_map_data |>
-    filter(.data$time_id == wave) |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$bhf_estimate), colour = "transparent") +
+    geom_sf(aes(fill = bhf_estimate), colour = "transparent") +
     scale_fill_viridis_c(
       option = "magma",
       limits = bhf_estimate_limits,
@@ -451,9 +459,9 @@ plot_bhf_estimate <- function(wave) {
 
 plot_bhf_ci_width <- function(wave) {
   final_bhf_map_data |>
-    filter(.data$time_id == wave) |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$bhf_ci_width), colour = "transparent") +
+    geom_sf(aes(fill = bhf_ci_width), colour = "transparent") +
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
@@ -467,44 +475,23 @@ plot_bhf_ci_width <- function(wave) {
     map_text_theme
 }
 
-plot_bhf_std_resid <- function(wave) {
-  final_bhf_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$bhf_std_resid), colour = "transparent") +
-    scale_fill_distiller(
-      palette = "RdBu",
-      direction = -1,
-      limits = bhf_std_resid_limits,
-      na.value = missing_fill,
-      name = "Std. residual"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
-
 estimate_maps <- lapply(bhf_wave_years, plot_bhf_estimate)
 uncertainty_maps <- lapply(bhf_wave_years, plot_bhf_ci_width)
-residual_maps <- lapply(bhf_wave_years, plot_bhf_std_resid)
 
 estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
 uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
-residual_maps[[1]] <- residual_maps[[1]] + ylab("Std. residual")
 
 for (i in seq_len(length(bhf_wave_years) - 1)) {
   estimate_maps[[i]] <- estimate_maps[[i]] +
     theme(legend.position = "none")
   uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
     theme(legend.position = "none")
-  residual_maps[[i]] <- residual_maps[[i]] +
-    theme(legend.position = "none")
 }
 
-wrap_plots(c(estimate_maps, uncertainty_maps, residual_maps), ncol = 3) +
+wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 2) +
   plot_annotation(
     title = "Share of adults who walk for transport daily",
-    subtitle = "Spatio-temporal BHF model (M2), 95% CI width and standardised residual",
+    subtitle = "Spatio-temporal BHF model (M3) and 95% CI width",
     theme = map_annotation_theme
   )
 ```
@@ -513,10 +500,7 @@ Compared with the mapped direct estimates, the modelled estimates show a more pl
 
 ```{r}
 #| label: load-bhf-comparison-results
-fh_final_estimates <- read_csv(
-  file.path(base_path, "freqwalk_estimates_fh.csv"),
-  show_col_types = FALSE
-) |>
+fh_final_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_fh.csv"), show_col_types = FALSE) |>
   transmute(
     area_id,
     time_id,
@@ -549,27 +533,21 @@ bhf_scatter_comparison <- bhf_estimates |>
   ) |>
   mutate(
     comparison = recode(
-      .data$comparison,
+      comparison,
       direct_estimate = "Direct estimates",
       fh_estimate = "Fay-Herriot estimates (M4)"
     )
   ) |>
   drop_na(comparison_estimate)
 
-bhf_scatter_x_limits <- c(
-  0,
-  max(bhf_scatter_comparison$comparison_estimate, na.rm = TRUE)
-)
-bhf_scatter_y_limits <- c(
-  0,
-  max(bhf_scatter_comparison$bhf_estimate, na.rm = TRUE)
-)
+bhf_scatter_x_limits <- c(0, max(bhf_scatter_comparison$comparison_estimate, na.rm = TRUE))
+bhf_scatter_y_limits <- c(0, max(bhf_scatter_comparison$bhf_estimate, na.rm = TRUE))
 
 bhf_scatter_comparison |>
-  ggplot(aes(x = .data$comparison_estimate, y = .data$bhf_estimate)) +
+  ggplot(aes(x = comparison_estimate, y = bhf_estimate)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey55") +
-  geom_point(aes(size = .data$n), alpha = 0.55, colour = "#1f4e5f") +
-  facet_wrap(vars(.data$comparison), nrow = 1) +
+  geom_point(aes(size = n), alpha = 0.55, colour = "#1f4e5f") +
+  facet_wrap(vars(comparison), nrow = 1) +
   scale_x_continuous(labels = share_label) +
   scale_y_continuous(labels = share_label) +
   scale_size_continuous(range = c(1, 5), guide = "none") +
@@ -581,7 +559,7 @@ bhf_scatter_comparison |>
     title = "Estimate comparison",
     subtitle = "Dashed line shows equality; points are area-time cells",
     x = "Comparison estimate",
-    y = "BHF estimate (M2)"
+    y = "BHF estimate (M3)"
   ) +
   theme_minimal(base_size = 12) +
   chart_text_theme +
@@ -591,16 +569,15 @@ bhf_scatter_comparison |>
   )
 ```
 
-However, the BHF and Fay--Herriot estimates could still differ because the two models use the survey information differently. This simple BHF example is fitted to unweighted respondent records and uses only one respondent-level predictor. The final Fay--Herriot model starts from weighted direct estimates, uses their sampling variances, and includes a richer set of area-level predictors and spatio-temporal effects.
+However, the BHF and Fay--Herriot estimates for each small area can still differ because the two models use the survey information differently. The BHF model is fitted to unweighted respondent records, while the Fay--Herriot model starts from weighted direct estimates and their sampling variances to model area-year estimates. As a result, unstable direct estimates can affect the Fay--Herriot results, whereas the BHF model may be inaccurate if the complex survey design and weights are ignored. In general, for scenarios where rich survey microdata is present, a unit-level approach is preferred.
 
-Adding more unit-level predictors such as age, sex, ethnicity, or employment status can help; aggregation then requires a population table with the joint distribution of those predictors for every area-time cell. This requirement leads to **multilevel regression with poststratification**: MRP fits a richer unit-level model and averages predicted outcomes over a poststratification table representing the target population.
+That said, although the model is fitted with unit-level predictors, the aggregation step relies on strong assumptions about each area’s population composition. Representing age, sex, and car access with area-level summaries, such as mean age, proportion female, and share of households without car access, can hide important compositional differences. Two areas may have similar summaries but very different age-sex-nocar structures, meaning the model could produce similar estimates even where walking behaviour differs across specific combinations of these predictors.
+
+This limitation can be addressed by using a poststratification table that contains population counts for the joint distribution of the relevant predictors. This is the logic of **Multilevel Regression with Poststratification (MRP)**, predict the outcome for each poststratification cell, then aggregate those predictions using the corresponding population counts so the final estimates better reflect the target population composition.
 
 ```{r}
 #| label: export-bhf-results
-#| echo: false
+#| code-fold: true
 
-write_csv(
-  final_bhf_results,
-  file.path(base_path, "freqwalk_estimates_bhf.csv")
-)
+write_csv(final_bhf_results, file.path(base_path, "freqwalk_estimates_bhf.csv"))
 ```

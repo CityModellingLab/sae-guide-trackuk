@@ -1,0 +1,767 @@
+---
+title: "Unit-Level SAE Modelling with Poststratification"
+subtitle: "A Bayesian spatio-temporal extension"
+---
+
+::: {.callout-note title="Theory in brief"}
+
+Let $c$ index poststratification cells within area $j$ and time $t$. The cells are defined by whichever population variables are available for poststratification. In a unit-level MRP approach, a binary walking outcome can be modelled at the respondent level as
+
+$$
+\begin{aligned}
+Y_{ijt} &\sim \mathrm{Bernoulli}(\pi_{ijt}) \\
+\mathrm{logit}(\pi_{ijt}) &=
+\alpha + z_{ijt}^{T}\beta + q_{jt}^{T}\eta + u_j + v_t .
+\end{aligned}
+$$
+
+where $z_{ijt}$ contains predictors used to define or adjust the poststratification cells, $q_{jt}$ contains contextual area-time predictors available for both respondent and population rows, $\beta$ and $\eta$ contain their coefficients, $u_j$ is an area effect, and $v_t$ is a time effect. The fitted model gives predicted cell means for the binary frequent-walking indicator in each poststratification cell:
+
+$$
+\hat{\pi}_{jtc}
+=
+\widehat{\mathbb{E}}(Y \mid j,t,c,q_{jt}).
+$$
+
+The poststratification step combines those cell predictions with population counts $N_{jtc}$ available or estimated for the same cells. Area-time estimates are then population-weighted averages of the cell predictions.
+$$
+\hat{\mu}_{jt}^{\mathrm{MRP}}
+=
+\frac{\sum_c N_{jtc}\hat{\pi}_{jtc}}
+{\sum_c N_{jtc}}.
+$$
+:::
+
+```{r}
+#| label: setup-mrp
+library(dplyr)
+library(readr)
+library(stringr)
+library(tidyr)
+library(sf)
+library(ggplot2)
+library(patchwork)
+library(spdep)
+library(INLA)
+library(tibble)
+library(purrr)
+library(scales)
+
+base_path <- here::here("data")
+domain_frame <- read_csv(
+  file.path(base_path, "clean", "domain_msoayear.csv"),
+  show_col_types = FALSE
+)
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
+
+msoa_boundaries <- st_read(
+  file.path(base_path, "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(area_id = all_of("MSOA21CD")) |>
+  filter(str_starts(area_id, "W"))
+```
+
+```{r}
+#| label: plotting-config-mrp
+#| echo: false
+missing_fill <- "grey85"
+
+map_text_theme <- theme(
+  plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+  axis.title.y = element_text(
+    size = 12,
+    face = "bold",
+    angle = 90,
+    margin = margin(r = 15)
+  ),
+  legend.title = element_text(size = 10),
+  legend.text = element_text(size = 9)
+)
+
+map_annotation_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
+
+chart_text_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+  strip.text = element_text(size = 14, face = "bold"),
+  axis.title = element_text(size = 14),
+  axis.text = element_text(size = 12),
+  legend.text = element_text(size = 12)
+)
+```
+
+## Estimation approach {.unnumbered}
+
+{{< include assets/target-estimand.qmd >}}
+
+MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using `age_band` and `sex`, plus spatial and temporal random effects. We include no-car access as a contextual MSOA-level predictor, using the share of households without car access rather than treating no-car as a poststratification cell variable. We then produce predicted cell means for each `age_band` × `sex` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+
+The poststratification table therefore remains the observed `age_band` × `sex` population table. This keeps the aggregation table smaller and avoids modelling an unobserved age-sex-no-car population distribution, but it assumes the contextual MSOA no-car share is a sufficient area-level adjustment for car access.
+
+## Prepare modelling and poststratification data
+
+As in previous methods, we first create consistent numeric indices for each MSOA and survey year, and a Queen-contiguity adjacency graph for the spatial effect.
+
+```{r}
+#| label: define-mrp-model-index
+#| code-fold: false
+#|
+area_levels <- sort(unique(domain_frame[["area_id"]]))
+time_levels <- sort(unique(domain_frame[["time_id"]]))
+
+area_index <- tibble(
+  area_id = area_levels,
+  area_inla_id = seq_along(area_levels)
+)
+
+time_index <- tibble(
+  time_id = time_levels,
+  time_inla_id = seq_along(time_levels)
+)
+```
+
+```{r}
+#| label: build-mrp-spatial-graph
+#| code-fold: false
+#|
+msoa_boundaries_sorted <- msoa_boundaries |>
+  inner_join(area_index, by = "area_id") |>
+  arrange(area_inla_id)
+
+msoa_neighbours <- poly2nb(
+  msoa_boundaries_sorted,
+  queen = TRUE,
+  row.names = msoa_boundaries_sorted$area_id
+)
+
+spatial_graph_file <- tempfile(fileext = ".adj")
+
+nb2INLA(
+  file = spatial_graph_file,
+  nb = msoa_neighbours
+)
+```
+
+The MRP workflow needs two inputs:
+
+- `model_data`, the sampled respondent records used to fit the model;
+- `poststrat_data`, the population cells over which predictions are averaged.
+
+### Respondent model data
+
+The survey file contains respondent-level age, sex, and walking outcome fields. For the contextual no-car specification, we also join the MSOA-level no-car household share from the area predictor file.
+
+It is essential for the predictors that define poststratification cells to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same five-year bands and sex is also recoded as Male and Female.
+```{r}
+#| label: load-mrp-survey-indicator
+walking_indicator <- read_csv(
+  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
+  show_col_types = FALSE
+)
+
+age_band_levels <- c(
+  "age_15_19", "age_20_24", "age_25_29", "age_30_34",
+  "age_35_39", "age_40_44", "age_45_49", "age_50_54",
+  "age_55_59", "age_60_64", "age_65_69", "age_70_74",
+  "age_75_79", "age_80_84", "age_85_89", "age_90_plus"
+)
+
+walking_indicator_recoded <- walking_indicator |>
+  mutate(
+    age_band = cut(
+      age,
+      breaks = c(seq(15, 90, by = 5), Inf),
+      labels = age_band_levels,
+      right = FALSE
+    ),
+    age_band = factor(age_band, levels = age_band_levels),
+    sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female"))
+  )
+
+area_context_predictors <- read_csv(
+  file.path(base_path, "clean", "areapred_freqwalk.csv"),
+  show_col_types = FALSE
+) |>
+  transmute(
+    area_id,
+    no_car_context = scaled_share_no_car_households
+  )
+
+model_data <- walking_indicator_recoded |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
+  left_join(area_context_predictors, by = "area_id") |>
+  drop_na(indicator, area_id, time_id, age_band, sex, no_car_context, time_inla_id, area_inla_id) |>
+  select(
+    unit_id,
+    area_id,
+    time_id,
+    indicator,
+    age_band,
+    sex,
+    no_car_context,
+    time_inla_id,
+    area_inla_id
+  )
+
+head(model_data)
+```
+
+### Population poststratification data
+
+First, we load the age-sex poststratification table and align its `age_band` and `sex` categories with the survey model data.
+
+```{r}
+#| label: load-poststratification-data
+
+poststrat_age_sex <- read_csv(
+  file.path(base_path, "clean", "poststrat_freqwalk.csv"),
+  show_col_types = FALSE
+) |>
+  transmute(
+    area_id,
+    msoa_name,
+    time_id,
+    age_band = factor(age_band, levels = age_band_levels),
+    sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
+    pop_count
+  ) |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
+  filter(pop_count > 0) |>
+  drop_na(age_band, sex, pop_count, time_inla_id, area_inla_id)
+
+head(poststrat_age_sex)
+```
+
+The poststratification table has age-sex population counts only. We keep it at that grain, then attach the same MSOA-level contextual no-car predictor to every age-sex cell within each area.
+
+```{r}
+#| label: prepare-poststratification-frame
+poststrat_data <- poststrat_age_sex |>
+  left_join(area_context_predictors, by = "area_id") |>
+  select(
+    area_id,
+    msoa_name,
+    time_id,
+    age_band,
+    sex,
+    no_car_context,
+    pop_count,
+    time_inla_id,
+    area_inla_id
+  ) |>
+  drop_na(no_car_context) |>
+  arrange(time_id, area_inla_id, age_band, sex)
+
+head(poststrat_data)
+```
+
+This approach uses no-car access as a contextual predictor. It does not represent within-area differences in car access across age-sex groups, but it avoids expanding the poststratification table with a modelled no-car distribution.
+
+## Fit and evaluate models
+
+We fit a sequence of binomial unit-level models. The outcome is the respondent walking indicator, and fitted values for the poststratification rows are returned as response-scale cell means.
+
+| Model | Name | Specification |
+|---|---|---|
+| M0 | Baseline | Temporal RW1 plus BYM2 spatial MSOA effect |
+| M1 | +Demographic | M0 plus age band and sex |
+| M2 | +Nocar | M1 plus contextual MSOA no-car household share |
+
+```{r}
+#| label: define-mrp-models
+#| code-fold: false
+
+m0_formula <- indicator ~
+  1 +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    area_inla_id,
+    model = "bym2",
+    graph = spatial_graph_file,
+    scale.model = TRUE,
+    constr = TRUE
+  )
+
+m1_formula <- indicator ~
+  age_band +
+  sex +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    area_inla_id,
+    model = "bym2",
+    graph = spatial_graph_file,
+    scale.model = TRUE,
+    constr = TRUE
+  )
+
+m2_formula <- indicator ~
+  age_band +
+  sex +
+  no_car_context +
+  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    area_inla_id,
+    model = "bym2",
+    graph = spatial_graph_file,
+    scale.model = TRUE,
+    constr = TRUE
+  )
+
+model_formulas <- list(
+  "M0 Baseline" = m0_formula,
+  "M1 +Demographic" = m1_formula,
+  "M2 +Nocar" = m2_formula
+)
+```
+
+The observed respondent rows and the poststratification rows are combined before fitting. Rows with `indicator = NA` are not used in the likelihood, but `INLA` still returns their fitted values, which are needed for poststratification.
+
+```{r}
+#| label: fit-mrp-models
+#| code-fold: false
+
+model_poststrat_data <- bind_rows(
+  model_data |>
+    transmute(
+      row_type = "model",
+      indicator,
+      age_band,
+      sex,
+      no_car_context,
+      time_inla_id,
+      area_inla_id
+    ),
+  poststrat_data |>
+    transmute(
+      row_type = "poststrat",
+      indicator = NA_real_,
+      age_band,
+      sex,
+      no_car_context,
+      time_inla_id,
+      area_inla_id
+    )
+)
+
+fit_mrp_model <- function(formula) {
+  inla(
+    formula = formula,
+    family = "binomial",
+    Ntrials = 1,
+    data = model_poststrat_data,
+    control.predictor = list(compute = TRUE, link = 1),
+    control.compute = list(waic = TRUE, config = TRUE)
+  )
+}
+
+mrp_fits <- lapply(model_formulas, fit_mrp_model)
+```
+
+As before, we use `WAIC` as an initial model check. M2 demonstrates the lowest WAIC, meaning age, sex, and the contextual no-car predictor together best explain the variability among the binary outcome being modelled.
+
+```{r}
+#| label: compare-mrp-waic
+
+model_waic <- imap_dfr(
+  mrp_fits,
+  \(fit, model_name) {
+    tibble(
+      model = model_name,
+      waic = fit$waic$waic,
+      eff_params = fit$waic$p.eff
+    )
+  }
+) |>
+  arrange(waic)
+
+model_waic
+```
+
+We can also expose the coefficients for all fixed effect terms for M2 to check whether the modelled relationships are logical. Here, we can inspect the age and sex terms alongside the contextual no-car coefficient, which represents differences associated with MSOAs where a higher share of households have no car access.
+
+```{r}
+#| label: mrp-no-car-coefficient
+
+mrp_fits[["M2 +Nocar"]]$summary.fixed |>
+  as.data.frame() |>
+  rownames_to_column("term") |>
+  transmute(
+    term,
+    mean = pp_label(mean),
+    lower = pp_label(.data[["0.025quant"]]),
+    upper = pp_label(.data[["0.975quant"]])
+  )
+```
+
+At this point, having selected our final model, we use poststratification to convert its cell-level predictions into the target MSOA-year estimates. That means each `age_band` x `sex` cell prediction is weighted by its population count, then aggregated within each MSOA-year. On the one hand, we can apply this calculation using the posterior mean cell values returned above, which gives a simple point-estimate for each cell:
+
+```{r}
+#| label: poststratify-mrp-point-estimate
+
+mrp_final_fit <- mrp_fits[["M2 +Nocar"]]
+poststrat_cell_rows <- which(model_poststrat_data$row_type == "poststrat")
+
+cell_mean_predictions <- mrp_final_fit$summary.fitted.values |>
+  as_tibble() |>
+  slice(poststrat_cell_rows) |>
+  transmute(cell_mean = mean)
+
+cell_point_estimates <- bind_cols(poststrat_data, cell_mean_predictions)
+
+area_year_point_estimates <- cell_point_estimates |>
+  group_by(area_id, time_id) |>
+  summarise(
+    weighted_cell_sum = sum(cell_mean * pop_count),
+    population_total = sum(pop_count),
+    .groups = "drop"
+  ) |>
+  mutate(mrp_point_estimate = weighted_cell_sum / population_total) |>
+  select(area_id, time_id, mrp_point_estimate)
+
+head(area_year_point_estimates)
+```
+
+However, the final output for SAE also needs uncertainty estimates. To propagate uncertainty through poststratification, we repeat the same population-weighted aggregation across posterior draws. This means the credible intervals describe uncertainty in the aggregated MSOA-year estimates, not just uncertainty in the individual cell predictions. The posterior draws used for this calculation are shown below.
+
+## Final estimates and uncertainty
+
+The function `inla.posterior.sample()` gives plausible versions of the fitted model; for each draw, we keep the poststratification rows and convert their fitted values from the logit scale to the original scale of the outcome (0-1).
+
+```{r}
+#| label: sample-mrp-posterior
+#| code-fold: false
+
+# Draw plausible versions of the fitted model from the posterior.
+set.seed(100)
+posterior_draws <- inla.posterior.sample(n = 300, result = mrp_final_fit)
+
+# Rows are poststrat cells; columns are posterior draws; values are predicted cell means.
+estimate_draws <- matrix(NA_real_, nrow = nrow(poststrat_data), ncol = length(posterior_draws))
+
+predictor_row_index <- startsWith(rownames(posterior_draws[[1]]$latent), "Predictor")
+
+for (draw_id in seq_along(posterior_draws)) {
+  draw <- posterior_draws[[draw_id]]
+  row_prediction_logits <- as.numeric(draw$latent[predictor_row_index, 1])
+  poststrat_logits <- row_prediction_logits[poststrat_cell_rows]
+  poststrat_cell_means <- 1 / (1 + exp(-poststrat_logits))
+  estimate_draws[, draw_id] <- poststrat_cell_means
+}
+```
+
+The matrix `estimate_draws` contains the draw-level predicted cell means. Using it, we poststratify each posterior draw. That means, for every draw, the predictions are weighted by the corresponding population counts, summed within each MSOA-year, and divided by the total MSOA-year population. This gives one population-weighted estimate per MSOA-year for each posterior draw.
+
+```{r}
+#| label: poststratify-mrp-posterior
+#| code-fold: false
+
+area_year_id <- paste(poststrat_data$area_id, poststrat_data$time_id, sep = "__")
+
+# Population-weight cell means and aggregate them to MSOA-year estimates.
+area_year_weighted_sums <- rowsum(estimate_draws * poststrat_data$pop_count, group = area_year_id, reorder = FALSE)
+area_year_populations <- rowsum(poststrat_data$pop_count, group = area_year_id, reorder = FALSE)
+
+area_year_means <- area_year_weighted_sums / as.numeric(area_year_populations)
+area_year_means[1:5, 1:10]
+```
+
+Since each row of `area_year_means` is the posterior distribution for one MSOA-year estimate, we summarise those into a posterior mean, posterior variance, and 95% credible interval.
+
+```{r}
+#| label: summarise-mrp-final-estimates
+#| code-fold: false
+
+area_year_summary <- tibble(
+  area_year_id = rownames(area_year_means),
+  mrp_estimate = rowMeans(area_year_means),
+  mrp_variance = apply(area_year_means, 1, var),
+  mrp_lower = apply(area_year_means, 1, quantile, probs = 0.025, names = FALSE),
+  mrp_upper = apply(area_year_means, 1, quantile, probs = 0.975, names = FALSE)
+) |>
+  mutate(mrp_ci_width = mrp_upper - mrp_lower) |>
+  separate(area_year_id, into = c("area_id", "time_id"), sep = "__", convert = TRUE)
+
+final_mrp_results <- domain_frame |>
+  select(area_id, msoa_name, time_id) |>
+  left_join(area_year_summary, by = c("area_id", "time_id"))
+
+head(final_mrp_results)
+```
+
+As with previous methods, we report the MRP estimates alongside the direct estimates and variance outputs in order to provide a full view of the direct survey evidence that accompanies the modelled estimates.
+
+```{r}
+#| label: extract-mrp-final-results
+
+direct_estimates <- read_csv(
+  file.path(base_path, "freqwalk_estimates_direct.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, time_id, n, direct_estimate, variance)
+
+final_mrp_results <- final_mrp_results |>
+  left_join(direct_estimates, by = c("area_id", "time_id")) |>
+  mutate(
+    direct_ci_width = 2 * qnorm(0.975) * sqrt(pmax(variance, 0))
+  ) |>
+  select(
+    area_id,
+    msoa_name,
+    time_id,
+    n,
+    direct_estimate,
+    variance,
+    direct_ci_width,
+    mrp_estimate,
+    mrp_variance,
+    mrp_lower,
+    mrp_upper,
+    mrp_ci_width
+  )
+
+head(final_mrp_results)
+```
+
+```{r}
+#| label: map-mrp-final-results
+#| echo: false
+#| fig-width: 16
+#| fig-height: 16
+#| out-width: "100%"
+
+final_mrp_map_data <- msoa_boundaries |>
+  left_join(final_mrp_results, by = "area_id")
+mrp_estimate_limits <- range(final_mrp_results$mrp_estimate, na.rm = TRUE)
+mrp_ci_width_limits <- c(0, max(final_mrp_results$mrp_ci_width, na.rm = TRUE))
+mrp_wave_years <- sort(unique(final_mrp_results$time_id))
+
+plot_mrp_estimate <- function(wave) {
+  final_mrp_map_data |>
+    filter(time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = mrp_estimate), colour = "transparent") +
+    scale_fill_viridis_c(
+      option = "magma",
+      limits = mrp_estimate_limits,
+      labels = share_label,
+      na.value = missing_fill,
+      name = "Share"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+plot_mrp_ci_width <- function(wave) {
+  final_mrp_map_data |>
+    filter(time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = mrp_ci_width), colour = "transparent") +
+    scale_fill_distiller(
+      palette = "Oranges",
+      direction = 1,
+      limits = mrp_ci_width_limits,
+      labels = pp_label,
+      na.value = missing_fill,
+      name = "95% CI width"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+estimate_maps <- lapply(mrp_wave_years, plot_mrp_estimate)
+uncertainty_maps <- lapply(mrp_wave_years, plot_mrp_ci_width)
+
+estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
+uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
+
+for (i in seq_len(length(mrp_wave_years) - 1)) {
+  estimate_maps[[i]] <- estimate_maps[[i]] +
+    theme(legend.position = "none")
+  uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 2) +
+  plot_annotation(
+    title = "Share of adults who walk for transport daily",
+    subtitle = "MRP final model and 95% credible interval width",
+    theme = map_annotation_theme
+  )
+```
+
+### Comparison diagnostics
+
+The comparison plot shows that the MRP estimates are very close to the BHF estimates, with points clustered around the equality line. Agreement with the direct estimates is much weaker as expected, reflecting the instability of sparse MSOA-year survey cells. The Fay--Herriot estimates tend to sit lower than MRP for many cells, suggesting stronger shrinkage toward lower area-year rates.
+
+```{r}
+#| label: add-mrp-comparison-estimates
+bhf_final_estimates <- read_csv(
+  file.path(base_path, "freqwalk_estimates_bhf.csv"),
+  show_col_types = FALSE
+) |>
+  select(
+    area_id,
+    time_id,
+    bhf_estimate,
+    bhf_variance,
+    bhf_ci_width
+  )
+
+fh_final_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_fh.csv"), show_col_types = FALSE) |>
+  select(area_id, time_id, fh_estimate, fh_variance, fh_ci_width)
+
+final_mrp_results <- final_mrp_results |>
+  left_join(bhf_final_estimates, by = c("area_id", "time_id")) |>
+  left_join(fh_final_estimates, by = c("area_id", "time_id")) |>
+  mutate(mrp_minus_bhf = mrp_estimate - bhf_estimate) |>
+  select(
+    area_id,
+    msoa_name,
+    time_id,
+    n,
+    direct_estimate,
+    variance,
+    direct_ci_width,
+    bhf_estimate,
+    bhf_variance,
+    bhf_ci_width,
+    fh_estimate,
+    fh_variance,
+    fh_ci_width,
+    mrp_estimate,
+    mrp_variance,
+    mrp_lower,
+    mrp_upper,
+    mrp_ci_width,
+    mrp_minus_bhf
+  )
+
+head(final_mrp_results)
+```
+```{r}
+#| label: plot-mrp-comparison-scatter
+#| echo: false
+#| fig-height: 6
+#| fig-width: 14
+
+mrp_scatter_comparison <- final_mrp_results |>
+  select(
+    area_id,
+    time_id,
+    n,
+    mrp_estimate,
+    direct_estimate,
+    bhf_estimate,
+    fh_estimate
+  ) |>
+  pivot_longer(
+    cols = c(direct_estimate, bhf_estimate, fh_estimate),
+    names_to = "comparison",
+    values_to = "comparison_estimate"
+  ) |>
+  mutate(
+    comparison = recode(
+      comparison,
+      direct_estimate = "Direct estimates",
+      fh_estimate = "Fay-Herriot estimates",
+      bhf_estimate = "BHF estimates"
+    )
+  ) |>
+  filter(!is.na(comparison_estimate))
+
+mrp_scatter_limits <- c(0, 0.5)
+
+mrp_scatter_comparison |>
+  ggplot(aes(x = comparison_estimate, y = mrp_estimate)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey55") +
+  geom_point(aes(size = n), alpha = 0.55, colour = "#1f4e5f") +
+  facet_wrap(vars(comparison), nrow = 1) +
+  scale_x_continuous(labels = share_label, limits = mrp_scatter_limits, oob = squish) +
+  scale_y_continuous(labels = share_label, limits = mrp_scatter_limits, oob = squish) +
+  scale_size_continuous(range = c(1, 5), guide = "none") +
+  coord_equal() +
+  labs(
+    title = "Estimate comparison",
+    subtitle = "Dashed line shows equality",
+    x = "Comparison estimate",
+    y = "MRP estimate"
+  ) +
+  theme_minimal(base_size = 12) +
+  chart_text_theme +
+  theme(
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+```
+
+A closer look at the difference between the unit-level BHF and MRP estimates reveals subtle differences in how population composition is handled. The BHF workflow aggregates using area-level summaries, so it cannot fully represent the internal age and sex composition of each MSOA-year. MRP instead predicts over the `age_band` x `sex` poststratification cells and then weights those cells by their population counts. In this workbook, no-car access enters as a contextual MSOA-level predictor rather than as a poststratification cell dimension.
+
+MRP estimates should therefore be higher than BHF estimates where the poststratification table gives more weight to groups with higher predicted frequent-walking rates. In this scenario, those groups are mainly younger adults and any sex-specific differences estimated by the model. Where these groups make up a larger share of a local population than the BHF area-level summaries can represent, MRP will tend to shift the estimate upward.
+
+```{r}
+#| label: map-mrp-bhf-comparison
+#| echo: false
+#| fig-width: 16
+#| fig-height: 6
+#| out-width: "100%"
+
+mrp_bhf_difference_limit <- quantile(abs(final_mrp_results$mrp_minus_bhf), 0.95, na.rm = TRUE, names = FALSE)
+mrp_bhf_difference_limits <- c(-mrp_bhf_difference_limit, mrp_bhf_difference_limit)
+
+final_mrp_comparison_map_data <- msoa_boundaries |>
+  left_join(final_mrp_results, by = "area_id")
+
+plot_mrp_bhf_difference <- function(wave) {
+  final_mrp_comparison_map_data |>
+    filter(time_id == wave) |>
+    ggplot() +
+    geom_sf(aes(fill = mrp_minus_bhf), colour = "transparent") +
+    scale_fill_gradient2(
+      low = "#2166ac",
+      mid = "white",
+      high = "#b2182b",
+      midpoint = 0,
+      limits = mrp_bhf_difference_limits,
+      oob = squish,
+      labels = pp_label,
+      na.value = missing_fill,
+      name = "MRP - BHF"
+    ) +
+    ggtitle(wave) +
+    theme_void() +
+    map_text_theme
+}
+
+bhf_difference_maps <- lapply(mrp_wave_years, plot_mrp_bhf_difference)
+
+bhf_difference_maps[[1]] <- bhf_difference_maps[[1]] + ylab("MRP - BHF")
+
+for (i in seq_len(length(mrp_wave_years) - 1)) {
+  bhf_difference_maps[[i]] <- bhf_difference_maps[[i]] +
+    theme(legend.position = "none")
+}
+
+wrap_plots(bhf_difference_maps, ncol = 3) +
+  plot_annotation(
+    title = "Poststratification diagnostics",
+    subtitle = "Difference from BHF estimates",
+    theme = map_annotation_theme
+  )
+```
+
+
+```{r}
+#| label: export-mrp-results
+#| code-fold: true
+
+write_csv(final_mrp_results, file.path(base_path, "freqwalk_estimates_mrp_unit.csv"))
+```

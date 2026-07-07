@@ -5,7 +5,7 @@ subtitle: "Define the estimand, area-time domain, survey indicator, and model in
 
 ```{r}
 #| label: setup-data-preparation
-#| echo: false
+#| code-fold: true
 
 library(dplyr)
 library(readr)
@@ -16,24 +16,21 @@ library(patchwork)
 library(scales)
 
 base_path <- here::here("data")
-survey_microdata <- read_csv(
-  file.path(base_path, "clean", "survey_microdata_msoayear.csv"),
-  show_col_types = FALSE
-)
+survey_microdata <- read_csv(file.path(base_path, "clean", "survey_microdata_msoayear.csv"), show_col_types = FALSE)
 
 la_boundaries <- st_read(
   file.path(base_path, "boundaries-ltla.geojson"),
   quiet = TRUE
 ) |>
-  transmute(la_code = .data$LAD21CD) |>
-  filter(str_starts(.data$la_code, "W"))
+  transmute(la_code = LAD21CD) |>
+  filter(str_starts(la_code, "W"))
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  transmute(area_id = .data$MSOA21CD) |>
-  filter(str_starts(.data$area_id, "W"))
+  transmute(area_id = MSOA21CD) |>
+  filter(str_starts(area_id, "W"))
 ```
 
 ```{r}
@@ -52,7 +49,7 @@ count_map_theme <- theme_void(base_size = 11) +
   )
 ```
 
-This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.
+This data preparation step introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.
 
 ## The Survey Microdata
 
@@ -80,12 +77,12 @@ From here on, the survey period labels are simplified to their end year. For exa
 #| fig-align: "center"
 
 la_response_counts <- survey_microdata |>
-  filter(!is.na(.data$la_code), !is.na(.data$la_name)) |>
-  count(.data$la_code, name = "responses")
+  filter(!is.na(la_code), !is.na(la_name)) |>
+  count(la_code, name = "responses")
 
 msoa_response_counts <- survey_microdata |>
-  filter(!is.na(.data$area_id)) |>
-  count(.data$area_id, name = "responses")
+  filter(!is.na(area_id)) |>
+  count(area_id, name = "responses")
 
 la_count_map_data <- la_boundaries |>
   left_join(la_response_counts, by = "la_code")
@@ -96,7 +93,7 @@ msoa_count_map_data <- msoa_boundaries |>
 plot_response_map <- function(map_data, title, border_colour = "transparent") {
   ggplot(map_data) +
     geom_sf(
-      aes(fill = .data$responses),
+      aes(fill = responses),
       colour = border_colour,
       linewidth = 0.15
     ) +
@@ -144,7 +141,6 @@ In this tutorial, the estimand is:
 
 {{< include assets/target-estimand.qmd >}}
 
-
 ### Preparing The Survey Indicator
 
 Since we are interested in whether our respondents walk frequently as the main mode of transport, we can code the indicator from `AtFrqWlk10`, the active-travel frequency question for walking. 
@@ -159,8 +155,8 @@ Since we are interested in whether our respondents walk frequently as the main m
 
 Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding `weight` variable selection rule is as follows:
 
-- Use `SampleTravelWeight` in survey periods where this question was asked to a subsample and the weight for this exists, 
-- Use `SampleAdultWeight` in survey periods where this question was asked to the main sample. 
+- Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists, 
+- Use `SampleAdultWeight` in survey waves where this question was asked to the main sample. 
 
 The walking survey indicator clean file has *one row per respondent-wave* and keeps the unit predictors needed for unit-level SAE:
 
@@ -187,16 +183,19 @@ As an overview, the current cleaned data give the following usable observations 
 Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
-#### Area Predictors
+#### Area Predictors and Area Summaries
 
-SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `cov_*` variables for modelling.
-
-These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns.
+SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `scaled_*` variables for modelling. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or occupation patterns.
 
 | Group | Variables | Why include |
 |---|---|---|
-| Core predictors | - Population density<br>- Share of households without car/van | Capturing broad urban form and car access |
-| Additional predictors | - Share working from home<br>- Share full-time students<br>- Share in routine or semi-routine occupations | Capturing work-pattern differences that may explain transport mode choice |
+| Demographic summaries | Female share; mean adult age | Capture broad differences in population composition |
+| Core area predictors | Population density; share of households without a car or van | Capture urban form and car access |
+| Additional area predictors | Share working from home; share full-time students; share in routine or semi-routine occupations | Capture wider socioeconomic and work-pattern differences related to travel behaviour |
+
+:::{.callout-note}
+These MSOA-level summaries can also be used as aggregation inputs after fitting a unit-level model to the survey microdata. See [BHF unit-level model](bhf-unit.qmd).
+:::
 
 The area-predictor output *has one row per MSOA*:
 
@@ -204,8 +203,8 @@ The area-predictor output *has one row per MSOA*:
 |---|---|
 | `area_id` | MSOA estimation area |
 | `msoa_name` | MSOA name |
-| `raw_*` | Raw 5 predictors used in the models |
-| `cov_*` | Z-scored versions of the raw predictors |
+| `raw_*` | Raw predictors and summaries used in the models |
+| `scaled_*` | Z-scored versions of the raw predictors |
 
 #### Poststratification Table
 

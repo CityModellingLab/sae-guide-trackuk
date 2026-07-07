@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Multilevel Regression and Poststratification</title>
+<title>Small Area Estimation for Urban Analytics - Unit-Level SAE Modelling with Poststratification (a.k.a MRP)</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -30,7 +64,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./toolkit.html" rel="next">
+<link href="./mrp-unit.html" rel="next">
 <link href="./bhf-unit.html" rel="prev">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
@@ -122,15 +156,19 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level model (FH)</span></a>
+ <span class="dropdown-text">Area-level (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level model (BHF)</span></a>
+ <span class="dropdown-text">Unit-level (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">MRP</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./mrp-unit.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
     </ul>
   </li>
@@ -160,7 +198,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./mrp.html">MRP</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./mrp.html">SAE with Poststrat (MRP)</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -210,19 +248,25 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level model (FH)</span></a>
+ <span class="menu-text">Area-level (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level model (BHF)</span></a>
+ <span class="menu-text">Unit-level (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">MRP</span></a>
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mrp-unit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
   </div>
 </li>
       </ul>
@@ -256,15 +300,31 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#estimation-approach" id="toc-estimation-approach" class="nav-link active" data-scroll-target="#estimation-approach">Estimation approach</a></li>
+  <li><a href="#prepare-modelling-and-poststratification-data" id="toc-prepare-modelling-and-poststratification-data" class="nav-link" data-scroll-target="#prepare-modelling-and-poststratification-data"><span class="header-section-number">1</span> Prepare modelling and poststratification data</a>
+  <ul class="collapse">
+  <li><a href="#respondent-model-data" id="toc-respondent-model-data" class="nav-link" data-scroll-target="#respondent-model-data"><span class="header-section-number">1.1</span> Respondent model data</a></li>
+  <li><a href="#population-poststratification-data" id="toc-population-poststratification-data" class="nav-link" data-scroll-target="#population-poststratification-data"><span class="header-section-number">1.2</span> Population poststratification data</a></li>
+  </ul></li>
+  <li><a href="#fit-and-evaluate-models" id="toc-fit-and-evaluate-models" class="nav-link" data-scroll-target="#fit-and-evaluate-models"><span class="header-section-number">2</span> Fit and evaluate models</a></li>
+  <li><a href="#final-estimates-and-uncertainty" id="toc-final-estimates-and-uncertainty" class="nav-link" data-scroll-target="#final-estimates-and-uncertainty"><span class="header-section-number">3</span> Final estimates and uncertainty</a>
+  <ul class="collapse">
+  <li><a href="#comparison-diagnostics" id="toc-comparison-diagnostics" class="nav-link" data-scroll-target="#comparison-diagnostics"><span class="header-section-number">3.1</span> Comparison diagnostics</a></li>
+  </ul></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Multilevel Regression and Poststratification</h1>
-<p class="subtitle lead">Predict small area estimates using survey microdata and population poststratification cells</p>
+<h1 class="title">Unit-Level SAE Modelling with Poststratification (a.k.a MRP)</h1>
+<p class="subtitle lead">A Bayesian spatio-temporal extension</p>
 </div>
 
 
@@ -279,7 +339,6 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>MRP extends the unit-level route by fitting a model to survey responses and then then averaging those predictions over a poststratification table that represents the target population in each area-time cell. This helps reduce bias from uneven sample composition in the original survey microdata.</p>
 <div class="callout callout-style-default callout-note callout-titled" title="Theory in brief">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -290,26 +349,62 @@ Theory in brief
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Let <span class="math inline">c</span> index poststratification cells, such as age-by-sex cells within area <span class="math inline">j</span> and time <span class="math inline">t</span>. A compact unit-level model is:</p>
+<p>Let <span class="math inline">c</span> index poststratification cells within area <span class="math inline">j</span> and time <span class="math inline">t</span>. The cells are defined by whichever population variables are available for poststratification. In a unit-level MRP approach, a binary walking outcome can be modelled at the respondent level as</p>
 <p><span class="math display">
-y_{ijt} = \alpha + \varphi_{a_i} + \gamma_{s_i}
-+ \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + \epsilon_{ijt},
+\begin{aligned}
+Y_{ijt} &amp;\sim \mathrm{Bernoulli}(\pi_{ijt}) \\
+\mathrm{logit}(\pi_{ijt}) &amp;=
+\alpha + z_{ijt}^{T}\beta + u_j + v_t .
+\end{aligned}
 </span></p>
-<p>where <span class="math inline">\varphi_{a_i}</span> and <span class="math inline">\gamma_{s_i}</span> capture demographic structure, while <span class="math inline">u_j</span> captures area-level variation. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">v_t</span> can be added to represent wave-to-wave dependence. The model gives a predicted outcome for each area-time poststratification cell:</p>
+<p>where <span class="math inline">z_{ijt}</span> is a vector of respondent-level predictors used to define or adjust the poststratification cells, <span class="math inline">\beta</span> contains their coefficients, <span class="math inline">u_j</span> is an area effect, and <span class="math inline">v_t</span> is a time effect. The fitted model gives predicted cell means for the binary frequent-walking indicator in each poststratification cell:</p>
 <p><span class="math display">
-\hat{\mu}_{jtc} = \widehat{\mathbb{E}}(Y \mid j,t,c).
+\hat{\pi}_{jtc}
+=
+\widehat{\mathbb{E}}(Y \mid j,t,c).
 </span></p>
-<p>Area-time estimates are then poststratified using population counts <span class="math inline">N_{jtc}</span>:</p>
-<p><span class="math display">
-\hat{\mu}_{jt}^{\mathrm{MRP}} =
-\frac{\sum_c N_{jtc}\hat{\mu}_{jtc}}
+<p>The poststratification step combines those cell predictions with population counts <span class="math inline">N_{jtc}</span> available or estimated for the same cells. Area-time estimates are then population-weighted averages of the cell predictions. <span class="math display">
+\hat{\mu}_{jt}^{\mathrm{MRP}}
+=
+\frac{\sum_c N_{jtc}\hat{\pi}_{jtc}}
 {\sum_c N_{jtc}}.
 </span></p>
 </div>
 </div>
-<div class="method-divider" aria-hidden="true">
-
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(spdep)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(INLA)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tibble)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>domain_frame <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"domain_msoayear.csv"</span>),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>share_label <span class="ot">&lt;-</span> <span class="fu">label_percent</span>(<span class="at">accuracy =</span> <span class="fl">0.1</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>pp_label <span class="ot">&lt;-</span> <span class="fu">label_number</span>(<span class="at">accuracy =</span> <span class="fl">0.1</span>, <span class="at">scale =</span> <span class="dv">100</span>, <span class="at">suffix =</span> <span class="st">" pp"</span>)</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">area_id =</span> <span class="fu">all_of</span>(<span class="st">"MSOA21CD"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
+<section id="estimation-approach" class="level2 unnumbered">
+<h2 class="unnumbered anchored" data-anchor-id="estimation-approach">Estimation approach</h2>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -329,8 +424,1496 @@ Target estimand
 </div>
 </div>
 </div>
+<p>MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using <code>age_band</code> (to reflect the age composition in the poststratification table), <code>sex</code>, <code>no_car</code>, and spatial and temporal random effects. We then produce predicted cell means for the binary frequent-walking indicator for each <code>age_band</code> × <code>sex</code> × <code>no_car</code> population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.</p>
+<p>One data limitation is that the available ONS poststratification table only contains <code>age_band</code> × <code>sex</code> population counts. To include <code>no_car</code>, we first estimate no-car probabilities for each <code>age_band</code> × <code>sex</code> cell and use them to extend the poststratification table. This avoids applying the same MSOA-level no-car share to every age-sex cell, but it introduces additional uncertainty because part of the population table is modelled rather than directly observed. A more conservative alternative would be to model walking using only <code>age_band</code> and <code>sex</code>, and use MSOA-level no-car share separately as a contextual area-level predictor.</p>
+</section>
+<section id="prepare-modelling-and-poststratification-data" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="prepare-modelling-and-poststratification-data"><span class="header-section-number">1</span> Prepare modelling and poststratification data</h2>
+<p>As in previous methods, we first create consistent numeric indices for each MSOA and survey year, and a Queen-contiguity adjacency graph for the spatial effect.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">#|</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>area_levels <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(domain_frame[[<span class="st">"area_id"</span>]]))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>time_levels <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unique</span>(domain_frame[[<span class="st">"time_id"</span>]]))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>area_index <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">area_id =</span> area_levels,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">area_inla_id =</span> <span class="fu">seq_along</span>(area_levels)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>time_index <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_id =</span> time_levels,</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_inla_id =</span> <span class="fu">seq_along</span>(time_levels)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#|</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>msoa_boundaries_sorted <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_inla_id)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>msoa_neighbours <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  msoa_boundaries_sorted,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">queen =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> msoa_boundaries_sorted<span class="sc">$</span>area_id</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">fileext =</span> <span class="st">".adj"</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">nb2INLA</span>(</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> spatial_graph_file,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">nb =</span> msoa_neighbours</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The MRP workflow needs two inputs:</p>
+<ul>
+<li><code>model_data</code>, the sampled respondent records used to fit the model;</li>
+<li><code>poststrat_data</code>, the population cells over which predictions are averaged.</li>
+</ul>
+<section id="respondent-model-data" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="respondent-model-data"><span class="header-section-number">1.1</span> Respondent model data</h3>
+<p>The survey file contains respondent-level age, sex, no-car access, and walking outcome fields.</p>
+<p>It is essential for the unit-level predictors to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same five-year bands and sex is also recoded as Male and Female.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>walking_indicator <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqwalk.csv"</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>age_band_levels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"age_15_19"</span>, <span class="st">"age_20_24"</span>, <span class="st">"age_25_29"</span>, <span class="st">"age_30_34"</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="st">"age_35_39"</span>, <span class="st">"age_40_44"</span>, <span class="st">"age_45_49"</span>, <span class="st">"age_50_54"</span>,</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="st">"age_55_59"</span>, <span class="st">"age_60_64"</span>, <span class="st">"age_65_69"</span>, <span class="st">"age_70_74"</span>,</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="st">"age_75_79"</span>, <span class="st">"age_80_84"</span>, <span class="st">"age_85_89"</span>, <span class="st">"age_90_plus"</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>walking_indicator_recoded <span class="ot">&lt;-</span> walking_indicator <span class="sc">|&gt;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_band =</span> <span class="fu">cut</span>(</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>      age,</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">breaks =</span> <span class="fu">c</span>(<span class="fu">seq</span>(<span class="dv">15</span>, <span class="dv">90</span>, <span class="at">by =</span> <span class="dv">5</span>), <span class="cn">Inf</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> age_band_levels,</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>      <span class="at">right =</span> <span class="cn">FALSE</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_band =</span> <span class="fu">factor</span>(age_band, <span class="at">levels =</span> age_band_levels),</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex =</span> <span class="fu">factor</span>(sex, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Male"</span>, <span class="st">"Female"</span>))</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>model_data <span class="ot">&lt;-</span> walking_indicator_recoded <span class="sc">|&gt;</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(time_index, <span class="at">by =</span> <span class="st">"time_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(indicator, area_id, time_id, age_band, sex, no_car, time_inla_id, area_inla_id) <span class="sc">|&gt;</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    unit_id,</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    indicator,</span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    age_band,</span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    sex,</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    no_car,</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>    time_inla_id,</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    area_inla_id</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(model_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 16%">
+<col style="width: 10%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 13%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">unit_id</th>
+<th style="text-align: left;">area_id</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">indicator</th>
+<th style="text-align: left;">age_band</th>
+<th style="text-align: left;">sex</th>
+<th style="text-align: right;">no_car</th>
+<th style="text-align: right;">time_inla_id</th>
+<th style="text-align: right;">area_inla_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2021_202100001</td>
+<td style="text-align: left;">W02000007</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">age_65_69</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2021_202100002</td>
+<td style="text-align: left;">W02000006</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">age_65_69</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2021_202100003</td>
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">age_65_69</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2021_202100004</td>
+<td style="text-align: left;">W02000003</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">age_50_54</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2021_202100005</td>
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">age_80_84</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2021_202100006</td>
+<td style="text-align: left;">W02000004</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;">age_70_74</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="population-poststratification-data" class="level3" data-number="1.2">
+<h3 data-number="1.2" class="anchored" data-anchor-id="population-poststratification-data"><span class="header-section-number">1.2</span> Population poststratification data</h3>
+<p>First, we load the age-sex poststratification table and align its <code>age_band</code> and <code>sex</code> categories with the survey model data.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>poststrat_age_sex <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"poststrat_freqwalk.csv"</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">age_band =</span> <span class="fu">factor</span>(age_band, <span class="at">levels =</span> age_band_levels),</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">sex =</span> <span class="fu">factor</span>(sex, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Male"</span>, <span class="st">"Female"</span>)),</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    pop_count</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(time_index, <span class="at">by =</span> <span class="st">"time_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(pop_count <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(age_band, sex, pop_count, time_inla_id, area_inla_id)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(poststrat_age_sex)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 23%">
+<col style="width: 8%">
+<col style="width: 11%">
+<col style="width: 5%">
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 14%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: left;">msoa_name</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: left;">age_band</th>
+<th style="text-align: left;">sex</th>
+<th style="text-align: right;">pop_count</th>
+<th style="text-align: right;">area_inla_id</th>
+<th style="text-align: right;">time_inla_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">203</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_20_24</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">186</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_25_29</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">191</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_30_34</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">181</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_35_39</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">206</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_40_44</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">183</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>The poststratification table has age-sex population counts, but it does not contain the joint distribution of age, sex, and car access. We first model respondent no-car access using the variables that are available in the poststratification table. We then predict the probability of <code>no_car = 1</code> for each age-sex-area-time population cell and use those probabilities to expand the poststratification table.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>no_car_extension_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  model_data <span class="sc">|&gt;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"model"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>      no_car,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>      age_band,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>      sex,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  poststrat_age_sex <span class="sc">|&gt;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"poststrat"</span>,</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">no_car =</span> <span class="cn">NA_real_</span>,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>      age_band,</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>      sex,</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>no_car_extension_formula <span class="ot">&lt;-</span> no_car <span class="sc">~</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  sex <span class="sc">+</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>no_car_extension_fit <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> no_car_extension_formula,</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> no_car_extension_data,</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"binomial"</span>,</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ntrials =</span> <span class="dv">1</span>,</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>, <span class="at">link =</span> <span class="dv">1</span>)</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>poststrat_age_sex_extended <span class="ot">&lt;-</span> poststrat_age_sex <span class="sc">|&gt;</span></span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">no_car_prob =</span> no_car_extension_fit<span class="sc">$</span>summary.fitted.values<span class="sc">$</span>mean[</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>      no_car_extension_data<span class="sc">$</span>row_type <span class="sc">==</span> <span class="st">"poststrat"</span></span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>poststrat_age_sex_extended <span class="sc">|&gt;</span></span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, age_band, sex, no_car_prob) <span class="sc">|&gt;</span></span>
+<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_id, time_id, age_band, sex) <span class="sc">|&gt;</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: left;">age_band</th>
+<th style="text-align: left;">sex</th>
+<th style="text-align: right;">no_car_prob</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0.1567155</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0.2578801</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_20_24</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0.1673925</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_20_24</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0.2739849</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_25_29</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0.0948569</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_25_29</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0.1649636</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>With the modelled <code>no_car_prob</code> in place for the original poststratification table, we calculate the population count for the extended table now with an additional categorical variable.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>poststrat_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  poststrat_age_sex_extended <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">no_car =</span> <span class="dv">1</span>, <span class="at">pop_count =</span> pop_count <span class="sc">*</span> no_car_prob),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  poststrat_age_sex_extended <span class="sc">|&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">no_car =</span> <span class="dv">0</span>, <span class="at">pop_count =</span> pop_count <span class="sc">*</span> (<span class="dv">1</span> <span class="sc">-</span> no_car_prob))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    age_band,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    sex,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    no_car,</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    pop_count,</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    time_inla_id,</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    area_inla_id</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(time_id, area_inla_id, age_band, sex, no_car)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(poststrat_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 21%">
+<col style="width: 8%">
+<col style="width: 10%">
+<col style="width: 7%">
+<col style="width: 7%">
+<col style="width: 10%">
+<col style="width: 13%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: left;">msoa_name</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: left;">age_band</th>
+<th style="text-align: left;">sex</th>
+<th style="text-align: right;">no_car</th>
+<th style="text-align: right;">pop_count</th>
+<th style="text-align: right;">time_inla_id</th>
+<th style="text-align: right;">area_inla_id</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">171.18675</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">31.81325</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">152.13458</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_15_19</td>
+<td style="text-align: left;">Female</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">52.86542</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_20_24</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">154.86500</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: left;">age_20_24</td>
+<td style="text-align: left;">Male</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">31.13500</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>Note that although we have the share of households with no car by MSOA as an area predictor this approach avoids assuming that the MSOA-level no-car share is constant across every age-sex cell. The trade-off is that the new poststratification table now contains a modelled variable instead of being based on the ground-truth that is observed joint Census cross-tabulation.</p>
+</section>
+</section>
+<section id="fit-and-evaluate-models" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="fit-and-evaluate-models"><span class="header-section-number">2</span> Fit and evaluate models</h2>
+<p>We fit a sequence of binomial unit-level models. The outcome is the respondent walking indicator, and fitted values for the poststratification rows are returned as response-scale cell means.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Name</th>
+<th>Specification</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>M0</td>
+<td>Baseline</td>
+<td>Temporal RW1 plus BYM2 spatial MSOA effect</td>
+</tr>
+<tr class="even">
+<td>M1</td>
+<td>+Demographic</td>
+<td>M0 plus age band and sex</td>
+</tr>
+<tr class="odd">
+<td>M2</td>
+<td>+Nocar</td>
+<td>M1 plus no-car</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>m0_formula <span class="ot">&lt;-</span> indicator <span class="sc">~</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="sc">+</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>m1_formula <span class="ot">&lt;-</span> indicator <span class="sc">~</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  sex <span class="sc">+</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>m2_formula <span class="ot">&lt;-</span> indicator <span class="sc">~</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>  sex <span class="sc">+</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>  no_car <span class="sc">+</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>model_formulas <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M0 Baseline"</span> <span class="ot">=</span> m0_formula,</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M1 +Demographic"</span> <span class="ot">=</span> m1_formula,</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M2 +Nocar"</span> <span class="ot">=</span> m2_formula</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The observed respondent rows and the poststratification rows are combined before fitting. Rows with <code>indicator = NA</code> are not used in the likelihood, but <code>INLA</code> still returns their fitted values, which are needed for poststratification.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>model_poststrat_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  model_data <span class="sc">|&gt;</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"model"</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>      indicator,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      age_band,</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>      sex,</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>      no_car,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  poststrat_data <span class="sc">|&gt;</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"poststrat"</span>,</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">indicator =</span> <span class="cn">NA_real_</span>,</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>      age_band,</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>      sex,</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>      no_car,</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>fit_mrp_model <span class="ot">&lt;-</span> <span class="cf">function</span>(formula) {</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inla</span>(</span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> formula,</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"binomial"</span>,</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">Ntrials =</span> <span class="dv">1</span>,</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> model_poststrat_data,</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>, <span class="at">link =</span> <span class="dv">1</span>),</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>, <span class="at">config =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a>mrp_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(model_formulas, fit_mrp_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>As before, we use <code>WAIC</code> as an initial model check. M2 demonstrates the lowest WAIC, meaning the age, sex and no-car access predictors together best explain the variablity among the binary outcome being modelled.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>model_waic <span class="ot">&lt;-</span> <span class="fu">imap_dfr</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  mrp_fits,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  \(fit, model_name) {</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">model =</span> model_name,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">waic =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>waic,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">eff_params =</span> fit<span class="sc">$</span>waic<span class="sc">$</span>p.eff</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(waic)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>model_waic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">model</th>
+<th style="text-align: right;">waic</th>
+<th style="text-align: right;">eff_params</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">M2 +Nocar</td>
+<td style="text-align: right;">4177.302</td>
+<td style="text-align: right;">71.31944</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M1 +Demographic</td>
+<td style="text-align: right;">4207.312</td>
+<td style="text-align: right;">71.47727</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">M0 Baseline</td>
+<td style="text-align: right;">4235.970</td>
+<td style="text-align: right;">54.03897</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>We can also expose the coefficients for all fixed effect terms for M2 to check whether the modelled relationships are logical. Here, we see that the older the respondent is the less likely they are to walk daily as main transport (reference category is <code>age_15_19</code>), whereas those without access to a car or a van are more likely.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>mrp_fits[[<span class="st">"M2 +Nocar"</span>]]<span class="sc">$</span>summary.fixed <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    term,</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">pp_label</span>(mean),</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.025quant"</span>]]),</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="fu">pp_label</span>(.data[[<span class="st">"0.975quant"</span>]])</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">term</th>
+<th style="text-align: left;">mean</th>
+<th style="text-align: left;">lower</th>
+<th style="text-align: left;">upper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: left;">-120.0 pp</td>
+<td style="text-align: left;">-181.0 pp</td>
+<td style="text-align: left;">-58.7 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_20_24</td>
+<td style="text-align: left;">-2.7 pp</td>
+<td style="text-align: left;">-75.3 pp</td>
+<td style="text-align: left;">70.0 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_25_29</td>
+<td style="text-align: left;">-30.3 pp</td>
+<td style="text-align: left;">-98.1 pp</td>
+<td style="text-align: left;">37.5 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_30_34</td>
+<td style="text-align: left;">-48.7 pp</td>
+<td style="text-align: left;">-115.8 pp</td>
+<td style="text-align: left;">18.3 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_35_39</td>
+<td style="text-align: left;">-51.1 pp</td>
+<td style="text-align: left;">-117.9 pp</td>
+<td style="text-align: left;">15.7 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_40_44</td>
+<td style="text-align: left;">-38.5 pp</td>
+<td style="text-align: left;">-104.6 pp</td>
+<td style="text-align: left;">27.5 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_45_49</td>
+<td style="text-align: left;">-49.1 pp</td>
+<td style="text-align: left;">-115.5 pp</td>
+<td style="text-align: left;">17.2 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_50_54</td>
+<td style="text-align: left;">-83.6 pp</td>
+<td style="text-align: left;">-149.8 pp</td>
+<td style="text-align: left;">-17.4 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_55_59</td>
+<td style="text-align: left;">-46.9 pp</td>
+<td style="text-align: left;">-110.3 pp</td>
+<td style="text-align: left;">16.4 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_60_64</td>
+<td style="text-align: left;">-51.0 pp</td>
+<td style="text-align: left;">-114.6 pp</td>
+<td style="text-align: left;">12.6 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_65_69</td>
+<td style="text-align: left;">-46.2 pp</td>
+<td style="text-align: left;">-109.9 pp</td>
+<td style="text-align: left;">17.5 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_70_74</td>
+<td style="text-align: left;">-71.3 pp</td>
+<td style="text-align: left;">-135.2 pp</td>
+<td style="text-align: left;">-7.5 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_75_79</td>
+<td style="text-align: left;">-94.9 pp</td>
+<td style="text-align: left;">-161.2 pp</td>
+<td style="text-align: left;">-28.7 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_80_84</td>
+<td style="text-align: left;">-136.2 pp</td>
+<td style="text-align: left;">-210.3 pp</td>
+<td style="text-align: left;">-62.1 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">age_bandage_85_89</td>
+<td style="text-align: left;">-188.8 pp</td>
+<td style="text-align: left;">-285.5 pp</td>
+<td style="text-align: left;">-92.0 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">age_bandage_90_plus</td>
+<td style="text-align: left;">-212.1 pp</td>
+<td style="text-align: left;">-343.3 pp</td>
+<td style="text-align: left;">-80.9 pp</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">sexFemale</td>
+<td style="text-align: left;">-28.3 pp</td>
+<td style="text-align: left;">-44.5 pp</td>
+<td style="text-align: left;">-12.2 pp</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">no_car</td>
+<td style="text-align: left;">63.8 pp</td>
+<td style="text-align: left;">42.9 pp</td>
+<td style="text-align: left;">84.8 pp</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>At this point, having selected our final model, we use poststratification to convert its cell-level predictions into the target MSOA-year estimates. That means, each <code>age_band</code> x <code>sex</code> x <code>no_car</code> cell prediction is weighted by its population count, then aggregated within each MSOA-year. One the one hand, we can apply this calculation using the posterior mean cell values returned above, which gives a simple point-estimate for each cell:</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>mrp_final_fit <span class="ot">&lt;-</span> mrp_fits[[<span class="st">"M2 +Nocar"</span>]]</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>poststrat_cell_rows <span class="ot">&lt;-</span> <span class="fu">which</span>(model_poststrat_data<span class="sc">$</span>row_type <span class="sc">==</span> <span class="st">"poststrat"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>cell_mean_predictions <span class="ot">&lt;-</span> mrp_final_fit<span class="sc">$</span>summary.fitted.values <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(poststrat_cell_rows) <span class="sc">|&gt;</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">cell_mean =</span> mean)</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>cell_point_estimates <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(poststrat_data, cell_mean_predictions)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>area_year_point_estimates <span class="ot">&lt;-</span> cell_point_estimates <span class="sc">|&gt;</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(area_id, time_id) <span class="sc">|&gt;</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">weighted_cell_sum =</span> <span class="fu">sum</span>(cell_mean <span class="sc">*</span> pop_count),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">population_total =</span> <span class="fu">sum</span>(pop_count),</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mrp_point_estimate =</span> weighted_cell_sum <span class="sc">/</span> population_total) <span class="sc">|&gt;</span></span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, mrp_point_estimate)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(area_year_point_estimates)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">mrp_point_estimate</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0.1247196</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.1516881</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.1534454</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0.1641975</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.1970060</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.1983156</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>However, the final output for SAE also needs uncertainty estimates. To propagate uncertainty through poststratification, we repeat the same population-weighted aggregation across posterior draws. This means the credible intervals describe uncertainty in the aggregated MSOA-year estimates, not just uncertainty in the individual cell predictions. The posterior draws used for this calculation are shown below.</p>
+</section>
+<section id="final-estimates-and-uncertainty" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="final-estimates-and-uncertainty"><span class="header-section-number">3</span> Final estimates and uncertainty</h2>
+<p>The function <code>inla.posterior.sample()</code> gives plausible versions of the fitted model; for each draw, we keep the poststratification rows and convert their fitted values from the logit scale to the original scale of the outcome (0-1).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw plausible versions of the fitted model from the posterior.</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(<span class="at">n =</span> <span class="dv">300</span>, <span class="at">result =</span> mrp_final_fit)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Rows are poststrat cells; columns are posterior draws; values are predicted cell means.</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>estimate_draws <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="cn">NA_real_</span>, <span class="at">nrow =</span> <span class="fu">nrow</span>(poststrat_data), <span class="at">ncol =</span> <span class="fu">length</span>(posterior_draws))</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>predictor_row_index <span class="ot">&lt;-</span> <span class="fu">startsWith</span>(<span class="fu">rownames</span>(posterior_draws[[<span class="dv">1</span>]]<span class="sc">$</span>latent), <span class="st">"Predictor"</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (draw_id <span class="cf">in</span> <span class="fu">seq_along</span>(posterior_draws)) {</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  draw <span class="ot">&lt;-</span> posterior_draws[[draw_id]]</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  row_prediction_logits <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[predictor_row_index, <span class="dv">1</span>])</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  poststrat_logits <span class="ot">&lt;-</span> row_prediction_logits[poststrat_cell_rows]</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  poststrat_cell_means <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>poststrat_logits))</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  estimate_draws[, draw_id] <span class="ot">&lt;-</span> poststrat_cell_means</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The matrix <code>estimate_draws</code> contains the draw-level predicted cell means. Using it, we poststratify each posterior draw. That means, for every draw, the predictions are weighted by the corresponding population counts, summed within each MSOA-year, and divided by the total MSOA-year population. This gives one population-weighted estimate per MSOA-year for each posterior draw.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>area_year_id <span class="ot">&lt;-</span> <span class="fu">paste</span>(poststrat_data<span class="sc">$</span>area_id, poststrat_data<span class="sc">$</span>time_id, <span class="at">sep =</span> <span class="st">"__"</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Population-weight cell means and aggregate them to MSOA-year estimates.</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>area_year_weighted_sums <span class="ot">&lt;-</span> <span class="fu">rowsum</span>(estimate_draws <span class="sc">*</span> poststrat_data<span class="sc">$</span>pop_count, <span class="at">group =</span> area_year_id, <span class="at">reorder =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>area_year_populations <span class="ot">&lt;-</span> <span class="fu">rowsum</span>(poststrat_data<span class="sc">$</span>pop_count, <span class="at">group =</span> area_year_id, <span class="at">reorder =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>area_year_means <span class="ot">&lt;-</span> area_year_weighted_sums <span class="sc">/</span> <span class="fu">as.numeric</span>(area_year_populations)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>area_year_means[<span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                      [,1]      [,2]       [,3]       [,4]       [,5]
+W02000001__2021 0.09845401 0.1037286 0.13957086 0.09600792 0.07804071
+W02000002__2021 0.18766870 0.1097878 0.13689998 0.14970187 0.22675662
+W02000003__2021 0.26329793 0.2036188 0.33521465 0.14489887 0.11502269
+W02000004__2021 0.15414108 0.1547023 0.05569987 0.09567460 0.08946806
+W02000005__2021 0.19490347 0.1696000 0.14391192 0.12748475 0.10509835
+                      [,6]      [,7]       [,8]      [,9]      [,10]
+W02000001__2021 0.09862438 0.1630914 0.10042864 0.1601084 0.11064149
+W02000002__2021 0.20280432 0.1415909 0.13912117 0.1495779 0.13259498
+W02000003__2021 0.09420292 0.1914792 0.11091512 0.2325953 0.17843044
+W02000004__2021 0.10270266 0.1417902 0.07725588 0.1042235 0.06895806
+W02000005__2021 0.18748760 0.1313332 0.19604955 0.1356236 0.12259515</code></pre>
+</div>
+</div>
+<p>Since each row of <code>area_year_means</code> is the posterior distribution for one MSOA-year estimate, we summarise those into a posterior mean, posterior variance, and 95% credible interval.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>area_year_summary <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">area_year_id =</span> <span class="fu">rownames</span>(area_year_means),</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">mrp_estimate =</span> <span class="fu">rowMeans</span>(area_year_means),</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">mrp_variance =</span> <span class="fu">apply</span>(area_year_means, <span class="dv">1</span>, var),</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">mrp_lower =</span> <span class="fu">apply</span>(area_year_means, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.025</span>, <span class="at">names =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">mrp_upper =</span> <span class="fu">apply</span>(area_year_means, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.975</span>, <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mrp_ci_width =</span> mrp_upper <span class="sc">-</span> mrp_lower) <span class="sc">|&gt;</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">separate</span>(area_year_id, <span class="at">into =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>), <span class="at">sep =</span> <span class="st">"__"</span>, <span class="at">convert =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>final_mrp_results <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, msoa_name, time_id) <span class="sc">|&gt;</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_year_summary, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>))</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_mrp_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 10%">
+<col style="width: 21%">
+<col style="width: 8%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 10%">
+<col style="width: 10%">
+<col style="width: 13%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: left;">msoa_name</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">mrp_estimate</th>
+<th style="text-align: right;">mrp_variance</th>
+<th style="text-align: right;">mrp_lower</th>
+<th style="text-align: right;">mrp_upper</th>
+<th style="text-align: right;">mrp_ci_width</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0.1266426</td>
+<td style="text-align: right;">0.0012366</td>
+<td style="text-align: right;">0.0659971</td>
+<td style="text-align: right;">0.2018081</td>
+<td style="text-align: right;">0.1358110</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.1539051</td>
+<td style="text-align: right;">0.0016081</td>
+<td style="text-align: right;">0.0909003</td>
+<td style="text-align: right;">0.2372668</td>
+<td style="text-align: right;">0.1463665</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.1573177</td>
+<td style="text-align: right;">0.0023774</td>
+<td style="text-align: right;">0.0742121</td>
+<td style="text-align: right;">0.2666879</td>
+<td style="text-align: right;">0.1924758</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">0.1662309</td>
+<td style="text-align: right;">0.0021050</td>
+<td style="text-align: right;">0.0972878</td>
+<td style="text-align: right;">0.2782163</td>
+<td style="text-align: right;">0.1809285</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">0.1995456</td>
+<td style="text-align: right;">0.0028475</td>
+<td style="text-align: right;">0.1208310</td>
+<td style="text-align: right;">0.3297116</td>
+<td style="text-align: right;">0.2088806</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">0.2020909</td>
+<td style="text-align: right;">0.0033927</td>
+<td style="text-align: right;">0.1126085</td>
+<td style="text-align: right;">0.3407919</td>
+<td style="text-align: right;">0.2281833</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>As with previous methods, we report the MRP estimates alongside the direct estimates and variance outputs in order to provide a full view of the direct survey evidence that accompanies the modelled estimates.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>direct_estimates <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_direct.csv"</span>),</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, n, direct_estimate, variance)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>final_mrp_results <span class="ot">&lt;-</span> final_mrp_results <span class="sc">|&gt;</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">direct_ci_width =</span> <span class="dv">2</span> <span class="sc">*</span> <span class="fu">qnorm</span>(<span class="fl">0.975</span>) <span class="sc">*</span> <span class="fu">sqrt</span>(<span class="fu">pmax</span>(variance, <span class="dv">0</span>))</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>    n,</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>    direct_estimate,</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>    variance,</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    direct_ci_width,</span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>    mrp_estimate,</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>    mrp_variance,</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>    mrp_lower,</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a>    mrp_upper,</span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a>    mrp_ci_width</span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_mrp_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 14%">
+<col style="width: 5%">
+<col style="width: 2%">
+<col style="width: 11%">
+<col style="width: 6%">
+<col style="width: 11%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 6%">
+<col style="width: 6%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: left;">msoa_name</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">direct_estimate</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">direct_ci_width</th>
+<th style="text-align: right;">mrp_estimate</th>
+<th style="text-align: right;">mrp_variance</th>
+<th style="text-align: right;">mrp_lower</th>
+<th style="text-align: right;">mrp_upper</th>
+<th style="text-align: right;">mrp_ci_width</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.1266426</td>
+<td style="text-align: right;">0.0012366</td>
+<td style="text-align: right;">0.0659971</td>
+<td style="text-align: right;">0.2018081</td>
+<td style="text-align: right;">0.1358110</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.1856526</td>
+<td style="text-align: right;">0.0160569</td>
+<td style="text-align: right;">0.4967173</td>
+<td style="text-align: right;">0.1539051</td>
+<td style="text-align: right;">0.0016081</td>
+<td style="text-align: right;">0.0909003</td>
+<td style="text-align: right;">0.2372668</td>
+<td style="text-align: right;">0.1463665</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0.0094000</td>
+<td style="text-align: right;">0.0000933</td>
+<td style="text-align: right;">0.0378543</td>
+<td style="text-align: right;">0.1573177</td>
+<td style="text-align: right;">0.0023774</td>
+<td style="text-align: right;">0.0742121</td>
+<td style="text-align: right;">0.2666879</td>
+<td style="text-align: right;">0.1924758</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.4319654</td>
+<td style="text-align: right;">0.0406652</td>
+<td style="text-align: right;">0.7904778</td>
+<td style="text-align: right;">0.1662309</td>
+<td style="text-align: right;">0.0021050</td>
+<td style="text-align: right;">0.0972878</td>
+<td style="text-align: right;">0.2782163</td>
+<td style="text-align: right;">0.1809285</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.4885359</td>
+<td style="text-align: right;">0.0332991</td>
+<td style="text-align: right;">0.7153097</td>
+<td style="text-align: right;">0.1995456</td>
+<td style="text-align: right;">0.0028475</td>
+<td style="text-align: right;">0.1208310</td>
+<td style="text-align: right;">0.3297116</td>
+<td style="text-align: right;">0.2088806</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">0.0511807</td>
+<td style="text-align: right;">0.0013595</td>
+<td style="text-align: right;">0.1445343</td>
+<td style="text-align: right;">0.2020909</td>
+<td style="text-align: right;">0.0033927</td>
+<td style="text-align: right;">0.1126085</td>
+<td style="text-align: right;">0.3407919</td>
+<td style="text-align: right;">0.2281833</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="mrp_files/figure-html/map-mrp-final-results-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<section id="comparison-diagnostics" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="comparison-diagnostics"><span class="header-section-number">3.1</span> Comparison diagnostics</h3>
+<p>The comparison plot shows that the MRP estimates are very close to the BHF estimates, with points clustered around the equality line. Agreement with the direct estimates is much weaker as expected, reflecting the instability of sparse MSOA-year survey cells. The Fay–Herriot estimates tend to sit lower than MRP for many cells, suggesting stronger shrinkage toward lower area-year rates.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>bhf_final_estimates <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_bhf.csv"</span>),</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    bhf_estimate,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    bhf_variance,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    bhf_ci_width</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>fh_final_estimates <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_fh.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, fh_estimate, fh_variance, fh_ci_width)</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>final_mrp_results <span class="ot">&lt;-</span> final_mrp_results <span class="sc">|&gt;</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(bhf_final_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(fh_final_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mrp_minus_bhf =</span> mrp_estimate <span class="sc">-</span> bhf_estimate) <span class="sc">|&gt;</span></span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>    msoa_name,</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>    n,</span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>    direct_estimate,</span>
+<span id="cb18-26"><a href="#cb18-26" aria-hidden="true" tabindex="-1"></a>    variance,</span>
+<span id="cb18-27"><a href="#cb18-27" aria-hidden="true" tabindex="-1"></a>    direct_ci_width,</span>
+<span id="cb18-28"><a href="#cb18-28" aria-hidden="true" tabindex="-1"></a>    bhf_estimate,</span>
+<span id="cb18-29"><a href="#cb18-29" aria-hidden="true" tabindex="-1"></a>    bhf_variance,</span>
+<span id="cb18-30"><a href="#cb18-30" aria-hidden="true" tabindex="-1"></a>    bhf_ci_width,</span>
+<span id="cb18-31"><a href="#cb18-31" aria-hidden="true" tabindex="-1"></a>    fh_estimate,</span>
+<span id="cb18-32"><a href="#cb18-32" aria-hidden="true" tabindex="-1"></a>    fh_variance,</span>
+<span id="cb18-33"><a href="#cb18-33" aria-hidden="true" tabindex="-1"></a>    fh_ci_width,</span>
+<span id="cb18-34"><a href="#cb18-34" aria-hidden="true" tabindex="-1"></a>    mrp_estimate,</span>
+<span id="cb18-35"><a href="#cb18-35" aria-hidden="true" tabindex="-1"></a>    mrp_variance,</span>
+<span id="cb18-36"><a href="#cb18-36" aria-hidden="true" tabindex="-1"></a>    mrp_lower,</span>
+<span id="cb18-37"><a href="#cb18-37" aria-hidden="true" tabindex="-1"></a>    mrp_upper,</span>
+<span id="cb18-38"><a href="#cb18-38" aria-hidden="true" tabindex="-1"></a>    mrp_ci_width,</span>
+<span id="cb18-39"><a href="#cb18-39" aria-hidden="true" tabindex="-1"></a>    mrp_minus_bhf</span>
+<span id="cb18-40"><a href="#cb18-40" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb18-41"><a href="#cb18-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-42"><a href="#cb18-42" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_mrp_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 4%">
+<col style="width: 9%">
+<col style="width: 3%">
+<col style="width: 1%">
+<col style="width: 6%">
+<col style="width: 4%">
+<col style="width: 6%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 4%">
+<col style="width: 4%">
+<col style="width: 5%">
+<col style="width: 6%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: left;">msoa_name</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">direct_estimate</th>
+<th style="text-align: right;">variance</th>
+<th style="text-align: right;">direct_ci_width</th>
+<th style="text-align: right;">bhf_estimate</th>
+<th style="text-align: right;">bhf_variance</th>
+<th style="text-align: right;">bhf_ci_width</th>
+<th style="text-align: right;">fh_estimate</th>
+<th style="text-align: right;">fh_variance</th>
+<th style="text-align: right;">fh_ci_width</th>
+<th style="text-align: right;">mrp_estimate</th>
+<th style="text-align: right;">mrp_variance</th>
+<th style="text-align: right;">mrp_lower</th>
+<th style="text-align: right;">mrp_upper</th>
+<th style="text-align: right;">mrp_ci_width</th>
+<th style="text-align: right;">mrp_minus_bhf</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0.1186315</td>
+<td style="text-align: right;">0.0010457</td>
+<td style="text-align: right;">0.1278480</td>
+<td style="text-align: right;">0.0182848</td>
+<td style="text-align: right;">0.0001461</td>
+<td style="text-align: right;">0.0474004</td>
+<td style="text-align: right;">0.1266426</td>
+<td style="text-align: right;">0.0012366</td>
+<td style="text-align: right;">0.0659971</td>
+<td style="text-align: right;">0.2018081</td>
+<td style="text-align: right;">0.1358110</td>
+<td style="text-align: right;">0.0080111</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.1856526</td>
+<td style="text-align: right;">0.0160569</td>
+<td style="text-align: right;">0.4967173</td>
+<td style="text-align: right;">0.1505347</td>
+<td style="text-align: right;">0.0010717</td>
+<td style="text-align: right;">0.1293396</td>
+<td style="text-align: right;">0.0750211</td>
+<td style="text-align: right;">0.0001974</td>
+<td style="text-align: right;">0.0550715</td>
+<td style="text-align: right;">0.1539051</td>
+<td style="text-align: right;">0.0016081</td>
+<td style="text-align: right;">0.0909003</td>
+<td style="text-align: right;">0.2372668</td>
+<td style="text-align: right;">0.1463665</td>
+<td style="text-align: right;">0.0033704</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">0.0094000</td>
+<td style="text-align: right;">0.0000933</td>
+<td style="text-align: right;">0.0378543</td>
+<td style="text-align: right;">0.1505335</td>
+<td style="text-align: right;">0.0020407</td>
+<td style="text-align: right;">0.1799304</td>
+<td style="text-align: right;">0.0132064</td>
+<td style="text-align: right;">0.0000889</td>
+<td style="text-align: right;">0.0369727</td>
+<td style="text-align: right;">0.1573177</td>
+<td style="text-align: right;">0.0023774</td>
+<td style="text-align: right;">0.0742121</td>
+<td style="text-align: right;">0.2666879</td>
+<td style="text-align: right;">0.1924758</td>
+<td style="text-align: right;">0.0067842</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0.4319654</td>
+<td style="text-align: right;">0.0406652</td>
+<td style="text-align: right;">0.7904778</td>
+<td style="text-align: right;">0.1495890</td>
+<td style="text-align: right;">0.0010969</td>
+<td style="text-align: right;">0.1299824</td>
+<td style="text-align: right;">0.0875501</td>
+<td style="text-align: right;">0.0008291</td>
+<td style="text-align: right;">0.1129719</td>
+<td style="text-align: right;">0.1662309</td>
+<td style="text-align: right;">0.0021050</td>
+<td style="text-align: right;">0.0972878</td>
+<td style="text-align: right;">0.2782163</td>
+<td style="text-align: right;">0.1809285</td>
+<td style="text-align: right;">0.0166419</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0.4885359</td>
+<td style="text-align: right;">0.0332991</td>
+<td style="text-align: right;">0.7153097</td>
+<td style="text-align: right;">0.1814927</td>
+<td style="text-align: right;">0.0011231</td>
+<td style="text-align: right;">0.1316843</td>
+<td style="text-align: right;">0.1442860</td>
+<td style="text-align: right;">0.0008757</td>
+<td style="text-align: right;">0.1161028</td>
+<td style="text-align: right;">0.1995456</td>
+<td style="text-align: right;">0.0028475</td>
+<td style="text-align: right;">0.1208310</td>
+<td style="text-align: right;">0.3297116</td>
+<td style="text-align: right;">0.2088806</td>
+<td style="text-align: right;">0.0180528</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">0.0511807</td>
+<td style="text-align: right;">0.0013595</td>
+<td style="text-align: right;">0.1445343</td>
+<td style="text-align: right;">0.1814916</td>
+<td style="text-align: right;">0.0020948</td>
+<td style="text-align: right;">0.1823108</td>
+<td style="text-align: right;">0.0824720</td>
+<td style="text-align: right;">0.0007879</td>
+<td style="text-align: right;">0.1101352</td>
+<td style="text-align: right;">0.2020909</td>
+<td style="text-align: right;">0.0033927</td>
+<td style="text-align: right;">0.1126085</td>
+<td style="text-align: right;">0.3407919</td>
+<td style="text-align: right;">0.2281833</td>
+<td style="text-align: right;">0.0205994</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="mrp_files/figure-html/plot-mrp-comparison-scatter-1.png" class="img-fluid" width="1344"></p>
+</div>
+</div>
+<p>A closer look at the difference between the unit-level BHF and MRP estimates reveals subtle differences in how population composition is handled. The BHF workflow aggregates using area-level summaries, so it cannot fully represent the internal age, sex, and car-access composition of each MSOA-year. MRP instead predicts over the <code>age_band</code> x <code>sex</code> x <code>no_car</code> poststratification cells and then weights those cells by their population counts.</p>
+<p>MRP estimates should therefore be higher than BHF estimates where the poststratification table gives more weight to groups with higher predicted frequent-walking rates. In this scenario, those groups are mainly younger adults and people without car access. Where these groups make up a larger share of a local population than the BHF area-level summaries can represent, MRP will tend to shift the estimate upward.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="mrp_files/figure-html/map-mrp-bhf-comparison-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_mrp_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_mrp.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 
 
+</section>
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -583,12 +2166,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./bhf-unit.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Unit-level model (BHF)</span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Unit-level (BHF)</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./toolkit.html" class="pagination-link">
-        <span class="nav-page-text">Toolkit</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./mrp-unit.html" class="pagination-link">
+        <span class="nav-page-text">SAE with Poststrat (MRP)</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

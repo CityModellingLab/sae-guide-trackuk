@@ -1,7 +1,33 @@
 ---
-title: "Bayesian Fay-Herriot Area-Level Model"
-subtitle: "A spatio-temporal extension"
+title: Area-Level SAE Modeling (Fay--Herriot)"
+subtitle: "A Bayesian spatio-temporal extension"
 ---
+
+::: {.callout-note title="Theory in brief"}
+The Fay--Herriot model treats each direct estimate as a noisy observation of the true area-time quantity:
+
+$$
+\hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
+e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
+$$
+
+where $\psi_{jt}$ is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:
+
+$$
+\mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j.
+$$
+
+Here $u_j$ borrows strength across areas while the target remains the area-time quantity $\mu_{jt}$. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. 
+The fitted model gives an area-time estimate by combining the direct estimate with the model prediction:
+
+$$
+\hat{\mu}_{jt}^{\mathrm{FH}}
+=
+\widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, x_{jt}).
+$$
+
+Here $u_j$ borrows strength across areas while the target remains the area-time quantity $\mu_{jt}$. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence.
+:::
 
 ```{r}
 #| label: setup-fh
@@ -19,26 +45,23 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
-domain_frame <- read_csv(
-  file.path(base_path, "clean", "domain_msoayear.csv"),
-  show_col_types = FALSE
-)
+domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), show_col_types = FALSE)
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
   rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(.data$area_id, "W")) |>
-  arrange(.data$area_id)
+  filter(str_starts(area_id, "W")) |>
+  arrange(area_id)
 
 ```
 
 ```{r}
 #| label: plotting-config
 #| echo: false
-share_label <- label_percent(accuracy = 0.1)
-pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
 diverging_low <- "#2166ac"
@@ -70,39 +93,21 @@ map_annotation_theme <- theme(
 )
 ```
 
-Area-level SAE starts from the direct estimates created in the previously. The Fay--Herriot model lets direct estimates for each area-time cell, an *MSOA-year cell* in this example, borrow strength from predictors and spatial and temporal structures to stabilise noisy estimates.
-
-::: {.callout-note title="Theory in brief"}
-The Fay--Herriot model treats each direct estimate as a noisy observation of the true area-time quantity:
-
-$$
-\hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
-e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
-$$
-
-where $\psi_{jt}$ is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:
-
-$$
-\mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j.
-$$
-
-Here $u_j$ borrows strength across areas while the target remains the area-time quantity $\mu_{jt}$. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence.
-:::
-
-<div class="method-divider" aria-hidden="true"></div>
+## Estimation approach {.unnumbered}
 
 {{< include assets/target-estimand.qmd >}}
 
+Area-level SAE starts from the direct estimates created in the previous step. The Fay--Herriot model treats each direct estimate for an area-time cell, an *MSOA-year cell* in this example, as a noisy observation of the underlying frequent-walking rate, using its sampling variance to control how much confidence the model places in that value.
+
+The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, no-car households, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.
+
 ## Prepare modelling data
 
-First we import the complete area-time direct-estimate table exported from the direct-estimation workbook, then load the area predictors.
+First we import the complete area-time direct-estimates, then load the area predictors.
 
 ```{r}
 #| label: load-direct-estimates
-direct_walk <- read_csv(
-  file.path(base_path, "freqwalk_estimates_direct.csv"),
-  show_col_types = FALSE
-) |>
+direct_walk <- read_csv(file.path(base_path, "freqwalk_estimates_direct.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
       "area_id",
@@ -118,18 +123,17 @@ head(direct_walk)
 ```
 ```{r}
 #| label: load-area-predictors
-area_predictors <- read_csv(
-  file.path(base_path, "clean", "areapred_freqwalk.csv"),
-  show_col_types = FALSE
-) |>
+area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
       "area_id",
-      "cov_population_density",
-      "cov_share_no_car_households",
-      "cov_share_work_from_home",
-      "cov_share_students",
-      "cov_share_routine_semiroutine"
+      "scaled_mean_age_16plus",
+      "scaled_prob_female",
+      "scaled_population_density",
+      "scaled_share_no_car_households",
+      "scaled_share_work_from_home",
+      "scaled_share_students",
+      "scaled_share_routine_semiroutine"
     ))
   )
 head(area_predictors)
@@ -144,18 +148,15 @@ The missing or zero sampling variances of direct estimates need to be handled, b
 #| label: prepare-sampling-variance
 #| code-fold: false
 
-max_variance <- max(
-  direct_walk$variance[direct_walk$variance > 0],
-  na.rm = TRUE
-)
+max_variance <- max(direct_walk$variance[direct_walk$variance > 0], na.rm = TRUE)
 
 direct_walk_model <- direct_walk |>
   mutate(
     adj_variance = case_when(
-      is.na(.data$direct_estimate) ~ max_variance,
-      is.na(.data$variance) ~ max_variance,
-      .data$variance <= 1e-8 ~ max_variance,
-      TRUE ~ .data$variance
+      is.na(direct_estimate) ~ max_variance,
+      is.na(variance) ~ max_variance,
+      variance <= 1e-8 ~ max_variance,
+      TRUE ~ variance
     )
   )
 ```
@@ -185,7 +186,7 @@ time_index <- tibble(
 
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
-  arrange(.data$area_inla_id)
+  arrange(area_inla_id)
 
 msoa_neighbours <- poly2nb(
   msoa_boundaries_sorted,
@@ -212,22 +213,22 @@ model_data <- direct_walk_model |>
   left_join(area_predictors, by = "area_id") |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
-  arrange(.data$time_id, .data$area_inla_id)
+  arrange(time_id, area_inla_id)
 
 head(model_data)
 ```
 
 ## Fit and evaluate models
 
-Each model uses the direct estimate as the response. The sampling variance from the direct-estimation workbook is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight. We define these model specifications and fit each one to the direct estimates using `INLA`. 
+Each model uses the direct estimate as the response. The sampling variance from the direct estimation is passed to `INLA` as known observation-level uncertainty, so cells with noisy direct estimates receive less weight. We define these model specifications and fit each one to the direct estimates using `INLA`.
 
 | Model | Name | Specifications |
 |---|---|---|
 | M0 | Baseline | Intercept plus independent area effect |
-| M1 | +Temporal | M0 plus temporal random walk |
+| M1 | +Demographic | M0 plus mean age and proportion female |
 | M2 | +Core predictors | M1 plus population density and no-car households |
 | M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
-| M4 | +Spatial | M3 plus spatial structure among MSOA adjacency |
+| M4 | +TempSpatial | M3 plus temporal random walk and BYM2 spatial MSOA effect |
 
 The choice of spatial and temporal models should reflect assumptions about how residual variation is structured across space and time.
 
@@ -253,31 +254,35 @@ m0_formula <- direct_estimate ~
   f(area_inla_id, model = "iid")
 
 m1_formula <- direct_estimate ~
-  1 +
-  f(area_inla_id, model = "iid") +
-  f(time_inla_id, model = "rw1", constr = TRUE)
+  scaled_mean_age_16plus +
+  scaled_prob_female +
+  f(area_inla_id, model = "iid")
 
 m2_formula <- direct_estimate ~
-  cov_population_density +
-  cov_share_no_car_households +
-  f(area_inla_id, model = "iid") +
-  f(time_inla_id, model = "rw1", constr = TRUE)
+  scaled_mean_age_16plus +
+  scaled_prob_female +
+  scaled_population_density +
+  scaled_share_no_car_households +
+  f(area_inla_id, model = "iid")
 
 m3_formula <- direct_estimate ~
-  cov_population_density +
-  cov_share_no_car_households +
-  cov_share_work_from_home +
-  cov_share_students +
-  cov_share_routine_semiroutine +
-  f(area_inla_id, model = "iid") +
-  f(time_inla_id, model = "rw1", constr = TRUE)
+  scaled_mean_age_16plus +
+  scaled_prob_female +
+  scaled_population_density +
+  scaled_share_no_car_households +
+  scaled_share_work_from_home +
+  scaled_share_students +
+  scaled_share_routine_semiroutine +
+  f(area_inla_id, model = "iid")
 
 m4_formula <- direct_estimate ~
-  cov_population_density +
-  cov_share_no_car_households +
-  cov_share_work_from_home +
-  cov_share_students +
-  cov_share_routine_semiroutine +
+  scaled_mean_age_16plus +
+  scaled_prob_female +
+  scaled_population_density +
+  scaled_share_no_car_households +
+  scaled_share_work_from_home +
+  scaled_share_students +
+  scaled_share_routine_semiroutine +
   f(
     area_inla_id,
     model = "bym2",
@@ -289,10 +294,10 @@ m4_formula <- direct_estimate ~
 
 model_formulas <- list(
   "M0 Baseline" = m0_formula,
-  "M1 +Temporal" = m1_formula,
+  "M1 +Demographic" = m1_formula,
   "M2 +Core predictors" = m2_formula,
   "M3 +All predictors" = m3_formula,
-  "M4 +Spatial" = m4_formula
+  "M4 +TempSpatial" = m4_formula
 )
 
 fit_fh_model <- function(formula) {
@@ -341,9 +346,9 @@ model_waic <- imap_dfr(
 model_waic
 ```
 
-M4 has the lowest WAIC and M0 is clearly the weakest model, suggesting that the temporal term, area predictors, and spatial structure together give the best overall fit among the FH specifications.
+M4 has the lowest WAIC and M0 is clearly the weakest model, suggesting that the full set of demographic, core, and additional area predictors plus spatio-temporal structure gives the best overall fit among the FH specifications.
 
-## Report estimates and uncertainty
+## Final estimates and uncertainty
 
 To extract the estimates for this model, we take the fitted-value summary from the `INLA` object and bind it back to the area-time rows used in the model fit. For transparency, the output also retains the direct estimates, sample sizes, and direct-estimate variances. The final model estimates are reported with uncertainty, shown here using the width of the posterior 95% credible interval.
 
@@ -354,7 +359,7 @@ To extract the estimates for this model, we take the fitted-value summary from t
 model_output_frame <- model_data |>
   select(area_id, time_id, msoa_name, direct_estimate, variance, n)
 
-fitted_values <- fh_fits[["M4 +Spatial"]]$summary.fitted.values |>
+fitted_values <- fh_fits[["M4 +TempSpatial"]]$summary.fitted.values |>
   as_tibble()
 
 final_fh_results <- bind_cols(model_output_frame, fitted_values) |>
@@ -369,8 +374,7 @@ final_fh_results <- bind_cols(model_output_frame, fitted_values) |>
     fh_variance = sd^2,
     fh_lower = .data[["0.025quant"]],
     fh_upper = .data[["0.975quant"]],
-    fh_ci_width = fh_upper - fh_lower,
-    fh_std_resid = (direct_estimate - fh_estimate) /  sqrt(variance + fh_variance)
+    fh_ci_width = fh_upper - fh_lower
   )
 
 head(final_fh_results)
@@ -382,22 +386,20 @@ head(final_fh_results)
 #| fig-height: 16
 #| out-width: "100%"
 
-final_map_data <- msoa_boundaries |>
+final_fh_map_data <- msoa_boundaries |>
   left_join(final_fh_results, by = "area_id")
-final_estimate_limits <- range(final_fh_results$fh_estimate, na.rm = TRUE)
-final_ci_width_limits <- c(0, max(final_fh_results$fh_ci_width, na.rm = TRUE))
-final_std_resid_limit <- max(abs(final_fh_results$fh_std_resid), na.rm = TRUE)
-final_std_resid_limits <- c(-final_std_resid_limit, final_std_resid_limit)
-final_wave_years <- sort(unique(final_fh_results$time_id))
+fh_estimate_limits <- range(final_fh_results$fh_estimate, na.rm = TRUE)
+fh_ci_width_limits <- c(0, max(final_fh_results$fh_ci_width, na.rm = TRUE))
+fh_wave_years <- sort(unique(final_fh_results$time_id))
 
-plot_final_estimate <- function(wave) {
-  final_map_data |>
-    filter(.data$time_id == wave) |>
+plot_fh_estimate <- function(wave) {
+  final_fh_map_data |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$fh_estimate), colour = "transparent") +
+    geom_sf(aes(fill = fh_estimate), colour = "transparent") +
     scale_fill_viridis_c(
       option = "magma",
-      limits = final_estimate_limits,
+      limits = fh_estimate_limits,
       labels = share_label,
       na.value = missing_fill,
       name = "Share"
@@ -407,15 +409,15 @@ plot_final_estimate <- function(wave) {
     map_text_theme
 }
 
-plot_final_ci_width <- function(wave) {
-  final_map_data |>
-    filter(.data$time_id == wave) |>
+plot_fh_ci_width <- function(wave) {
+  final_fh_map_data |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$fh_ci_width), colour = "transparent") +
+    geom_sf(aes(fill = fh_ci_width), colour = "transparent") +
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
-      limits = final_ci_width_limits,
+      limits = fh_ci_width_limits,
       labels = pp_label,
       na.value = missing_fill,
       name = "95% CI width"
@@ -425,49 +427,30 @@ plot_final_ci_width <- function(wave) {
     map_text_theme
 }
 
-plot_final_std_resid <- function(wave) {
-  final_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$fh_std_resid), colour = "transparent") +
-    scale_fill_distiller(
-      palette = "RdBu",
-      direction = -1,
-      limits = final_std_resid_limits,
-      na.value = missing_fill,
-      name = "Std. residual"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
+fh_estimate_maps <- lapply(fh_wave_years, plot_fh_estimate)
+fh_uncertainty_maps <- lapply(fh_wave_years, plot_fh_ci_width)
 
-estimate_maps <- lapply(final_wave_years, plot_final_estimate)
-uncertainty_maps <- lapply(final_wave_years, plot_final_ci_width)
-residual_maps <- lapply(final_wave_years, plot_final_std_resid)
+fh_estimate_maps[[1]] <- fh_estimate_maps[[1]] + ylab("Final estimate")
+fh_uncertainty_maps[[1]] <- fh_uncertainty_maps[[1]] + ylab("95% CI width")
 
-estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
-uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
-residual_maps[[1]] <- residual_maps[[1]] + ylab("Std. residual")
-
-for (i in seq_len(length(final_wave_years) - 1)) {
-  estimate_maps[[i]] <- estimate_maps[[i]] +
+for (i in seq_len(length(fh_wave_years) - 1)) {
+  fh_estimate_maps[[i]] <- fh_estimate_maps[[i]] +
     theme(legend.position = "none")
-  uncertainty_maps[[i]] <- uncertainty_maps[[i]] +
-    theme(legend.position = "none")
-  residual_maps[[i]] <- residual_maps[[i]] +
+  fh_uncertainty_maps[[i]] <- fh_uncertainty_maps[[i]] +
     theme(legend.position = "none")
 }
 
-wrap_plots(c(estimate_maps, uncertainty_maps, residual_maps), ncol = 3) +
+wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = 2) +
   plot_annotation(
     title = "Share of adults who walk for transport daily",
-    subtitle = "Spatio-temporal FH model (M4), 95% CI width and standardised residual",
+    subtitle = "Spatio-temporal FH model (M4) and 95% CI width",
     theme = map_annotation_theme
   )
 ```
 
 Here we see that the Fay--Herriot estimates produce a more plausible spatial pattern than the direct estimates, with less jagged variation across neighbouring areas and clearer broad regional structure. At the same time, weaker survey coverage can still leave year-specific patterns in the modelled estimates. The generally higher 2023 estimates are consistent with weaker survey coverage in that wave, so the modelled estimates should be read alongside posterior interval widths and original sample sizes.
+
+**Unit-level modelling** seeks to overcome this shortcoming by modelling the individual outcome directly using unit-level predictors present in the survey respondent data.
 
 ## Further diagnostics
 
@@ -505,15 +488,14 @@ fh_results <- imap_dfr(
         fh_variance = sd^2,
         fh_lower = .data[["0.025quant"]],
         fh_upper = .data[["0.975quant"]],
-        fh_ci_width = fh_upper - fh_lower,
-        fh_std_resid = (direct_estimate - fh_estimate) /  sqrt(variance + fh_variance)
+        fh_ci_width = fh_upper - fh_lower
       )
   }
 ) |>
   mutate(model = factor(model, levels = names(model_formulas)))
 ```
 
-### Direct To Baseline Model
+### How Fay--Herriot model smoothes direct estimates
 
 We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure to understand how the FH models fundamentally handle noisy direct estimates. 
 
@@ -542,7 +524,7 @@ direct_to_m0 <- fh_wide |>
     area_id,
     time_id,
     direct_variance = variance,
-    variance_change = .data[["fh_variance__M0 Baseline"]] - .data$variance
+    variance_change = .data[["fh_variance__M0 Baseline"]] - variance
   )
 
 wave_years <- sort(unique(fh_wide$time_id))
@@ -563,9 +545,9 @@ direct_to_m0_map_data <- msoa_boundaries |>
 
 plot_m0_variance_change <- function(wave) {
   direct_to_m0_map_data |>
-    filter(.data$time_id == wave) |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$variance_change), colour = "transparent") +
+    geom_sf(aes(fill = variance_change), colour = "transparent") +
     scale_fill_gradient2(
       low = diverging_low,
       mid = "white",
@@ -584,9 +566,9 @@ plot_m0_variance_change <- function(wave) {
 
 plot_direct_variance <- function(wave) {
   direct_to_m0_map_data |>
-    filter(.data$time_id == wave) |>
+    filter(time_id == wave) |>
     ggplot() +
-    geom_sf(aes(fill = .data$direct_variance), colour = "transparent") +
+    geom_sf(aes(fill = direct_variance), colour = "transparent") +
     scale_fill_distiller(
       palette = "Reds",
       direction = 1,
@@ -637,14 +619,14 @@ direct_to_m0_ranked <- direct_to_m0 |>
 direct_to_m0_ranked_plot <- ggplot(
   direct_to_m0_ranked,
   aes(
-    x = .data$variance_rank,
-    y = .data$value,
-    colour = .data$measure
+    x = variance_rank,
+    y = value,
+    colour = measure
   )
 ) +
   geom_hline(yintercept = 0, colour = "grey60") +
   geom_line(alpha = 0.8) +
-  facet_wrap(vars(.data$time_id), nrow = 1) +
+  facet_wrap(vars(time_id), nrow = 1) +
   scale_y_continuous(labels = variance_label) +
   scale_colour_manual(values = c(
     "Variance change" = "purple",
@@ -673,12 +655,12 @@ Area-time cells with high sampling variance contain less reliable local informat
 ```{r}
 #| label: summarise-fh-missing-direct
 fh_wide |>
-  filter(is.na(.data$direct_estimate) | is.na(.data$variance)) |>
+  filter(is.na(direct_estimate) | is.na(variance)) |>
   transmute(
-    `MSOA` = .data$area_id,
-    `Wave year` = .data$time_id,
-    `Direct estimate` = share_label(.data$direct_estimate),
-    `Sampling variance` = round(.data$variance, 6),
+    `MSOA` = area_id,
+    `Wave year` = time_id,
+    `Direct estimate` = share_label(direct_estimate),
+    `Sampling variance` = round(variance, 6),
     `M0 estimate` = share_label(.data[["fh_estimate__M0 Baseline"]]),
     `M0 posterior variance` = round(
       .data[["fh_variance__M0 Baseline"]],
@@ -694,20 +676,23 @@ After the WAIC comparison, we inspect local estimate changes to see where the mo
 For example, moving from M2 to M3 adds the occupation and work-pattern predictors. We map where M3 changes the estimates relative to M2, then summarise the predictor profiles of the areas with the largest upward and downward shifts (top and bottom 10%).
 
 ```{r}
-#| label: map-fh-spatial-change
-#| echo: false
-#| fig-width: 16
-#| fig-height: 5
-#| out-width: "100%"
+#| label: calculate-fh-predictor-change
 
 m2_to_m3 <- fh_wide |>
   transmute(
     area_id,
-    time_id,
     estimate_change =
-      .data[["fh_estimate__M3 +All predictors"]] - 
+      .data[["fh_estimate__M3 +All predictors"]] -
       .data[["fh_estimate__M2 +Core predictors"]]
-  )
+  ) |>
+  distinct(area_id, .keep_all = TRUE)
+```
+```{r}
+#| label: map-fh-predictor-change
+#| echo: false
+#| fig-width: 8
+#| fig-height: 6
+#| out-width: "100%"
 
 m2_to_m3_map_data <- msoa_boundaries |>
   left_join(m2_to_m3, by = "area_id")
@@ -719,53 +704,38 @@ m2_to_m3_estimate_limit <- quantile(
   names = FALSE
 )
 
-plot_m2_to_m3_change <- function(wave) {
-  m2_to_m3_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
-    scale_fill_gradient2(
-      low = diverging_low,
-      mid = "white",
-      high = diverging_high,
-      midpoint = 0,
-      limits = c(-m2_to_m3_estimate_limit, m2_to_m3_estimate_limit),
-      oob = squish,
-      labels = pp_label,
-      na.value = missing_fill,
-      name = "Change"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
-
-m2_to_m3_maps <- lapply(wave_years, plot_m2_to_m3_change)
-m2_to_m3_maps[[1]] <- m2_to_m3_maps[[1]] + ylab("Estimate change")
-
-for (i in seq_len(length(wave_years) - 1)) {
-  m2_to_m3_maps[[i]] <- m2_to_m3_maps[[i]] +
-    theme(legend.position = "none")
-}
-
-wrap_plots(m2_to_m3_maps, ncol = 3) +
-  plot_annotation(
+m2_to_m3_map_data |>
+  ggplot() +
+  geom_sf(aes(fill = estimate_change), colour = "transparent") +
+  scale_fill_gradient2(
+    low = diverging_low,
+    mid = "white",
+    high = diverging_high,
+    midpoint = 0,
+    limits = c(-m2_to_m3_estimate_limit, m2_to_m3_estimate_limit),
+    oob = squish,
+    labels = pp_label,
+    na.value = missing_fill,
+    name = "Change"
+  ) +
+  labs(
     title = "Estimate change after adding additional predictors",
-    subtitle = "M3 minus M2",
-    theme = map_annotation_theme
-  )
+    subtitle = "M3 minus M2"
+  ) +
+  theme_void() +
+  map_text_theme
 ```
 ```{r}
-#| label: summarise-fh-spatial-change
+#| label: summarise-fh-predictor-change
 m2_to_m3_drivers <- model_data |>
   select(
     area_id,
-    time_id,
-    work_from_home = cov_share_work_from_home,
-    students = cov_share_students,
-    routine_semiroutine = cov_share_routine_semiroutine
+    work_from_home = scaled_share_work_from_home,
+    students = scaled_share_students,
+    routine_semiroutine = scaled_share_routine_semiroutine
   ) |>
-  left_join(m2_to_m3, by = c("area_id", "time_id")) |>
+  distinct(area_id, .keep_all = TRUE) |>
+  left_join(m2_to_m3, by = "area_id") |>
   mutate(
     change_group = case_when(
       estimate_change >= quantile(estimate_change, 0.9, na.rm = TRUE) ~
@@ -778,15 +748,45 @@ m2_to_m3_drivers <- model_data |>
 
 m2_to_m3_drivers |>
   drop_na(change_group) |>
-  group_by(.data$change_group) |>
+  group_by(change_group) |>
   summarise(
-    `Work from home` = mean(.data$work_from_home, na.rm = TRUE),
-    `Students` = mean(.data$students, na.rm = TRUE),
-    `Routine or semi-routine` = mean(.data$routine_semiroutine, na.rm = TRUE),
+    `Work from home` = mean(work_from_home, na.rm = TRUE),
+    `Students` = mean(students, na.rm = TRUE),
+    `Routine or semi-routine` = mean(routine_semiroutine, na.rm = TRUE),
     .groups = "drop"
   )
 ```
-The areas whose estimates are raised most by M3 have higher work-from-home and student shares, and lower routine/semi-routine occupation shares. This pattern is plausible: students and remote workers may have more flexible daily routines, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport. The improvement in WAIC from M2 to M3 suggests that these added predictors also improve overall model fit.
+The areas whose estimates are raised most by M3 have higher work-from-home and student shares, and lower routine/semi-routine occupation shares. This pattern is plausible: students and remote workers may have more flexible daily routines, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport.
+
+The coefficient table below reports the fixed-effect terms from the final model M4. Because the predictors are standardised, each coefficient can be read as the expected percentage-point change in daily walking associated with a one-standard-deviation increase in that predictor.
+
+```{r}
+#| label: summarise-fh-final-coefficients
+
+fh_fits[["M4 +TempSpatial"]]$summary.fixed |>
+  as_tibble(rownames = "term") |>
+  mutate(
+    term = recode(
+      term,
+      `(Intercept)` = "Intercept",
+      scaled_mean_age_16plus = "Mean age 16+",
+      scaled_prob_female = "Proportion female",
+      scaled_population_density = "Population density",
+      scaled_share_no_car_households = "No-car households",
+      scaled_share_work_from_home = "Work from home",
+      scaled_share_students = "Full-time students",
+      scaled_share_routine_semiroutine = "Routine/semi-routine occupations"
+    )
+  ) |>
+  transmute(
+    term,
+    mean = pp_label(mean),
+    lower = pp_label(.data[["0.025quant"]]),
+    upper = pp_label(.data[["0.975quant"]])
+  )
+```
+
+In practice, the decision to pick the right SAE model specification should be assessed holistically using model diagnostics, stepwise changes across models, and domain knowledge regarding the modelled outcome.
 
 ### Adding Temporal And Spatial Effects
 
@@ -798,86 +798,17 @@ The contribution of the temporal and spatial effects on the model prediction can
 ```{r}
 #| label: diagnose-fh-hyperparameters
 
-fh_fits[["M4 +Spatial"]]$summary.hyperpar |>
+fh_fits[["M4 +TempSpatial"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
-  filter(str_detect(.data$parameter, "time_inla_id|area_inla_id|Phi")) |>
+  filter(str_detect(parameter, "time_inla_id|area_inla_id|Phi")) |>
   select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
-  mutate(
-    across(where(is.numeric), ~ round(.x, 3))
-  )
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
 ```
 
-The temporal effect has a high `tau` than the spatial effect, indicating smaller differences between survey waves than between MSOAs. Meanwhile, the low spatial `phi` (less than `0.5`) indicates that only a small share of the remaining between-area variation follows the spatial weights; most of it remains unstructured. We can see where that structured spatial component affects the estimates by mapping the change from M3 to M4. In most areas the changes are small, with some clustered adjustments where neighbouring MSOAs share similar estimated walking rates, such as the more urban southern region.
-
-```{r}
-#| label: map-fh-residual-spatial-effect
-#| echo: false
-#| fig-width: 16
-#| fig-height: 5
-#| out-width: "100%"
-m3_to_m4 <- fh_wide |>
-  transmute(
-    area_id,
-    time_id,
-    estimate_change =
-      .data[["fh_estimate__M4 +Spatial"]] -
-      .data[["fh_estimate__M3 +All predictors"]]
-  )
-
-m3_to_m4_map_data <- msoa_boundaries |>
-  left_join(m3_to_m4, by = "area_id")
-
-m3_to_m4_limit <- quantile(
-  abs(m3_to_m4$estimate_change),
-  0.95,
-  na.rm = TRUE,
-  names = FALSE
-)
-
-plot_m3_to_m4_change <- function(wave) {
-  m3_to_m4_map_data |>
-    filter(.data$time_id == wave) |>
-    ggplot() +
-    geom_sf(aes(fill = .data$estimate_change), colour = "transparent") +
-    scale_fill_gradient2(
-      low = diverging_low,
-      mid = "white",
-      high = diverging_high,
-      midpoint = 0,
-      limits = c(-m3_to_m4_limit, m3_to_m4_limit),
-      oob = squish,
-      labels = pp_label,
-      na.value = missing_fill,
-      name = "Change"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-}
-
-m3_to_m4_maps <- lapply(wave_years, plot_m3_to_m4_change)
-m3_to_m4_maps[[1]] <- m3_to_m4_maps[[1]] + ylab("Estimate change")
-
-for (i in seq_len(length(wave_years) - 1)) {
-  m3_to_m4_maps[[i]] <- m3_to_m4_maps[[i]] +
-    theme(legend.position = "none")
-}
-
-wrap_plots(m3_to_m4_maps, ncol = 3) +
-  plot_annotation(
-    title = "Estimate change after adding spatial smoothing",
-    subtitle = "M4 minus M3",
-    theme = map_annotation_theme
-  )
-```
-
-In practice, the decision to pick the right SAE model specification should be assessed holistically using model diagnostics, stepwise changes across models, and domain knowledge. These checks help decide whether it should be further enriched with additional predictors, or alternative spatial or temporal structures.
+The temporal effect has a higher `tau` than the spatial effect, indicating smaller differences between survey waves than between MSOAs. Meanwhile, the low spatial `phi` (less than `0.5`) indicates that only a small share of the remaining between-area variation follows the spatial weights; most of it remains unstructured.
 
 ```{r}
 #| label: export-fh-results
-#| echo: false
-write_csv(
-  final_fh_results,
-  file.path(base_path, "freqwalk_estimates_fh.csv")
-)
+#| code-fold: true
+write_csv(final_fh_results, file.path(base_path, "freqwalk_estimates_fh.csv"))
 ```

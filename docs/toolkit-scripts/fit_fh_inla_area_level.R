@@ -28,13 +28,13 @@ config <- list(
   variance_col = "variance",
 
   core_covariates = c(
-    "cov_population_density",
-    "cov_share_no_car_households"
+    "scaled_population_density",
+    "scaled_share_no_car_households"
   ),
   extra_covariates = c(
-    "cov_share_work_from_home",
-    "cov_share_students",
-    "cov_share_routine_semiroutine"
+    "scaled_share_work_from_home",
+    "scaled_share_students",
+    "scaled_share_routine_semiroutine"
   )
 )
 
@@ -146,10 +146,7 @@ area_neighbours <- poly2nb(
 spatial_graph_file <- tempfile(fileext = ".adj")
 nb2INLA(file = spatial_graph_file, nb = area_neighbours)
 
-max_variance <- max(
-  direct_estimates$variance[direct_estimates$variance > 0],
-  na.rm = TRUE
-)
+max_variance <- max(direct_estimates$variance[direct_estimates$variance > 0], na.rm = TRUE)
 
 model_data <- domain_frame |>
   left_join(direct_estimates, by = c("area_id", "time_id")) |>
@@ -227,12 +224,6 @@ estimates <- model_data |>
 
 dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)
 
-write_csv(
-  model_comparison,
-  file.path(config$output_dir, "fh_inla_model_comparison.csv")
-)
+write_csv(model_comparison, file.path(config$output_dir, "fh_inla_model_comparison.csv"))
 
-write_csv(
-  estimates,
-  file.path(config$output_dir, "fh_inla_estimates.csv")
-)
+write_csv(estimates, file.path(config$output_dir, "fh_inla_estimates.csv"))

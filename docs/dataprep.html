@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -106,15 +140,19 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level model (FH)</span></a>
+ <span class="dropdown-text">Area-level (FH)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level model (BHF)</span></a>
+ <span class="dropdown-text">Unit-level (BHF)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">MRP</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./mrp-unit.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
     </ul>
   </li>
@@ -194,19 +232,25 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level model (FH)</span></a>
+ <span class="menu-text">Area-level (FH)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level model (BHF)</span></a>
+ <span class="menu-text">Unit-level (BHF)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">MRP</span></a>
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mrp-unit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
   </div>
 </li>
       </ul>
@@ -275,7 +319,36 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This workbook introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoayear.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">la_code =</span> LAD21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(la_code, <span class="st">"W"</span>))</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">area_id =</span> MSOA21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>This data preparation step introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.</p>
 <section id="the-survey-microdata" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</h2>
 <p>The tutorial uses a synthetic teaching dataset based on the three survey waves of the <strong>National Survey for Wales (NSW) in 2020-2021, 2022-2023, and 2024-2025</strong>.</p>
@@ -380,8 +453,8 @@ Target estimand
 </table>
 <p>Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding <code>weight</code> variable selection rule is as follows:</p>
 <ul>
-<li>Use <code>SampleTravelWeight</code> in survey periods where this question was asked to a subsample and the weight for this exists,</li>
-<li>Use <code>SampleAdultWeight</code> in survey periods where this question was asked to the main sample.</li>
+<li>Use <code>SampleTravelWeight</code> in survey waves where this question was asked to a subsample and the corresponding weight for this module exists,</li>
+<li>Use <code>SampleAdultWeight</code> in survey waves where this question was asked to the main sample.</li>
 </ul>
 <p>The walking survey indicator clean file has <em>one row per respondent-wave</em> and keeps the unit predictors needed for unit-level SAE:</p>
 <table class="table">
@@ -465,10 +538,9 @@ Target estimand
 </section>
 <section id="preparing-auxiliary-data" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</h3>
-<section id="area-predictors" class="level4" data-number="2.3.1">
-<h4 data-number="2.3.1" class="anchored" data-anchor-id="area-predictors"><span class="header-section-number">2.3.1</span> Area Predictors</h4>
-<p>SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>cov_*</code> variables for modelling.</p>
-<p>These variables are chosen because daily walking is likely to vary with density, car access, and local work or occupation patterns.</p>
+<section id="area-predictors-and-area-summaries" class="level4" data-number="2.3.1">
+<h4 data-number="2.3.1" class="anchored" data-anchor-id="area-predictors-and-area-summaries"><span class="header-section-number">2.3.1</span> Area Predictors and Area Summaries</h4>
+<p>SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>scaled_*</code> variables for modelling. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or occupation patterns.</p>
 <table class="table">
 <colgroup>
 <col style="width: 33%">
@@ -484,17 +556,35 @@ Target estimand
 </thead>
 <tbody>
 <tr class="odd">
-<td>Core predictors</td>
-<td>- Population density<br>- Share of households without car/van</td>
-<td>Capturing broad urban form and car access</td>
+<td>Demographic summaries</td>
+<td>Female share; mean adult age</td>
+<td>Capture broad differences in population composition</td>
 </tr>
 <tr class="even">
-<td>Additional predictors</td>
-<td>- Share working from home<br>- Share full-time students<br>- Share in routine or semi-routine occupations</td>
-<td>Capturing work-pattern differences that may explain transport mode choice</td>
+<td>Core area predictors</td>
+<td>Population density; share of households without a car or van</td>
+<td>Capture urban form and car access</td>
+</tr>
+<tr class="odd">
+<td>Additional area predictors</td>
+<td>Share working from home; share full-time students; share in routine or semi-routine occupations</td>
+<td>Capture wider socioeconomic and work-pattern differences related to travel behaviour</td>
 </tr>
 </tbody>
 </table>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>These MSOA-level summaries can also be used as aggregation inputs after fitting a unit-level model to the survey microdata. See <a href="./bhf-unit.html">BHF unit-level model</a>.</p>
+</div>
+</div>
 <p>The area-predictor output <em>has one row per MSOA</em>:</p>
 <table class="table">
 <thead>
@@ -514,10 +604,10 @@ Target estimand
 </tr>
 <tr class="odd">
 <td><code>raw_*</code></td>
-<td>Raw 5 predictors used in the models</td>
+<td>Raw predictors and summaries used in the models</td>
 </tr>
 <tr class="even">
-<td><code>cov_*</code></td>
+<td><code>scaled_*</code></td>
 <td>Z-scored versions of the raw predictors</td>
 </tr>
 </tbody>
