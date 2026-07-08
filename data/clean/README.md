@@ -21,6 +21,7 @@ Notes:
 ## Walking Auxiliary Files
 
 - `areapred_freqwalk.csv`: one row per MSOA with raw and z-scored area predictors for daily walking models, including Census 2021 mean age among usual residents aged 16+ and proportion female from Nomis bulk tables.
+- `validation_ts061_walk_to_work.csv`: one row per Wales MSOA with Census 2021 TS061 walking-to-work, cycling-to-work, and work-from-home counts and shares. Use `ts061_walk_to_work_share` as an external benchmark for spatial pattern checks only: it covers usual residents aged 16+ in employment on Census Day 2021, not all adults walking for transport daily.
 - `poststrat_freqwalk_age_sex_212325.csv`: one row per MSOA-year-age-sex cell with `pop_count` for poststratification.
 - `poststrat_freqwalk_age_sex_car_21.csv`: one row per MSOA-year-age-sex-car-access cell with `pop_count` for richer poststratification.
 

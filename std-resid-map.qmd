@@ -1,16 +1,16 @@
 ---
-title: "Temporary Standardised Residual Maps"
-subtitle: "Model estimates compared with direct estimates"
+title: "Validation Residual Maps"
 ---
 
-This temporary workbook gathers the existing direct, FH, BHF, and MRP outputs and computes standardised residuals in one place. These residuals compare each model estimate with the corresponding direct survey estimate, so they are useful diagnostics rather than ground-truth validation.
+The validation residual is `(obs - estimate) / sqrt(estimate)`.
 
 ```{r}
-#| label: setup-standardised-residual-maps
+#| label: setup-validation-residuals
+#| include: false
+
 library(dplyr)
 library(readr)
 library(stringr)
-library(tidyr)
 library(sf)
 library(ggplot2)
 library(patchwork)
@@ -21,16 +21,35 @@ base_path <- if (dir.exists("data")) {
 } else {
   normalizePath(file.path("..", "data"))
 }
-share_label <- label_percent(accuracy = 0.1)
-residual_label <- label_number(accuracy = 0.1)
-missing_fill <- "grey85"
 
-msoa_boundaries <- st_read(
-  file.path(base_path, "boundaries-msoa.geojson"),
-  quiet = TRUE
-) |>
-  rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(area_id, "W"))
+method_levels <- c("Direct", "FH", "BHF", "MRP Context", "MRP Rich")
+missing_fill <- "grey85"
+underestimate_colour <- "#2166ac"
+overestimate_colour <- "#b2182b"
+
+residual_label <- label_number(accuracy = 0.01)
+ci_width_label <- label_number(accuracy = 1, scale = 100, suffix = " pp")
+
+safe_limit <- function(x, fallback = 0.01, symmetric = FALSE, p = NULL) {
+  x <- x[is.finite(x)]
+  if (length(x) == 0) {
+    return(if (symmetric) c(-fallback, fallback) else c(0, fallback))
+  }
+
+  limit <- if (is.null(p)) {
+    max(abs(x), na.rm = TRUE)
+  } else if (symmetric) {
+    quantile(abs(x), p, na.rm = TRUE, names = FALSE)
+  } else {
+    quantile(x, p, na.rm = TRUE, names = FALSE)
+  }
+
+  if (!is.finite(limit) || limit == 0) {
+    limit <- fallback
+  }
+
+  if (symmetric) c(-limit, limit) else c(0, limit)
+}
 
 map_text_theme <- theme(
   plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
@@ -44,145 +63,287 @@ map_text_theme <- theme(
   legend.text = element_text(size = 9)
 )
 
-map_annotation_theme <- theme(
+annotation_theme <- theme(
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+  plot.caption = element_text(size = 10, hjust = 0.5, colour = "grey30")
 )
-```
 
-```{r}
-#| label: import-method-estimates
+chart_theme <- theme_minimal(base_size = 12) +
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+    legend.position = "bottom"
+  )
 
-direct_estimates <- read_csv(
-  file.path(base_path, "freqwalk_estimates_direct.csv"),
-  show_col_types = FALSE
-) |>
-  select(area_id, time_id, msoa_name, direct_estimate, variance, n)
+read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NULL, variance_col = NULL) {
+  estimate_data <- read_csv(path, show_col_types = FALSE)
 
-read_method_estimates <- function(path, method_name, estimate_col, variance_col) {
-  read_csv(path, show_col_types = FALSE) |>
+  ci_width <- if (!is.null(ci_width_col)) {
+    estimate_data[[ci_width_col]]
+  } else if (!is.null(variance_col)) {
+    2 * qnorm(0.975) * sqrt(estimate_data[[variance_col]])
+  } else {
+    NA_real_
+  }
+
+  estimate_data |>
     transmute(
       method = method_name,
       area_id,
       time_id,
-      model_estimate = .data[[estimate_col]],
-      model_variance = .data[[variance_col]]
+      estimate = .data[[estimate_col]],
+      ci_width = ci_width
     )
 }
 
-method_estimates <- bind_rows(
-  read_method_estimates(
+obs <- read_csv(
+  file.path(base_path, "clean", "validation_ts061_walk_to_work.csv"),
+  show_col_types = FALSE
+) |>
+  transmute(
+    area_id,
+    time_id,
+    msoa_name,
+    obs = ts061_walk_to_work_share
+  )
+
+estimate_sets <- bind_rows(
+  read_estimate_set(
+    file.path(base_path, "freqwalk_estimates_direct.csv"),
+    "Direct",
+    "direct_estimate",
+    variance_col = "variance"
+  ),
+  read_estimate_set(
     file.path(base_path, "freqwalk_estimates_fh.csv"),
     "FH",
     "fh_estimate",
-    "fh_variance"
+    ci_width_col = "fh_ci_width"
   ),
-  read_method_estimates(
+  read_estimate_set(
     file.path(base_path, "freqwalk_estimates_bhf.csv"),
     "BHF",
     "bhf_estimate",
-    "bhf_variance"
+    ci_width_col = "bhf_ci_width"
   ),
-  read_method_estimates(
-    file.path(base_path, "freqwalk_estimates_mrp.csv"),
-    "MRP",
+  read_estimate_set(
+    file.path(base_path, "freqwalk_estimates_mrp_context.csv"),
+    "MRP Context",
     "mrp_estimate",
-    "mrp_variance"
+    ci_width_col = "mrp_ci_width"
+  ),
+  read_estimate_set(
+    file.path(base_path, "freqwalk_estimates_mrp_rich.csv"),
+    "MRP Rich",
+    "mrp_estimate",
+    ci_width_col = "mrp_ci_width"
   )
 )
 
-standardised_residuals <- method_estimates |>
-  left_join(direct_estimates, by = c("area_id", "time_id")) |>
+validation_residuals <- estimate_sets |>
+  inner_join(obs, by = c("area_id", "time_id")) |>
   mutate(
-    method = factor(method, levels = c("FH", "BHF", "MRP")),
-    std_resid = (direct_estimate - model_estimate) /
-      sqrt(variance + model_variance),
-    abs_std_resid = abs(std_resid)
+    method = factor(method, levels = method_levels),
+    residual = if_else(estimate > 0, (obs - estimate) / sqrt(estimate), NA_real_),
+    abs_residual = abs(residual),
+    residual_direction = case_when(
+      residual > 0 ~ "Underestimate",
+      residual < 0 ~ "Overestimate",
+      TRUE ~ "Zero"
+    ),
+    residual_direction = factor(
+      residual_direction,
+      levels = c("Overestimate", "Zero", "Underestimate")
+    )
   )
+
+msoa_boundaries <- st_read(
+  file.path(base_path, "boundaries-msoa.geojson"),
+  quiet = TRUE
+) |>
+  rename(area_id = all_of("MSOA21CD")) |>
+  filter(str_starts(area_id, "W"))
+
+map_data <- msoa_boundaries |>
+  left_join(validation_residuals, by = "area_id")
+
+residual_colour_limits <- safe_limit(validation_residuals$residual, symmetric = TRUE, p = 0.95)
+residual_axis_limits <- safe_limit(validation_residuals$residual, symmetric = TRUE)
+ci_width_colour_limits <- safe_limit(validation_residuals$ci_width, p = 0.95)
+ci_width_axis_limits <- safe_limit(validation_residuals$ci_width)
 ```
 
 ```{r}
-#| label: summarise-standardised-residuals
+#| label: summarise-validation-residuals
 
-standardised_residuals |>
+validation_residuals |>
   group_by(method) |>
   summarise(
-    area_time_cells = n(),
-    mean_abs_std_resid = mean(abs_std_resid, na.rm = TRUE),
-    median_abs_std_resid = median(abs_std_resid, na.rm = TRUE),
-    p90_abs_std_resid = quantile(abs_std_resid, 0.9, na.rm = TRUE, names = FALSE),
-    cells_abs_gt_2 = sum(abs_std_resid > 2, na.rm = TRUE),
+    msoas = n(),
+    mean_abs_residual = mean(abs_residual, na.rm = TRUE),
+    p90_abs_residual = quantile(abs_residual, 0.9, na.rm = TRUE, names = FALSE),
     .groups = "drop"
   ) |>
   mutate(across(where(is.numeric), ~ round(.x, 2)))
 ```
 
 ```{r}
-#| label: map-standardised-residuals
+#| label: map-validation-residuals
 #| echo: false
 #| fig-width: 18
-#| fig-height: 12
+#| fig-height: 8
 #| out-width: "100%"
 
-residual_map_data <- msoa_boundaries |>
-  left_join(standardised_residuals, by = "area_id")
-
-std_resid_limit <- quantile(
-  abs(standardised_residuals$std_resid),
-  0.95,
-  na.rm = TRUE,
-  names = FALSE
-)
-if (!is.finite(std_resid_limit) || std_resid_limit == 0) {
-  std_resid_limit <- 1
-}
-std_resid_limits <- c(-std_resid_limit, std_resid_limit)
-
-method_levels <- levels(standardised_residuals$method)
-wave_years <- sort(unique(standardised_residuals$time_id))
-
-plot_standardised_residual <- function(method_name, wave) {
-  plot_data <- residual_map_data |>
-    filter(method == method_name, time_id == wave)
-
-  residual_map <- plot_data |>
-    ggplot() +
-    geom_sf(aes(fill = std_resid), colour = "transparent") +
-    scale_fill_distiller(
-      palette = "RdBu",
-      direction = -1,
-      limits = std_resid_limits,
-      oob = squish,
-      labels = residual_label,
-      na.value = missing_fill,
-      name = "Std. residual"
-    ) +
-    ggtitle(wave) +
-    theme_void() +
-    map_text_theme
-
-  if (wave == wave_years[1]) {
-    residual_map <- residual_map + ylab(method_name)
-  }
-
-  if (!(method_name == method_levels[length(method_levels)] && wave == wave_years[length(wave_years)])) {
-    residual_map <- residual_map + theme(legend.position = "none")
-  }
-
-  residual_map
-}
-
-residual_maps <- list()
-for (method_name in method_levels) {
-  for (wave in wave_years) {
-    residual_maps[[length(residual_maps) + 1]] <- plot_standardised_residual(method_name, wave)
-  }
-}
-
-wrap_plots(residual_maps, ncol = length(wave_years)) +
+map_data |>
+  ggplot() +
+  geom_sf(aes(fill = residual), colour = "transparent") +
+  facet_wrap(vars(method), nrow = 1) +
+  scale_fill_gradient2(
+    low = overestimate_colour,
+    mid = "white",
+    high = underestimate_colour,
+    midpoint = 0,
+    limits = residual_colour_limits,
+    breaks = pretty_breaks(n = 3),
+    oob = squish,
+    labels = residual_label,
+    na.value = missing_fill,
+    name = "Residual",
+    guide = guide_colourbar(
+      title.position = "top",
+      barwidth = grid::unit(5, "cm"),
+      barheight = grid::unit(0.35, "cm")
+    )
+  ) +
+  theme_void() +
+  map_text_theme +
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "bottom"
+  ) +
   plot_annotation(
-    title = "Standardised residuals by method and wave",
-    subtitle = "Residual = (direct estimate - model estimate) / sqrt(direct variance + model variance)",
-    theme = map_annotation_theme
+    title = "Validation residuals",
+    subtitle = "Residual = (walking-to-work share - 2021 estimate) / sqrt(2021 estimate)",
+    caption = "Blue: underestimation. Red: overestimation.",
+    theme = annotation_theme
   )
+```
+
+```{r}
+#| label: plot-validation-residual-distributions
+#| echo: false
+#| fig-width: 18
+#| fig-height: 4
+#| out-width: "100%"
+
+validation_residuals |>
+  filter(!is.na(residual)) |>
+  ggplot(aes(x = residual, fill = residual_direction)) +
+  geom_histogram(
+    bins = 32,
+    colour = "white",
+    linewidth = 0.15,
+    boundary = 0
+  ) +
+  geom_vline(xintercept = 0, colour = "grey25", linewidth = 0.35) +
+  facet_wrap(vars(method), nrow = 1) +
+  coord_cartesian(xlim = residual_axis_limits) +
+  scale_fill_manual(
+    values = c(
+      "Overestimate" = overestimate_colour,
+      "Zero" = "grey70",
+      "Underestimate" = underestimate_colour
+    ),
+    name = NULL
+  ) +
+  scale_x_continuous(labels = residual_label) +
+  labs(
+    x = "Residual",
+    y = "MSOAs"
+  ) +
+  chart_theme
+```
+
+```{r}
+#| label: summarise-ci-widths
+
+validation_residuals |>
+  group_by(method) |>
+  summarise(
+    msoas = n(),
+    mean_ci_width_pp = mean(ci_width, na.rm = TRUE) * 100,
+    median_ci_width_pp = median(ci_width, na.rm = TRUE) * 100,
+    p90_ci_width_pp = quantile(ci_width, 0.9, na.rm = TRUE, names = FALSE) * 100,
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+```
+
+```{r}
+#| label: map-ci-widths
+#| echo: false
+#| fig-width: 18
+#| fig-height: 8
+#| out-width: "100%"
+
+map_data |>
+  ggplot() +
+  geom_sf(aes(fill = ci_width), colour = "transparent") +
+  facet_wrap(vars(method), nrow = 1) +
+  scale_fill_distiller(
+    palette = "YlGnBu",
+    direction = 1,
+    limits = ci_width_colour_limits,
+    breaks = pretty_breaks(n = 3),
+    oob = squish,
+    labels = ci_width_label,
+    na.value = missing_fill,
+    name = "CI width",
+    guide = guide_colourbar(
+      title.position = "top",
+      barwidth = grid::unit(5, "cm"),
+      barheight = grid::unit(0.35, "cm")
+    )
+  ) +
+  theme_void() +
+  map_text_theme +
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    legend.position = "bottom"
+  ) +
+  plot_annotation(
+    title = "CI widths",
+    subtitle = "Direct CI width is approximated from variance; model CI widths use exported intervals",
+    theme = annotation_theme
+  )
+```
+
+```{r}
+#| label: plot-ci-width-distributions
+#| echo: false
+#| fig-width: 18
+#| fig-height: 4
+#| out-width: "100%"
+
+validation_residuals |>
+  filter(!is.na(ci_width)) |>
+  ggplot(aes(x = ci_width)) +
+  geom_histogram(
+    bins = 32,
+    fill = "#3b7ea1",
+    colour = "white",
+    linewidth = 0.15,
+    boundary = 0
+  ) +
+  facet_wrap(vars(method), nrow = 1) +
+  coord_cartesian(xlim = ci_width_axis_limits) +
+  scale_x_continuous(labels = ci_width_label) +
+  labs(
+    x = "CI width",
+    y = "MSOAs"
+  ) +
+  chart_theme +
+  theme(legend.position = "none")
 ```
