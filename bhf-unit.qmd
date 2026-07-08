@@ -282,26 +282,22 @@ Conceptually, the workflow has two steps: fit the respondent-level model, then e
 
 model_agg_data <- bind_rows(
   model_data |>
-    transmute(
-      row_type = "model",
-      indicator,
-      age,
-      female,
-      car_access,
-      time_inla_id,
-      area_inla_id
-    ),
+    mutate(row_type = "model"),
   aggregation_data |>
-    transmute(
+    mutate(
       row_type = "aggregation",
-      indicator = NA_real_,
-      age,
-      female,
-      car_access,
-      time_inla_id,
-      area_inla_id
+      indicator = NA_real_
     )
-)
+) |>
+  select(
+    row_type, 
+    indicator, 
+    age, 
+    female, 
+    car_access, 
+    time_inla_id, 
+    area_inla_id
+    )
 
 fit_bhf_model <- function(formula) {
   inla(

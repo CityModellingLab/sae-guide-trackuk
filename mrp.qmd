@@ -151,7 +151,6 @@ The MRP workflow needs two inputs:
 - `poststrat_data`, the population cells over which predictions are averaged.
 - `model_data`, the sampled respondent records used to fit the model;
 
-
 ### Population poststratification data
 
 First, we load the age-sex poststratification table and align its `age_band` and `sex` categories with the survey model data.
@@ -649,8 +648,6 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
   )
 ```
 
-### Comparison diagnostics
-
 The comparison plot shows that the MRP estimates are very close to the BHF estimates, with points clustered around the equality line. Agreement with the direct estimates is much weaker as expected, reflecting the instability of sparse MSOA-year survey cells. The Fay--Herriot estimates tend to sit lower than MRP for many cells, suggesting stronger shrinkage toward lower area-year rates.
 
 ```{r}
@@ -670,7 +667,7 @@ bhf_final_estimates <- read_csv(
 fh_final_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_fh.csv"), show_col_types = FALSE) |>
   select(area_id, time_id, fh_estimate, fh_variance, fh_ci_width)
 
-final_mrp_results <- final_mrp_results |>
+comparison_results <- final_mrp_results |>
   left_join(bhf_final_estimates, by = c("area_id", "time_id")) |>
   left_join(fh_final_estimates, by = c("area_id", "time_id")) |>
   mutate(mrp_minus_bhf = mrp_estimate - bhf_estimate) |>
@@ -695,8 +692,6 @@ final_mrp_results <- final_mrp_results |>
     mrp_ci_width,
     mrp_minus_bhf
   )
-
-head(final_mrp_results)
 ```
 ```{r}
 #| label: plot-mrp-comparison-scatter
@@ -704,7 +699,7 @@ head(final_mrp_results)
 #| fig-height: 6
 #| fig-width: 14
 
-mrp_scatter_comparison <- final_mrp_results |>
+mrp_scatter_comparison <- comparison_results |>
   select(
     area_id,
     time_id,
@@ -769,11 +764,11 @@ MRP estimates should therefore be higher than BHF estimates where the poststrati
 #| fig-height: 6
 #| out-width: "100%"
 
-mrp_bhf_difference_limit <- quantile(abs(final_mrp_results$mrp_minus_bhf), 0.95, na.rm = TRUE, names = FALSE)
+mrp_bhf_difference_limit <- quantile(abs(comparison_results$mrp_minus_bhf), 0.95, na.rm = TRUE, names = FALSE)
 mrp_bhf_difference_limits <- c(-mrp_bhf_difference_limit, mrp_bhf_difference_limit)
 
 final_mrp_comparison_map_data <- msoa_boundaries |>
-  left_join(final_mrp_results, by = "area_id")
+  left_join(comparison_results, by = "area_id")
 
 plot_mrp_bhf_difference <- function(wave) {
   final_mrp_comparison_map_data |>

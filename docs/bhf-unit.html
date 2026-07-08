@@ -64,7 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./mrp.html" rel="next">
+<link href="./mrp-rich.html" rel="next">
 <link href="./fh-area.html" rel="prev">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
@@ -163,16 +163,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Unit-level (BHF)</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP1)</span></a>
-  </li>  
-        <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP2)</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-context.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP3)</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
     </ul>
   </li>
@@ -263,20 +259,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (1)</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (2)</span></a>
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp-context.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (3)</span></a>
+ <span class="menu-text">SAE with Poststrat (MRP)</span></a>
   </div>
 </li>
       </ul>
@@ -818,38 +808,34 @@ Note
 <div class="cell">
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>model_agg_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  model_data <span class="sc">|&gt;</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"model"</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      indicator,</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      age,</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      female,</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>      car_access,</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>  aggregation_data <span class="sc">|&gt;</span></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">transmute</span>(</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"aggregation"</span>,</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>      <span class="at">indicator =</span> <span class="cn">NA_real_</span>,</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>      age,</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>      female,</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>      car_access,</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>      time_inla_id,</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>      area_inla_id</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>fit_bhf_model <span class="ot">&lt;-</span> <span class="cf">function</span>(formula) {</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inla</span>(</span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> formula,</span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> model_agg_data,</span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>, <span class="at">config =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>bhf_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(model_formulas, fit_bhf_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">row_type =</span> <span class="st">"model"</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  aggregation_data <span class="sc">|&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">row_type =</span> <span class="st">"aggregation"</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">indicator =</span> <span class="cn">NA_real_</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    row_type, </span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    indicator, </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    age, </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    female, </span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    car_access, </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    time_inla_id, </span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    area_inla_id</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>fit_bhf_model <span class="ot">&lt;-</span> <span class="cf">function</span>(formula) {</span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inla</span>(</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">formula =</span> formula,</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">family =</span> <span class="st">"gaussian"</span>,</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> model_agg_data,</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>, <span class="at">config =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>bhf_fits <span class="ot">&lt;-</span> <span class="fu">lapply</span>(model_formulas, fit_bhf_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -899,13 +885,13 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
-<td style="text-align: right;">3598.116</td>
-<td style="text-align: right;">56.43283</td>
+<td style="text-align: right;">3598.011</td>
+<td style="text-align: right;">56.41402</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
-<td style="text-align: right;">3628.536</td>
-<td style="text-align: right;">66.68196</td>
+<td style="text-align: right;">3627.442</td>
+<td style="text-align: right;">64.12691</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -1006,26 +992,26 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">4017.992</td>
-<td style="text-align: right;">6084.962</td>
-<td style="text-align: right;">307.951</td>
-<td style="text-align: right;">2233.688</td>
-<td style="text-align: right;">18942.221</td>
+<td style="text-align: right;">4023.833</td>
+<td style="text-align: right;">6099.173</td>
+<td style="text-align: right;">308.467</td>
+<td style="text-align: right;">2235.831</td>
+<td style="text-align: right;">18978.103</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">741.183</td>
-<td style="text-align: right;">448.062</td>
-<td style="text-align: right;">223.380</td>
-<td style="text-align: right;">631.696</td>
-<td style="text-align: right;">1912.951</td>
+<td style="text-align: right;">755.012</td>
+<td style="text-align: right;">475.299</td>
+<td style="text-align: right;">218.717</td>
+<td style="text-align: right;">636.130</td>
+<td style="text-align: right;">2003.604</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Phi for area_inla_id</td>
-<td style="text-align: right;">0.657</td>
-<td style="text-align: right;">0.371</td>
-<td style="text-align: right;">0.004</td>
-<td style="text-align: right;">0.849</td>
+<td style="text-align: right;">0.656</td>
+<td style="text-align: right;">0.378</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.861</td>
 <td style="text-align: right;">1.000</td>
 </tr>
 </tbody>
@@ -1122,11 +1108,11 @@ Note
 <td style="text-align: right;">6</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.1186889</td>
-<td style="text-align: right;">0.0010478</td>
-<td style="text-align: right;">0.0540272</td>
-<td style="text-align: right;">0.1820013</td>
-<td style="text-align: right;">0.1279741</td>
+<td style="text-align: right;">0.1186364</td>
+<td style="text-align: right;">0.0010457</td>
+<td style="text-align: right;">0.0540092</td>
+<td style="text-align: right;">0.1818558</td>
+<td style="text-align: right;">0.1278467</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -1135,11 +1121,11 @@ Note
 <td style="text-align: right;">9</td>
 <td style="text-align: right;">0.4319654</td>
 <td style="text-align: right;">0.0406652</td>
-<td style="text-align: right;">0.1496559</td>
-<td style="text-align: right;">0.0010981</td>
-<td style="text-align: right;">0.0873702</td>
-<td style="text-align: right;">0.2174185</td>
-<td style="text-align: right;">0.1300483</td>
+<td style="text-align: right;">0.1495874</td>
+<td style="text-align: right;">0.0010970</td>
+<td style="text-align: right;">0.0873485</td>
+<td style="text-align: right;">0.2173372</td>
+<td style="text-align: right;">0.1299887</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1148,11 +1134,11 @@ Note
 <td style="text-align: right;">11</td>
 <td style="text-align: right;">0.1612313</td>
 <td style="text-align: right;">0.0115984</td>
-<td style="text-align: right;">0.1705899</td>
-<td style="text-align: right;">0.0025814</td>
-<td style="text-align: right;">0.0723712</td>
-<td style="text-align: right;">0.2725387</td>
-<td style="text-align: right;">0.2001674</td>
+<td style="text-align: right;">0.1705501</td>
+<td style="text-align: right;">0.0025852</td>
+<td style="text-align: right;">0.0723000</td>
+<td style="text-align: right;">0.2725840</td>
+<td style="text-align: right;">0.2002840</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1161,11 +1147,11 @@ Note
 <td style="text-align: right;">14</td>
 <td style="text-align: right;">0.1388181</td>
 <td style="text-align: right;">0.0155708</td>
-<td style="text-align: right;">0.0945379</td>
-<td style="text-align: right;">0.0012081</td>
-<td style="text-align: right;">0.0243666</td>
-<td style="text-align: right;">0.1610507</td>
-<td style="text-align: right;">0.1366841</td>
+<td style="text-align: right;">0.0945077</td>
+<td style="text-align: right;">0.0012075</td>
+<td style="text-align: right;">0.0243351</td>
+<td style="text-align: right;">0.1609889</td>
+<td style="text-align: right;">0.1366538</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1174,11 +1160,11 @@ Note
 <td style="text-align: right;">17</td>
 <td style="text-align: right;">0.2357801</td>
 <td style="text-align: right;">0.0157031</td>
-<td style="text-align: right;">0.1570384</td>
-<td style="text-align: right;">0.0012118</td>
-<td style="text-align: right;">0.0911011</td>
-<td style="text-align: right;">0.2275578</td>
-<td style="text-align: right;">0.1364568</td>
+<td style="text-align: right;">0.1570082</td>
+<td style="text-align: right;">0.0012120</td>
+<td style="text-align: right;">0.0910863</td>
+<td style="text-align: right;">0.2275594</td>
+<td style="text-align: right;">0.1364730</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1187,11 +1173,11 @@ Note
 <td style="text-align: right;">19</td>
 <td style="text-align: right;">0.1008805</td>
 <td style="text-align: right;">0.0055383</td>
-<td style="text-align: right;">0.1206525</td>
-<td style="text-align: right;">0.0009746</td>
-<td style="text-align: right;">0.0579622</td>
-<td style="text-align: right;">0.1811428</td>
-<td style="text-align: right;">0.1231806</td>
+<td style="text-align: right;">0.1206228</td>
+<td style="text-align: right;">0.0009732</td>
+<td style="text-align: right;">0.0579512</td>
+<td style="text-align: right;">0.1810480</td>
+<td style="text-align: right;">0.1230969</td>
 </tr>
 </tbody>
 </table>
@@ -1492,8 +1478,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./mrp.html" class="pagination-link">
-        <span class="nav-page-text">SAE with Poststrat (1)</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./mrp-rich.html" class="pagination-link">
+        <span class="nav-page-text">SAE with Poststrat (MRP)</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
