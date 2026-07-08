@@ -183,6 +183,7 @@ validation_residuals |>
   summarise(
     msoas = n(),
     mean_abs_residual = mean(abs_residual, na.rm = TRUE),
+    median_abs_residual = median(abs_residual, na.rm = TRUE),
     p90_abs_residual = quantile(abs_residual, 0.9, na.rm = TRUE, names = FALSE),
     .groups = "drop"
   ) |>
