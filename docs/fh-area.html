@@ -164,11 +164,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP1)</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./mrp-unit.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+    <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP2)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./mrp-context.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP3)</span></a>
   </li>  
     </ul>
   </li>
@@ -260,13 +264,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">SAE with Poststrat (1)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./mrp-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (2)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mrp-context.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (3)</span></a>
   </div>
 </li>
       </ul>
@@ -418,7 +428,7 @@ Target estimand
 </div>
 </div>
 <p>Area-level SAE starts from the direct estimates created in the previous step. The Fay–Herriot model treats each direct estimate for an area-time cell, an <em>MSOA-year cell</em> in this example, as a noisy observation of the underlying frequent-walking rate, using its sampling variance to control how much confidence the model places in that value.</p>
-<p>The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, no-car households, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.</p>
+<p>The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, car-access household share, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.</p>
 </section>
 <section id="prepare-modelling-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-modelling-data"><span class="header-section-number">1</span> Prepare modelling data</h2>
@@ -522,10 +532,10 @@ Target estimand
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all_of</span>(<span class="fu">c</span>(</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="st">"area_id"</span>,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_mean_age_16plus"</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_mean_age_adult"</span>,</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_prob_female"</span>,</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_population_density"</span>,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_share_no_car_households"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_car_access_hhshare"</span>,</span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_share_work_from_home"</span>,</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_share_students"</span>,</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="st">"scaled_share_routine_semiroutine"</span></span>
@@ -539,20 +549,20 @@ Target estimand
 <colgroup>
 <col style="width: 5%">
 <col style="width: 11%">
-<col style="width: 9%">
+<col style="width: 10%">
 <col style="width: 13%">
-<col style="width: 16%">
-<col style="width: 14%">
+<col style="width: 13%">
+<col style="width: 15%">
 <col style="width: 11%">
 <col style="width: 17%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
-<th style="text-align: right;">scaled_mean_age_16plus</th>
+<th style="text-align: right;">scaled_mean_age_adult</th>
 <th style="text-align: right;">scaled_prob_female</th>
 <th style="text-align: right;">scaled_population_density</th>
-<th style="text-align: right;">scaled_share_no_car_households</th>
+<th style="text-align: right;">scaled_car_access_hhshare</th>
 <th style="text-align: right;">scaled_share_work_from_home</th>
 <th style="text-align: right;">scaled_share_students</th>
 <th style="text-align: right;">scaled_share_routine_semiroutine</th>
@@ -564,7 +574,7 @@ Target estimand
 <td style="text-align: right;">0.6562949</td>
 <td style="text-align: right;">-0.5343497</td>
 <td style="text-align: right;">-0.7385764</td>
-<td style="text-align: right;">-0.6348996</td>
+<td style="text-align: right;">0.6348996</td>
 <td style="text-align: right;">-0.4925120</td>
 <td style="text-align: right;">-0.2471960</td>
 <td style="text-align: right;">0.0038108</td>
@@ -574,7 +584,7 @@ Target estimand
 <td style="text-align: right;">1.5025271</td>
 <td style="text-align: right;">0.0610987</td>
 <td style="text-align: right;">-0.7435073</td>
-<td style="text-align: right;">-1.0668381</td>
+<td style="text-align: right;">1.0668381</td>
 <td style="text-align: right;">0.6555194</td>
 <td style="text-align: right;">-0.4337328</td>
 <td style="text-align: right;">-0.8118926</td>
@@ -584,7 +594,7 @@ Target estimand
 <td style="text-align: right;">-0.3609228</td>
 <td style="text-align: right;">0.3786147</td>
 <td style="text-align: right;">0.3977772</td>
-<td style="text-align: right;">1.4408027</td>
+<td style="text-align: right;">-1.4408027</td>
 <td style="text-align: right;">-1.4693683</td>
 <td style="text-align: right;">-0.1734198</td>
 <td style="text-align: right;">1.5395405</td>
@@ -594,7 +604,7 @@ Target estimand
 <td style="text-align: right;">1.0937329</td>
 <td style="text-align: right;">0.0642199</td>
 <td style="text-align: right;">-0.7200726</td>
-<td style="text-align: right;">-1.1056552</td>
+<td style="text-align: right;">1.1056552</td>
 <td style="text-align: right;">-0.1801613</td>
 <td style="text-align: right;">-0.2643614</td>
 <td style="text-align: right;">-0.3159590</td>
@@ -604,7 +614,7 @@ Target estimand
 <td style="text-align: right;">1.5810357</td>
 <td style="text-align: right;">0.6534791</td>
 <td style="text-align: right;">-0.7196659</td>
-<td style="text-align: right;">-0.9291559</td>
+<td style="text-align: right;">0.9291559</td>
 <td style="text-align: right;">0.4069885</td>
 <td style="text-align: right;">-0.3262651</td>
 <td style="text-align: right;">-0.9374519</td>
@@ -614,7 +624,7 @@ Target estimand
 <td style="text-align: right;">0.1329849</td>
 <td style="text-align: right;">-0.1120541</td>
 <td style="text-align: right;">-0.6930287</td>
-<td style="text-align: right;">-0.2053102</td>
+<td style="text-align: right;">0.2053102</td>
 <td style="text-align: right;">-0.8776878</td>
 <td style="text-align: right;">-0.0929360</td>
 <td style="text-align: right;">0.3234906</td>
@@ -701,8 +711,8 @@ Target estimand
 <col style="width: 4%">
 <col style="width: 7%">
 <col style="width: 6%">
-<col style="width: 8%">
-<col style="width: 10%">
+<col style="width: 9%">
+<col style="width: 9%">
 <col style="width: 9%">
 <col style="width: 7%">
 <col style="width: 11%">
@@ -718,10 +728,10 @@ Target estimand
 <th style="text-align: right;">variance</th>
 <th style="text-align: right;">n</th>
 <th style="text-align: right;">adj_variance</th>
-<th style="text-align: right;">scaled_mean_age_16plus</th>
+<th style="text-align: right;">scaled_mean_age_adult</th>
 <th style="text-align: right;">scaled_prob_female</th>
 <th style="text-align: right;">scaled_population_density</th>
-<th style="text-align: right;">scaled_share_no_car_households</th>
+<th style="text-align: right;">scaled_car_access_hhshare</th>
 <th style="text-align: right;">scaled_share_work_from_home</th>
 <th style="text-align: right;">scaled_share_students</th>
 <th style="text-align: right;">scaled_share_routine_semiroutine</th>
@@ -741,7 +751,7 @@ Target estimand
 <td style="text-align: right;">0.6562949</td>
 <td style="text-align: right;">-0.5343497</td>
 <td style="text-align: right;">-0.7385764</td>
-<td style="text-align: right;">-0.6348996</td>
+<td style="text-align: right;">0.6348996</td>
 <td style="text-align: right;">-0.4925120</td>
 <td style="text-align: right;">-0.2471960</td>
 <td style="text-align: right;">0.0038108</td>
@@ -759,7 +769,7 @@ Target estimand
 <td style="text-align: right;">1.5025271</td>
 <td style="text-align: right;">0.0610987</td>
 <td style="text-align: right;">-0.7435073</td>
-<td style="text-align: right;">-1.0668381</td>
+<td style="text-align: right;">1.0668381</td>
 <td style="text-align: right;">0.6555194</td>
 <td style="text-align: right;">-0.4337328</td>
 <td style="text-align: right;">-0.8118926</td>
@@ -777,7 +787,7 @@ Target estimand
 <td style="text-align: right;">-0.3609228</td>
 <td style="text-align: right;">0.3786147</td>
 <td style="text-align: right;">0.3977772</td>
-<td style="text-align: right;">1.4408027</td>
+<td style="text-align: right;">-1.4408027</td>
 <td style="text-align: right;">-1.4693683</td>
 <td style="text-align: right;">-0.1734198</td>
 <td style="text-align: right;">1.5395405</td>
@@ -795,7 +805,7 @@ Target estimand
 <td style="text-align: right;">1.0937329</td>
 <td style="text-align: right;">0.0642199</td>
 <td style="text-align: right;">-0.7200726</td>
-<td style="text-align: right;">-1.1056552</td>
+<td style="text-align: right;">1.1056552</td>
 <td style="text-align: right;">-0.1801613</td>
 <td style="text-align: right;">-0.2643614</td>
 <td style="text-align: right;">-0.3159590</td>
@@ -813,7 +823,7 @@ Target estimand
 <td style="text-align: right;">1.5810357</td>
 <td style="text-align: right;">0.6534791</td>
 <td style="text-align: right;">-0.7196659</td>
-<td style="text-align: right;">-0.9291559</td>
+<td style="text-align: right;">0.9291559</td>
 <td style="text-align: right;">0.4069885</td>
 <td style="text-align: right;">-0.3262651</td>
 <td style="text-align: right;">-0.9374519</td>
@@ -831,7 +841,7 @@ Target estimand
 <td style="text-align: right;">0.1329849</td>
 <td style="text-align: right;">-0.1120541</td>
 <td style="text-align: right;">-0.6930287</td>
-<td style="text-align: right;">-0.2053102</td>
+<td style="text-align: right;">0.2053102</td>
 <td style="text-align: right;">-0.8776878</td>
 <td style="text-align: right;">-0.0929360</td>
 <td style="text-align: right;">0.3234906</td>
@@ -874,7 +884,7 @@ Target estimand
 <tr class="odd">
 <td>M2</td>
 <td>+Core predictors</td>
-<td>M1 plus population density and no-car households</td>
+<td>M1 plus population density and car-access household share</td>
 </tr>
 <tr class="even">
 <td>M3</td>
@@ -944,32 +954,32 @@ Target estimand
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(area_inla_id, <span class="at">model =</span> <span class="st">"iid"</span>)</span>
 <span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>m1_formula <span class="ot">&lt;-</span> direct_estimate <span class="sc">~</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_16plus <span class="sc">+</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_adult <span class="sc">+</span></span>
 <span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  scaled_prob_female <span class="sc">+</span></span>
 <span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(area_inla_id, <span class="at">model =</span> <span class="st">"iid"</span>)</span>
 <span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>m2_formula <span class="ot">&lt;-</span> direct_estimate <span class="sc">~</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_16plus <span class="sc">+</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_adult <span class="sc">+</span></span>
 <span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  scaled_prob_female <span class="sc">+</span></span>
 <span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  scaled_population_density <span class="sc">+</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  scaled_share_no_car_households <span class="sc">+</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  scaled_car_access_hhshare <span class="sc">+</span></span>
 <span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(area_inla_id, <span class="at">model =</span> <span class="st">"iid"</span>)</span>
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>m3_formula <span class="ot">&lt;-</span> direct_estimate <span class="sc">~</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_16plus <span class="sc">+</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_adult <span class="sc">+</span></span>
 <span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  scaled_prob_female <span class="sc">+</span></span>
 <span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  scaled_population_density <span class="sc">+</span></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  scaled_share_no_car_households <span class="sc">+</span></span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  scaled_car_access_hhshare <span class="sc">+</span></span>
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  scaled_share_work_from_home <span class="sc">+</span></span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  scaled_share_students <span class="sc">+</span></span>
 <span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  scaled_share_routine_semiroutine <span class="sc">+</span></span>
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(area_inla_id, <span class="at">model =</span> <span class="st">"iid"</span>)</span>
 <span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>m4_formula <span class="ot">&lt;-</span> direct_estimate <span class="sc">~</span></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_16plus <span class="sc">+</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>  scaled_mean_age_adult <span class="sc">+</span></span>
 <span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>  scaled_prob_female <span class="sc">+</span></span>
 <span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>  scaled_population_density <span class="sc">+</span></span>
-<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  scaled_share_no_car_households <span class="sc">+</span></span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  scaled_car_access_hhshare <span class="sc">+</span></span>
 <span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  scaled_share_work_from_home <span class="sc">+</span></span>
 <span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>  scaled_share_students <span class="sc">+</span></span>
 <span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>  scaled_share_routine_semiroutine <span class="sc">+</span></span>
@@ -1072,13 +1082,13 @@ Note
 </tr>
 <tr class="even">
 <td style="text-align: left;">M3 +All predictors</td>
-<td style="text-align: right;">-690.6755</td>
+<td style="text-align: right;">-690.6754</td>
 <td style="text-align: right;">171.4596</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M4 +TempSpatial</td>
-<td style="text-align: right;">-737.7872</td>
-<td style="text-align: right;">152.9252</td>
+<td style="text-align: right;">-737.7867</td>
+<td style="text-align: right;">152.9225</td>
 </tr>
 </tbody>
 </table>
@@ -1152,11 +1162,11 @@ Note
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">0.0000000</td>
 <td style="text-align: right;">6</td>
-<td style="text-align: right;">0.0182848</td>
+<td style="text-align: right;">0.0182837</td>
 <td style="text-align: right;">0.0001461</td>
-<td style="text-align: right;">-0.0054414</td>
-<td style="text-align: right;">0.0419589</td>
-<td style="text-align: right;">0.0474004</td>
+<td style="text-align: right;">-0.0054426</td>
+<td style="text-align: right;">0.0419581</td>
+<td style="text-align: right;">0.0474007</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -1165,11 +1175,11 @@ Note
 <td style="text-align: right;">0.4319654</td>
 <td style="text-align: right;">0.0406652</td>
 <td style="text-align: right;">9</td>
-<td style="text-align: right;">0.0875501</td>
-<td style="text-align: right;">0.0008291</td>
-<td style="text-align: right;">0.0310348</td>
-<td style="text-align: right;">0.1440067</td>
-<td style="text-align: right;">0.1129719</td>
+<td style="text-align: right;">0.0875490</td>
+<td style="text-align: right;">0.0008290</td>
+<td style="text-align: right;">0.0310339</td>
+<td style="text-align: right;">0.1440053</td>
+<td style="text-align: right;">0.1129714</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1178,11 +1188,11 @@ Note
 <td style="text-align: right;">0.1612313</td>
 <td style="text-align: right;">0.0115984</td>
 <td style="text-align: right;">11</td>
-<td style="text-align: right;">0.1099733</td>
-<td style="text-align: right;">0.0011076</td>
-<td style="text-align: right;">0.0447057</td>
-<td style="text-align: right;">0.1753384</td>
-<td style="text-align: right;">0.1306326</td>
+<td style="text-align: right;">0.1099724</td>
+<td style="text-align: right;">0.0011078</td>
+<td style="text-align: right;">0.0447016</td>
+<td style="text-align: right;">0.1753408</td>
+<td style="text-align: right;">0.1306392</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1191,11 +1201,11 @@ Note
 <td style="text-align: right;">0.1388181</td>
 <td style="text-align: right;">0.0155708</td>
 <td style="text-align: right;">14</td>
-<td style="text-align: right;">0.0894650</td>
+<td style="text-align: right;">0.0894637</td>
 <td style="text-align: right;">0.0019050</td>
-<td style="text-align: right;">0.0040782</td>
+<td style="text-align: right;">0.0040757</td>
 <td style="text-align: right;">0.1756242</td>
-<td style="text-align: right;">0.1715460</td>
+<td style="text-align: right;">0.1715484</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1204,11 +1214,11 @@ Note
 <td style="text-align: right;">0.2357801</td>
 <td style="text-align: right;">0.0157031</td>
 <td style="text-align: right;">17</td>
-<td style="text-align: right;">0.1104453</td>
+<td style="text-align: right;">0.1104446</td>
 <td style="text-align: right;">0.0012566</td>
-<td style="text-align: right;">0.0411412</td>
-<td style="text-align: right;">0.1802849</td>
-<td style="text-align: right;">0.1391436</td>
+<td style="text-align: right;">0.0411401</td>
+<td style="text-align: right;">0.1802846</td>
+<td style="text-align: right;">0.1391446</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1217,11 +1227,11 @@ Note
 <td style="text-align: right;">0.1008805</td>
 <td style="text-align: right;">0.0055383</td>
 <td style="text-align: right;">19</td>
-<td style="text-align: right;">0.0940728</td>
+<td style="text-align: right;">0.0940716</td>
 <td style="text-align: right;">0.0009674</td>
-<td style="text-align: right;">0.0331189</td>
-<td style="text-align: right;">0.1551757</td>
-<td style="text-align: right;">0.1220568</td>
+<td style="text-align: right;">0.0331180</td>
+<td style="text-align: right;">0.1551742</td>
+<td style="text-align: right;">0.1220562</td>
 </tr>
 </tbody>
 </table>
@@ -1479,10 +1489,10 @@ Note
 <span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">term =</span> <span class="fu">recode</span>(</span>
 <span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      term,</span>
 <span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      <span class="st">`</span><span class="at">(Intercept)</span><span class="st">`</span> <span class="ot">=</span> <span class="st">"Intercept"</span>,</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_mean_age_16plus =</span> <span class="st">"Mean age 16+"</span>,</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_mean_age_adult =</span> <span class="st">"Mean age adult"</span>,</span>
 <span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_prob_female =</span> <span class="st">"Proportion female"</span>,</span>
 <span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_population_density =</span> <span class="st">"Population density"</span>,</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_share_no_car_households =</span> <span class="st">"No-car households"</span>,</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_car_access_hhshare =</span> <span class="st">"Car-access household share"</span>,</span>
 <span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_share_work_from_home =</span> <span class="st">"Work from home"</span>,</span>
 <span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_share_students =</span> <span class="st">"Full-time students"</span>,</span>
 <span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>      <span class="at">scaled_share_routine_semiroutine =</span> <span class="st">"Routine/semi-routine occupations"</span></span>
@@ -1514,7 +1524,7 @@ Note
 <td style="text-align: left;">13.9 pp</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Mean age 16+</td>
+<td style="text-align: left;">Mean age adult</td>
 <td style="text-align: left;">-0.7 pp</td>
 <td style="text-align: left;">-2.5 pp</td>
 <td style="text-align: left;">1.1 pp</td>
@@ -1532,10 +1542,10 @@ Note
 <td style="text-align: left;">1.7 pp</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">No-car households</td>
-<td style="text-align: left;">0.6 pp</td>
-<td style="text-align: left;">-1.1 pp</td>
-<td style="text-align: left;">2.3 pp</td>
+<td style="text-align: left;">Car-access household share</td>
+<td style="text-align: left;">-0.6 pp</td>
+<td style="text-align: left;">-2.3 pp</td>
+<td style="text-align: left;">1.1 pp</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Work from home</td>
@@ -1602,27 +1612,27 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">493.938</td>
-<td style="text-align: right;">88.921</td>
-<td style="text-align: right;">344.094</td>
-<td style="text-align: right;">485.432</td>
-<td style="text-align: right;">693.051</td>
+<td style="text-align: right;">493.948</td>
+<td style="text-align: right;">88.933</td>
+<td style="text-align: right;">344.103</td>
+<td style="text-align: right;">485.434</td>
+<td style="text-align: right;">693.106</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Phi for area_inla_id</td>
 <td style="text-align: right;">0.097</td>
-<td style="text-align: right;">0.088</td>
+<td style="text-align: right;">0.087</td>
 <td style="text-align: right;">0.008</td>
-<td style="text-align: right;">0.070</td>
-<td style="text-align: right;">0.336</td>
+<td style="text-align: right;">0.071</td>
+<td style="text-align: right;">0.335</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">622.342</td>
-<td style="text-align: right;">531.323</td>
-<td style="text-align: right;">92.077</td>
-<td style="text-align: right;">473.839</td>
-<td style="text-align: right;">2026.538</td>
+<td style="text-align: right;">623.020</td>
+<td style="text-align: right;">533.923</td>
+<td style="text-align: right;">92.176</td>
+<td style="text-align: right;">473.569</td>
+<td style="text-align: right;">2034.432</td>
 </tr>
 </tbody>
 </table>

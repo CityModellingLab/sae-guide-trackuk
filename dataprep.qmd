@@ -162,7 +162,7 @@ The walking survey indicator clean file has *one row per respondent-wave* and ke
 
 | Column | Meaning |
 |---|---|
-| `unit_id` | Respondent-wave identifier in the `time_id`_`case_no` format |
+| `unit_id` | Unique respondent identifier |
 | `time_id` | Survey year |
 | `area_id` | Synthetic MSOA assignment |
 | `strata` | Local Authority stratum |
@@ -170,7 +170,7 @@ The walking survey indicator clean file has *one row per respondent-wave* and ke
 | `weight` | Matched weight |
 | `age` | Respondent age |
 | `sex` | Respondent sex (`1` for Male, `2` for Female) |
-| `no_car` | Binary household car access predictor (`1` for no car/van, `0` for car/van available) |
+| `car_access` | Binary household car access predictor (`1` for car/van available, `0` for none available) |
 
 As an overview, the current cleaned data give the following usable observations for the walking estimand:
 
@@ -190,7 +190,7 @@ SAE models sometimes call for area-level predictors that plausibly explain spati
 | Group | Variables | Why include |
 |---|---|---|
 | Demographic summaries | Female share; mean adult age | Capture broad differences in population composition |
-| Core area predictors | Population density; share of households without a car or van | Capture urban form and car access |
+| Core area predictors | Population density; share of households with at least one car or van | Capture urban form and car access |
 | Additional area predictors | Share working from home; share full-time students; share in routine or semi-routine occupations | Capture wider socioeconomic and work-pattern differences related to travel behaviour |
 
 :::{.callout-note}

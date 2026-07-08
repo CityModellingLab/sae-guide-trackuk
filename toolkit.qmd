@@ -4,7 +4,7 @@ subtitle: "Bring your own survey into the workflow"
 number-sections: false
 ---
 
-This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and apply reusable scripts.
+This SAE toolkit shows how to adapt the tutorial workflow to your own survey, geography, and outcome by mapping your data to a common schema and applying reusable scripts.
 
 ## 1. Define the estimates you need
 
@@ -15,7 +15,7 @@ Start by defining the estimand that covers:
 - at which spatial scale;
 - over which time periods.
 
-In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an **area-time cell**. 
+In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This tutorial calls that combination an **area-time cell**.
 
 ## 2. Prepare the input tables
 
@@ -35,7 +35,7 @@ One row for every area-time cell that should receive an estimate. This table def
 
 One row per respondent-period for the outcome being estimated, together with the unit-level predictors.
 
-| Column | Meaning | 
+| Column | Meaning |
 |---|---|
 | `unit_id` | Respondent identifier |
 | `area_id` | Area assigned to the respondent |
@@ -43,7 +43,7 @@ One row per respondent-period for the outcome being estimated, together with the
 | `indicator` | Outcome used in estimation (binary or continuous) |
 | `weight` | Survey design weight |
 | `strata` | Survey stratum, if available |
-| predictors | Unit predictors (age, sex, car ownership, etc.) |
+| predictors | Unit predictors (age, sex, car access, etc.) |
 
 ### Area predictors
 
@@ -52,8 +52,8 @@ One row per area, with predictors used to explain spatial differences in the out
 | Column | Meaning |
 |---|---|
 | `area_id` | Area identifier |
-| `scaled_*` | Predictors (transformed) for modelling |
-| `raw_*` | Predictors (original) for interpretation and aggregation |
+| `scaled_*` | Predictors transformed for modelling |
+| `raw_*` | Predictors in original units for interpretation and aggregation |
 
 ### Poststratification table
 

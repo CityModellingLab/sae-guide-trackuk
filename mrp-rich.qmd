@@ -1,5 +1,5 @@
 ---
-title: "Small Area Estimation with Poststratification (MRP)"
+title: "Small Area Estimation with Poststratification"
 subtitle: "A Bayesian spatio-temporal extension"
 ---
 
@@ -99,9 +99,7 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using `age_band` (to reflect the age composition in the poststratification table), `sex`, `car_access`, and spatial and temporal random effects. We then produce predicted cell means for the binary frequent-walking indicator for each `age_band` × `sex` × `car_access` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
-
-One data limitation is that the available ONS poststratification table only contains `age_band` × `sex` population counts. To include `car_access`, we first estimate car-access probabilities for each `age_band` × `sex` cell and use them to extend the poststratification table. This avoids applying the same MSOA-level car-access share to every age-sex cell, but it introduces additional uncertainty because part of the population table is modelled rather than directly observed. A more conservative alternative would be to model walking using only `age_band` and `sex`, and use MSOA-level car-access share separately as a contextual area-level predictor.
+MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using `age_band`, `sex`, `car_access`, and spatial and temporal random effects. We then produce predicted cell means for the binary frequent-walking indicator for each `age_band` × `sex` × `car_access` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
 
 ## Prepare modelling and poststratification data
 
@@ -151,46 +149,46 @@ The MRP workflow needs two inputs:
 - `poststrat_data`, the population cells over which predictions are averaged.
 - `model_data`, the sampled respondent records used to fit the model;
 
-
 ### Population poststratification data
 
-First, we load the age-sex poststratification table and align its `age_band` and `sex` categories with the survey model data.
+First, we load the age-sex-car poststratification table and align its `age_band`, `sex`, and `car_access` categories with the survey model data.
 
 ```{r}
 #| label: load-poststratification-data
-age_band_levels <- c(
-  "15_19", "20_24", "25_29", "30_34",
-  "35_39", "40_44", "45_49", "50_54",
-  "55_59", "60_64", "65_69", "70_74",
-  "75_79", "80_84", "85_89", "90_plus"
-)
+age_band_levels <- c("16_24", "25_34", "35_49", "50_64", "65_plus")
 
-
-poststrat_age_sex <- read_csv(
-  file.path(base_path, "clean", "poststrat_freqwalk_age_sex_212325.csv"),
+poststrat_data <- read_csv(
+  file.path(base_path, "clean", "poststrat_freqwalk_age_sex_car_21.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
     area_id,
     msoa_name,
     time_id,
+    source_population_year,
     age_band = factor(age_band, levels = age_band_levels),
     sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
+    car_access,
     pop_count
   ) |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   filter(pop_count > 0) |>
-  drop_na(age_band, sex, pop_count, time_inla_id, area_inla_id)
+  drop_na(age_band, sex, car_access, pop_count, time_inla_id, area_inla_id) |>
+  arrange(time_id, area_inla_id, age_band, sex, car_access)
 
-head(poststrat_age_sex)
+head(poststrat_data)
 ```
+
+This table comes from Census 2021, so it is directly observed for one population year only. For the 2023 and 2025 survey waves, the same 2021 age-sex-car composition is reused for each MSOA. The model can still estimate different area-time outcomes through the temporal and spatial terms, but the population weights are held fixed. This is a practical way to use the richer joint table, with the caveat that local demographic and car-access composition is assumed not to change across the survey years.
+
 
 ### Respondent model data
 
 The survey file contains respondent-level age, sex, car access, and walking outcome fields.
 
-It is essential for the unit-level predictors to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same five-year bands and sex is also recoded as Male and Female.
+It is essential for the unit-level predictors to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same broad Census age bands and sex is also recoded as Male and Female.
+
 ```{r}
 #| label: load-mrp-survey-indicator
 walking_indicator <- read_csv(
@@ -202,7 +200,7 @@ walking_indicator_recoded <- walking_indicator |>
   mutate(
     age_band = cut(
       age,
-      breaks = c(seq(15, 90, by = 5), Inf),
+      breaks = c(16, 25, 35, 50, 65, Inf),
       labels = age_band_levels,
       right = FALSE
     ),
@@ -228,92 +226,6 @@ model_data <- walking_indicator_recoded |>
 
 head(model_data)
 ```
-
-### Adding car access into poststratification table
-
-The poststratification table has age-sex population counts, but it does not contain the joint distribution of age, sex, and car access. We first model respondent car access using the variables that are available in the poststratification table. We then predict the probability of `car_access = 1` for each age-sex-area-time population cell and use those probabilities to expand the poststratification table.
-
-```{r}
-#| label: estimate-car-access-probability
-car_access_extension_data <- bind_rows(
-  model_data |>
-    transmute(
-      row_type = "model",
-      car_access,
-      age_band,
-      sex,
-      time_inla_id,
-      area_inla_id
-    ),
-  poststrat_age_sex |>
-    transmute(
-      row_type = "poststrat",
-      car_access = NA_real_,
-      age_band,
-      sex,
-      time_inla_id,
-      area_inla_id
-    )
-)
-
-car_access_extension_formula <- car_access ~
-  age_band +
-  sex +
-  f(time_inla_id, model = "rw1", constr = TRUE) +
-  f(
-    area_inla_id,
-    model = "bym2",
-    graph = spatial_graph_file,
-    scale.model = TRUE,
-    constr = TRUE
-  )
-
-car_access_extension_fit <- inla(
-  formula = car_access_extension_formula,
-  data = car_access_extension_data,
-  family = "binomial",
-  Ntrials = 1,
-  control.predictor = list(compute = TRUE, link = 1)
-)
-
-poststrat_age_sex_extended <- poststrat_age_sex |>
-  mutate(
-    car_access_prob = car_access_extension_fit$summary.fitted.values$mean[
-      car_access_extension_data$row_type == "poststrat"
-    ]
-  )
-
-poststrat_age_sex_extended |>
-  select(area_id, time_id, age_band, sex, car_access_prob) |>
-  arrange(area_id, time_id, age_band, sex) |>
-  head()
-```
-With the modelled `car_access_prob` in place for the original poststratification table, we calculate the population count for the extended table now with an additional categorical variable.
-```{r}
-#| label: prepare-poststratification-frame
-poststrat_data <- bind_rows(
-  poststrat_age_sex_extended |>
-    mutate(car_access = 1, pop_count = pop_count * car_access_prob),
-  poststrat_age_sex_extended |>
-    mutate(car_access = 0, pop_count = pop_count * (1 - car_access_prob))
-) |>
-  select(
-    area_id,
-    msoa_name,
-    time_id,
-    age_band,
-    sex,
-    car_access,
-    pop_count,
-    time_inla_id,
-    area_inla_id
-  ) |>
-  arrange(time_id, area_inla_id, age_band, sex, car_access)
-
-head(poststrat_data)
-```
-
-With this approach, the trade-off is that the new poststratification table now contains a modelled variable instead of being based on the ground-truth that is observed joint Census cross-tabulation.
 
 ## Fit and evaluate models
 
@@ -451,7 +363,11 @@ mrp_fits[["M2 +CarAccess"]]$summary.fixed |>
   )
 ```
 
-At this point, having selected our final model, we use poststratification to convert its cell-level predictions into the target MSOA-year estimates. That means, each `age_band` x `sex` x `car_access` cell prediction is weighted by its population count, then aggregated within each MSOA-year. One the one hand, we can apply this calculation using the posterior mean cell values returned above, which gives a simple point-estimate for each cell:
+At this point, having selected our final model, we use poststratification to convert its cell-level predictions into the target MSOA-year estimates. That means, each `age_band` x `sex` x `car_access` cell prediction is weighted by its population count, then aggregated within each MSOA-year.
+
+The richer poststratification table is observed in Census 2021 only. To estimate later survey years, we reuse the same age-sex-car population counts for every wave and let the modelled time effect capture changes in the walking outcome. This gives area-year estimates for 2021, 2023, and 2025, but it does not update the population composition over time. If car access or age structure changes materially within an MSOA, those changes are not represented in the poststratification weights.
+
+We can apply this calculation using the posterior mean cell values returned above, which gives a simple point estimate for each cell:
 
 ```{r}
 #| label: poststratify-mrp-point-estimate
@@ -818,5 +734,5 @@ wrap_plots(bhf_difference_maps, ncol = 3) +
 #| label: export-mrp-results
 #| code-fold: true
 
-write_csv(final_mrp_results, file.path(base_path, "freqwalk_estimates_mrp.csv"))
+write_csv(final_mrp_results, file.path(base_path, "freqwalk_estimates_mrp_rich.csv"))
 ```

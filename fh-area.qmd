@@ -99,7 +99,7 @@ map_annotation_theme <- theme(
 
 Area-level SAE starts from the direct estimates created in the previous step. The Fay--Herriot model treats each direct estimate for an area-time cell, an *MSOA-year cell* in this example, as a noisy observation of the underlying frequent-walking rate, using its sampling variance to control how much confidence the model places in that value.
 
-The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, no-car households, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.
+The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, car-access household share, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.
 
 ## Prepare modelling data
 
@@ -127,10 +127,10 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv
   select(
     all_of(c(
       "area_id",
-      "scaled_mean_age_16plus",
+      "scaled_mean_age_adult",
       "scaled_prob_female",
       "scaled_population_density",
-      "scaled_share_no_car_households",
+      "scaled_car_access_hhshare",
       "scaled_share_work_from_home",
       "scaled_share_students",
       "scaled_share_routine_semiroutine"
@@ -226,7 +226,7 @@ Each model uses the direct estimate as the response. The sampling variance from 
 |---|---|---|
 | M0 | Baseline | Intercept plus independent area effect |
 | M1 | +Demographic | M0 plus mean age and proportion female |
-| M2 | +Core predictors | M1 plus population density and no-car households |
+| M2 | +Core predictors | M1 plus population density and car-access household share |
 | M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
 | M4 | +TempSpatial | M3 plus temporal random walk and BYM2 spatial MSOA effect |
 
@@ -254,32 +254,32 @@ m0_formula <- direct_estimate ~
   f(area_inla_id, model = "iid")
 
 m1_formula <- direct_estimate ~
-  scaled_mean_age_16plus +
+  scaled_mean_age_adult +
   scaled_prob_female +
   f(area_inla_id, model = "iid")
 
 m2_formula <- direct_estimate ~
-  scaled_mean_age_16plus +
+  scaled_mean_age_adult +
   scaled_prob_female +
   scaled_population_density +
-  scaled_share_no_car_households +
+  scaled_car_access_hhshare +
   f(area_inla_id, model = "iid")
 
 m3_formula <- direct_estimate ~
-  scaled_mean_age_16plus +
+  scaled_mean_age_adult +
   scaled_prob_female +
   scaled_population_density +
-  scaled_share_no_car_households +
+  scaled_car_access_hhshare +
   scaled_share_work_from_home +
   scaled_share_students +
   scaled_share_routine_semiroutine +
   f(area_inla_id, model = "iid")
 
 m4_formula <- direct_estimate ~
-  scaled_mean_age_16plus +
+  scaled_mean_age_adult +
   scaled_prob_female +
   scaled_population_density +
-  scaled_share_no_car_households +
+  scaled_car_access_hhshare +
   scaled_share_work_from_home +
   scaled_share_students +
   scaled_share_routine_semiroutine +
@@ -440,7 +440,7 @@ for (i in seq_len(length(fh_wave_years) - 1)) {
     theme(legend.position = "none")
 }
 
-wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = 2) +
+wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = length(fh_wave_years)) +
   plot_annotation(
     title = "Share of adults who walk for transport daily",
     subtitle = "Spatio-temporal FH model (M4) and 95% CI width",
@@ -600,7 +600,6 @@ for (i in seq_len(length(wave_years) - 1)) {
 direct_to_m0_ranked <- direct_to_m0 |>
   drop_na(variance_change) |>
   group_by(time_id) |>
-  # Rank within each wave by the original direct-estimate variance.
   arrange(direct_variance, .by_group = TRUE) |>
   mutate(variance_rank = row_number()) |>
   ungroup() |>
@@ -769,10 +768,10 @@ fh_fits[["M4 +TempSpatial"]]$summary.fixed |>
     term = recode(
       term,
       `(Intercept)` = "Intercept",
-      scaled_mean_age_16plus = "Mean age 16+",
+      scaled_mean_age_adult = "Mean age adult",
       scaled_prob_female = "Proportion female",
       scaled_population_density = "Population density",
-      scaled_share_no_car_households = "No-car households",
+      scaled_car_access_hhshare = "Car-access household share",
       scaled_share_work_from_home = "Work from home",
       scaled_share_students = "Full-time students",
       scaled_share_routine_semiroutine = "Routine/semi-routine occupations"

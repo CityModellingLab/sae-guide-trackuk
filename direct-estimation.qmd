@@ -2,7 +2,6 @@
 title: "Direct Estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
-
 ::: {.callout-note title="Theory in brief"}
 For an area-time cell $(j,t)$, the target is the population mean or proportion:
 
@@ -84,7 +83,7 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 |---|---|
 | `area_id` | Estimation area |
 | `time_id` | Survey wave / year |
-| `indicator` | Binary response: `1` if the adult walks for transport daily, `0` otherwise |
+| `indicator` | Binary response:<br>`1` if the adult walks for transport daily,<br>`0` otherwise |
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
@@ -134,7 +133,7 @@ direct_walk_counts <- survey_walk |>
   group_by(across(all_of(c("area_id", "time_id")))) |>
   summarise(n = n(), .groups = "drop")
 
-# Join
+# Join together
 direct_walk <- domain_frame |>
   left_join(direct_walk_estimates, by = c("area_id", "time_id")) |>
   left_join(direct_walk_counts, by = c("area_id", "time_id")) |>
@@ -158,7 +157,7 @@ Direct estimation provides a useful starting point because it makes three limita
 #| fig-height: 12
 #| out-width: "100%"
 #| fig-align: "center"
-#| 
+
 # Plotting functions
 base_map <- function(wave) {
   wave_direct <- direct_walk[direct_walk[["time_id"]] == wave, ]

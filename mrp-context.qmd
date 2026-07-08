@@ -1,5 +1,5 @@
 ---
-title: "Unit-Level SAE Modelling with Poststratification"
+title: "Small Area Estimation with Poststratification (MRP)"
 subtitle: "A Bayesian spatio-temporal extension"
 ---
 
@@ -99,9 +99,9 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using `age_band` and `sex`, plus spatial and temporal random effects. We include no-car access as a contextual MSOA-level predictor, using the share of households without car access rather than treating no-car as a poststratification cell variable. We then produce predicted cell means for each `age_band` × `sex` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+MRP extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For our estimand, we model the binary frequent-walking indicator using `age_band` and `sex`, plus spatial and temporal random effects. We include car access as a contextual MSOA-level predictor, using the share of households with car access rather than treating car-access as a poststratification cell variable. We then produce predicted cell means for each `age_band` × `sex` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
 
-The poststratification table therefore remains the observed `age_band` × `sex` population table. This keeps the aggregation table smaller and avoids modelling an unobserved age-sex-no-car population distribution, but it assumes the contextual MSOA no-car share is a sufficient area-level adjustment for car access.
+The poststratification table therefore remains the observed `age_band` × `sex` population table. This keeps the aggregation table smaller and avoids modelling an unobserved age-sex-car population distribution, but it assumes the contextual MSOA car-access share is a sufficient area-level adjustment for car access.
 
 ## Prepare modelling and poststratification data
 
@@ -110,7 +110,6 @@ As in previous methods, we first create consistent numeric indices for each MSOA
 ```{r}
 #| label: define-mrp-model-index
 #| code-fold: false
-#|
 area_levels <- sort(unique(domain_frame[["area_id"]]))
 time_levels <- sort(unique(domain_frame[["time_id"]]))
 
@@ -128,7 +127,6 @@ time_index <- tibble(
 ```{r}
 #| label: build-mrp-spatial-graph
 #| code-fold: false
-#|
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
   arrange(area_inla_id)
@@ -149,68 +147,8 @@ nb2INLA(
 
 The MRP workflow needs two inputs:
 
-- `model_data`, the sampled respondent records used to fit the model;
 - `poststrat_data`, the population cells over which predictions are averaged.
-
-### Respondent model data
-
-The survey file contains respondent-level age, sex, and walking outcome fields. For the contextual no-car specification, we also join the MSOA-level no-car household share from the area predictor file.
-
-It is essential for the predictors that define poststratification cells to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same five-year bands and sex is also recoded as Male and Female.
-```{r}
-#| label: load-mrp-survey-indicator
-walking_indicator <- read_csv(
-  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
-  show_col_types = FALSE
-)
-
-age_band_levels <- c(
-  "age_15_19", "age_20_24", "age_25_29", "age_30_34",
-  "age_35_39", "age_40_44", "age_45_49", "age_50_54",
-  "age_55_59", "age_60_64", "age_65_69", "age_70_74",
-  "age_75_79", "age_80_84", "age_85_89", "age_90_plus"
-)
-
-walking_indicator_recoded <- walking_indicator |>
-  mutate(
-    age_band = cut(
-      age,
-      breaks = c(seq(15, 90, by = 5), Inf),
-      labels = age_band_levels,
-      right = FALSE
-    ),
-    age_band = factor(age_band, levels = age_band_levels),
-    sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female"))
-  )
-
-area_context_predictors <- read_csv(
-  file.path(base_path, "clean", "areapred_freqwalk.csv"),
-  show_col_types = FALSE
-) |>
-  transmute(
-    area_id,
-    no_car_context = scaled_share_no_car_households
-  )
-
-model_data <- walking_indicator_recoded |>
-  left_join(area_index, by = "area_id") |>
-  left_join(time_index, by = "time_id") |>
-  left_join(area_context_predictors, by = "area_id") |>
-  drop_na(indicator, area_id, time_id, age_band, sex, no_car_context, time_inla_id, area_inla_id) |>
-  select(
-    unit_id,
-    area_id,
-    time_id,
-    indicator,
-    age_band,
-    sex,
-    no_car_context,
-    time_inla_id,
-    area_inla_id
-  )
-
-head(model_data)
-```
+- `model_data`, the sampled respondent records used to fit the model;
 
 ### Population poststratification data
 
@@ -219,8 +157,15 @@ First, we load the age-sex poststratification table and align its `age_band` and
 ```{r}
 #| label: load-poststratification-data
 
+age_band_levels <- c(
+  "15_19", "20_24", "25_29", "30_34",
+  "35_39", "40_44", "45_49", "50_54",
+  "55_59", "60_64", "65_69", "70_74",
+  "75_79", "80_84", "85_89", "90_plus"
+)
+
 poststrat_age_sex <- read_csv(
-  file.path(base_path, "clean", "poststrat_freqwalk.csv"),
+  file.path(base_path, "clean", "poststrat_freqwalk_age_sex_212325.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -239,10 +184,19 @@ poststrat_age_sex <- read_csv(
 head(poststrat_age_sex)
 ```
 
-The poststratification table has age-sex population counts only. We keep it at that grain, then attach the same MSOA-level contextual no-car predictor to every age-sex cell within each area.
+The poststratification table has age-sex population counts only. We keep it at that grain, then attach the same MSOA-level contextual car-access predictor to every age-sex cell within each area.
 
 ```{r}
 #| label: prepare-poststratification-frame
+area_context_predictors <- read_csv(
+  file.path(base_path, "clean", "areapred_freqwalk.csv"),
+  show_col_types = FALSE
+) |>
+  transmute(
+    area_id,
+    car_access_msoa = scaled_car_access_hhshare
+  )
+
 poststrat_data <- poststrat_age_sex |>
   left_join(area_context_predictors, by = "area_id") |>
   select(
@@ -251,18 +205,63 @@ poststrat_data <- poststrat_age_sex |>
     time_id,
     age_band,
     sex,
-    no_car_context,
+    car_access_msoa,
     pop_count,
     time_inla_id,
     area_inla_id
   ) |>
-  drop_na(no_car_context) |>
+  drop_na(car_access_msoa) |>
   arrange(time_id, area_inla_id, age_band, sex)
 
 head(poststrat_data)
 ```
 
-This approach uses no-car access as a contextual predictor. It does not represent within-area differences in car access across age-sex groups, but it avoids expanding the poststratification table with a modelled no-car distribution.
+This approach uses car access as a contextual predictor, and does not represent within-area differences in car access across age-sex groups.
+
+### Respondent model data
+
+The survey file contains respondent-level age, sex, and walking outcome fields. For the contextual car-access specification, we also join the MSOA-level car-access household share from the area predictor file.
+
+It is essential for the predictors that define poststratification cells to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same five-year bands and sex is also recoded as Male and Female.
+```{r}
+#| label: load-mrp-survey-indicator
+walking_indicator <- read_csv(
+  file.path(base_path, "clean", "surveyind_freqwalk.csv"),
+  show_col_types = FALSE
+)
+
+walking_indicator_recoded <- walking_indicator |>
+  mutate(
+    age_band = cut(
+      age,
+      breaks = c(seq(15, 90, by = 5), Inf),
+      labels = age_band_levels,
+      right = FALSE
+    ),
+    age_band = factor(age_band, levels = age_band_levels),
+    sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female"))
+  )
+
+
+model_data <- walking_indicator_recoded |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
+  left_join(area_context_predictors, by = "area_id") |>
+  drop_na(indicator, area_id, time_id, age_band, sex, car_access_msoa, time_inla_id, area_inla_id) |>
+  select(
+    unit_id,
+    area_id,
+    time_id,
+    indicator,
+    age_band,
+    sex,
+    car_access_msoa,
+    time_inla_id,
+    area_inla_id
+  )
+
+head(model_data)
+```
 
 ## Fit and evaluate models
 
@@ -272,7 +271,7 @@ We fit a sequence of binomial unit-level models. The outcome is the respondent w
 |---|---|---|
 | M0 | Baseline | Temporal RW1 plus BYM2 spatial MSOA effect |
 | M1 | +Demographic | M0 plus age band and sex |
-| M2 | +Nocar | M1 plus contextual MSOA no-car household share |
+| M2 | +CarAccess | M1 plus contextual MSOA car-access household share |
 
 ```{r}
 #| label: define-mrp-models
@@ -304,7 +303,7 @@ m1_formula <- indicator ~
 m2_formula <- indicator ~
   age_band +
   sex +
-  no_car_context +
+  car_access_msoa +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_inla_id,
@@ -317,7 +316,7 @@ m2_formula <- indicator ~
 model_formulas <- list(
   "M0 Baseline" = m0_formula,
   "M1 +Demographic" = m1_formula,
-  "M2 +Nocar" = m2_formula
+  "M2 +CarAccess" = m2_formula
 )
 ```
 
@@ -334,7 +333,7 @@ model_poststrat_data <- bind_rows(
       indicator,
       age_band,
       sex,
-      no_car_context,
+      car_access_msoa,
       time_inla_id,
       area_inla_id
     ),
@@ -344,7 +343,7 @@ model_poststrat_data <- bind_rows(
       indicator = NA_real_,
       age_band,
       sex,
-      no_car_context,
+      car_access_msoa,
       time_inla_id,
       area_inla_id
     )
@@ -364,7 +363,7 @@ fit_mrp_model <- function(formula) {
 mrp_fits <- lapply(model_formulas, fit_mrp_model)
 ```
 
-As before, we use `WAIC` as an initial model check. M2 demonstrates the lowest WAIC, meaning age, sex, and the contextual no-car predictor together best explain the variability among the binary outcome being modelled.
+As before, we use `WAIC` as an initial model check. M2 demonstrates the lowest WAIC, meaning age, sex, and the contextual car-access predictor together best explain the variability among the binary outcome being modelled.
 
 ```{r}
 #| label: compare-mrp-waic
@@ -384,12 +383,12 @@ model_waic <- imap_dfr(
 model_waic
 ```
 
-We can also expose the coefficients for all fixed effect terms for M2 to check whether the modelled relationships are logical. Here, we can inspect the age and sex terms alongside the contextual no-car coefficient, which represents differences associated with MSOAs where a higher share of households have no car access.
+We can also expose the coefficients for all fixed effect terms for M2 to check whether the modelled relationships are logical. Here, we can inspect the age and sex terms alongside the contextual car-access coefficient, which represents differences associated with MSOAs where a higher share of households have car access.
 
 ```{r}
-#| label: mrp-no-car-coefficient
+#| label: mrp-car-access-coefficient
 
-mrp_fits[["M2 +Nocar"]]$summary.fixed |>
+mrp_fits[["M2 +CarAccess"]]$summary.fixed |>
   as.data.frame() |>
   rownames_to_column("term") |>
   transmute(
@@ -405,7 +404,7 @@ At this point, having selected our final model, we use poststratification to con
 ```{r}
 #| label: poststratify-mrp-point-estimate
 
-mrp_final_fit <- mrp_fits[["M2 +Nocar"]]
+mrp_final_fit <- mrp_fits[["M2 +CarAccess"]]
 poststrat_cell_rows <- which(model_poststrat_data$row_type == "poststrat")
 
 cell_mean_predictions <- mrp_final_fit$summary.fitted.values |>
@@ -590,7 +589,7 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
     theme(legend.position = "none")
 }
 
-wrap_plots(c(estimate_maps, uncertainty_maps), ncol = 2) +
+wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
   plot_annotation(
     title = "Share of adults who walk for transport daily",
     subtitle = "MRP final model and 95% credible interval width",
@@ -664,7 +663,7 @@ mrp_scatter_comparison <- final_mrp_results |>
     fh_estimate
   ) |>
   pivot_longer(
-    cols = c(direct_estimate, bhf_estimate, fh_estimate),
+    cols = c(direct_estimate, fh_estimate, bhf_estimate),
     names_to = "comparison",
     values_to = "comparison_estimate"
   ) |>
@@ -674,6 +673,10 @@ mrp_scatter_comparison <- final_mrp_results |>
       direct_estimate = "Direct estimates",
       fh_estimate = "Fay-Herriot estimates",
       bhf_estimate = "BHF estimates"
+    ),
+    comparison = factor(
+      comparison,
+      levels = c("Direct estimates", "Fay-Herriot estimates", "BHF estimates")
     )
   ) |>
   filter(!is.na(comparison_estimate))
@@ -703,7 +706,7 @@ mrp_scatter_comparison |>
   )
 ```
 
-A closer look at the difference between the unit-level BHF and MRP estimates reveals subtle differences in how population composition is handled. The BHF workflow aggregates using area-level summaries, so it cannot fully represent the internal age and sex composition of each MSOA-year. MRP instead predicts over the `age_band` x `sex` poststratification cells and then weights those cells by their population counts. In this workbook, no-car access enters as a contextual MSOA-level predictor rather than as a poststratification cell dimension.
+A closer look at the difference between the unit-level BHF and MRP estimates reveals subtle differences in how population composition is handled. The BHF workflow aggregates using area-level summaries, so it cannot fully represent the internal age and sex composition of each MSOA-year. MRP instead predicts over the `age_band` x `sex` poststratification cells and then weights those cells by their population counts. In this workbook, car access enters as a contextual MSOA-level predictor rather than as a poststratification cell dimension.
 
 MRP estimates should therefore be higher than BHF estimates where the poststratification table gives more weight to groups with higher predicted frequent-walking rates. In this scenario, those groups are mainly younger adults and any sex-specific differences estimated by the model. Where these groups make up a larger share of a local population than the BHF area-level summaries can represent, MRP will tend to shift the estimate upward.
 
@@ -763,5 +766,5 @@ wrap_plots(bhf_difference_maps, ncol = 3) +
 #| label: export-mrp-results
 #| code-fold: true
 
-write_csv(final_mrp_results, file.path(base_path, "freqwalk_estimates_mrp_unit.csv"))
+write_csv(final_mrp_results, file.path(base_path, "freqwalk_estimates_mrp_context.csv"))
 ```

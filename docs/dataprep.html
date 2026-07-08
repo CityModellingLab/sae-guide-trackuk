@@ -148,11 +148,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">SAE with Poststrat (MRP1)</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./mrp-unit.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+    <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP2)</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./mrp-context.html" rel="" target="">
+ <span class="dropdown-text">SAE with Poststrat (MRP3)</span></a>
   </li>  
     </ul>
   </li>
@@ -244,13 +248,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">SAE with Poststrat (1)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./mrp-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (2)</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./mrp-context.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">SAE with Poststrat (3)</span></a>
   </div>
 </li>
       </ul>
@@ -471,7 +481,7 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td><code>unit_id</code></td>
-<td>Respondent-wave identifier in the <code>time_id</code>_<code>case_no</code> format</td>
+<td>Unique respondent identifier</td>
 </tr>
 <tr class="even">
 <td><code>time_id</code></td>
@@ -502,8 +512,8 @@ Target estimand
 <td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
 </tr>
 <tr class="odd">
-<td><code>no_car</code></td>
-<td>Binary household car access predictor (<code>1</code> for no car/van, <code>0</code> for car/van available)</td>
+<td><code>car_access</code></td>
+<td>Binary household car access predictor (<code>1</code> for car/van available, <code>0</code> for none available)</td>
 </tr>
 </tbody>
 </table>
@@ -562,7 +572,7 @@ Target estimand
 </tr>
 <tr class="even">
 <td>Core area predictors</td>
-<td>Population density; share of households without a car or van</td>
+<td>Population density; share of households with at least one car or van</td>
 <td>Capture urban form and car access</td>
 </tr>
 <tr class="odd">
