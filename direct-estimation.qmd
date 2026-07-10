@@ -19,7 +19,7 @@ $$
 :::
 
 ```{r}
-#| label: setup-direct
+#| label: direct-setup
 library(dplyr)
 library(readr)
 library(stringr)
@@ -43,7 +43,7 @@ domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), s
 ```
 
 ```{r}
-#| label: plotting-config
+#| label: direct-plot-config
 #| echo: false
 share_label <- label_percent(accuracy = 1)
 variance_label <- label_number(accuracy = 0.001)
@@ -64,6 +64,14 @@ map_text_theme <- theme(
 map_annotation_theme <- theme(
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+)
+
+chart_text_theme <- theme(
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+  axis.title = element_text(size = 14),
+  axis.text = element_text(size = 12),
+  legend.text = element_text(size = 12)
 )
 ```
 
@@ -87,7 +95,7 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
-#| label: load-survey-indicator
+#| label: direct-load
 survey_walk <- read_csv(file.path(base_path, "clean", "surveyind_freqwalk.csv"), show_col_types = FALSE) |>
   drop_na(indicator, weight, area_id, strata)
   
@@ -99,7 +107,7 @@ head(survey_walk)
 We use `svyby()` from the `survey` package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.
 
 ```{r}
-#| label: estimate-direct
+#| label: direct-estimate
 #| code-fold: false
 
 # Define survey design
@@ -151,7 +159,7 @@ Direct estimation provides a useful starting point because it makes three limita
 - **Zero within-area variance:** For binary indicators, small samples can contain only one response value, producing zero or unrealistically low variances.
 
 ```{r}
-#| label: direct-map-diagnostics
+#| label: direct-map
 #| echo: false
 #| fig-width: 16
 #| fig-height: 12
@@ -245,10 +253,8 @@ diagnostic_panel <- wrap_plots(
 diagnostic_panel
 ```
 
-
-
 ```{r}
-#| label: summarise-direct-estimates
+#| label: direct-summary
 direct_summary_by_wave <- direct_walk |>
   group_by(time_id) |>
   summarise(
@@ -274,7 +280,7 @@ direct_summary_by_wave
 In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE models** stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
 
 ```{r}
-#| label: export-direct-results
+#| label: direct-export
 #| code-fold: true
 write_csv(direct_walk, file.path(base_path, "freqwalk_estimates_direct.csv"))
 ```

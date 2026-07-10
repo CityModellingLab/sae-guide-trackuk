@@ -22,7 +22,7 @@ $$
 
 
 ```{r}
-#| label: setup-bhf
+#| label: bhf-setup
 library(dplyr)
 library(readr)
 library(stringr)
@@ -50,7 +50,7 @@ msoa_boundaries <- st_read(
 ```
 
 ```{r}
-#| label: plotting-config
+#| label: bhf-plot-config
 #| echo: false
 variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
@@ -95,7 +95,7 @@ The fitted model is then used to predict the target *MSOA-year* estimates using 
 Before preparing the model inputs, we create consistent numeric indices for each area and survey year so that `INLA` can attach random effects to the correct area and period, as well as a Queen-contiguity adjacency graph `.adj` as input, similar to what we did in the previous FH model estimation.
 
 ```{r}
-#| label: define-model-index
+#| label: bhf-index
 #| code-fold: false
 
 area_levels <- sort(unique(domain_frame[["area_id"]]))
@@ -112,7 +112,7 @@ time_index <- tibble(
 )
 ```
 ```{r}
-#| label: build-spatial-graph
+#| label: bhf-graph
 #| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
@@ -150,7 +150,7 @@ The respondent model data has one row per sampled person. For this example we us
 - `area_id` as the area identifier;
 
 ```{r}
-#| label: prepare-model-data
+#| label: bhf-model-data
 
 walking_indicator <- read_csv(file.path(base_path, "clean", "surveyind_freqwalk.csv"), show_col_types = FALSE) |>
   select(unit_id, time_id, area_id, indicator, age, sex, car_access) |>
@@ -181,7 +181,7 @@ head(model_data)
 The aggregation input contains the complete area-time grid we want to estimate, and the area-level mean of the unit-level predictor. Since unit-level `car_access` is binary, the area mean is simply the share of households with access to at least one car or van.
 
 ```{r}
-#| label: prepare-aggregation-data
+#| label: bhf-agg-data
 
 area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv"), show_col_types = FALSE) |>
   transmute(
@@ -227,7 +227,7 @@ We specify three unit-level models to evaluate at the next step:
 | M3 | +CarAccess | M2 plus respondent-level car access |
 
 ```{r}
-#| label: define-bhf-models
+#| label: bhf-specs
 #| code-fold: false
 
 m1_formula <- indicator ~
@@ -277,7 +277,7 @@ model_formulas <- list(
 Conceptually, the workflow has two steps: fit the respondent-level model, then evaluate it for each area-time. We implement this by binding the observed respondent rows and the area-time aggregation rows into a single input table before fitting. The area-time rows to have their estimates predicted have `indicator = NA`, signalling to `INLA` to return fitted values for them.
 
 ```{r}
-#| label: fit-bhf-models
+#| label: bhf-fit
 #| code-fold: false
 
 model_agg_data <- bind_rows(
@@ -322,7 +322,7 @@ When fitting unit-level BHF models with `INLA`, these arguments are needed:
 To compare the fitted models' overall performance, we again use `WAIC` as a first check, a global predictive-fit measure returned by `INLA`. Lower values indicate better expected prediction after penalising model complexity. Here, the lower WAIC for M3 shows that adding the car-access predictor improves the model predictive power as expected.
 
 ```{r}
-#| label: compare-bhf-waic
+#| label: bhf-waic
 
 model_waic <- imap_dfr(
   bhf_fits,
@@ -342,7 +342,7 @@ model_waic
 A look into the fitted coefficients for the fixed effect terms sheds more light about its predictive power. The `car_access` coefficient now compares respondents with access to a car or van against respondents without access, after accounting for age, sex, temporal structure, and spatial structure.
 
 ```{r}
-#| label: bhf-car-access-coefficient
+#| label: bhf-fixed
 
 bhf_fits[["M3 +CarAccess"]]$summary.fixed |>
   as.data.frame() |>
@@ -358,7 +358,7 @@ bhf_fits[["M3 +CarAccess"]]$summary.fixed |>
 Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `phi` help show what the temporal and spatial terms are doing in the selected model. 
 
 ```{r}
-#| label: diagnose-bhf-hyperparameters
+#| label: bhf-hyper
 
 bhf_fits[["M3 +CarAccess"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
@@ -376,7 +376,7 @@ Using M3 as the selected model, we extract predictions for the target area-time 
 In practice, modelled estimates should always be reported alongside the direct-estimate metadata. This keeps the sample size, direct estimate, and direct-estimate variance in the final output, making it easier to compare the modelled result with the survey evidence it builds on.
 
 ```{r}
-#| label: extract-bhf-final-predictions
+#| label: bhf-preds
 #| code-fold: false
 bhf_m3_fitted_values <- bhf_fits[["M3 +CarAccess"]]$summary.fitted.values |>
   as_tibble() |>
@@ -399,7 +399,7 @@ bhf_m3_results <- bind_cols(
 ```
 
 ```{r}
-#| label: extract-bhf-final-results
+#| label: bhf-results
 
 direct_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_direct.csv"), show_col_types = FALSE) |>
   select(area_id, time_id, n, direct_estimate, variance)
@@ -424,7 +424,7 @@ head(final_bhf_results)
 ```
 
 ```{r}
-#| label: map-bhf-final-results
+#| label: bhf-map
 #| echo: false
 #| fig-width: 16
 #| fig-height: 16
@@ -495,7 +495,7 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(bhf_wave_years)) +
 Compared with the mapped direct estimates, the modelled estimates show a more plausible spatial pattern: more urban areas in south Wales have higher rates of daily walking among adults, while the sporadic jaggedness seen in low-sample regions is smoothed. The scatterplot below shows that the BHF estimates are in fact much smoother than the direct estimates and closer to the Fay--Herriot estimates, as expected from a model-based approach that borrows strength across area-time cells.
 
 ```{r}
-#| label: load-bhf-comparison-results
+#| label: bhf-load-comp
 fh_final_estimates <- read_csv(file.path(base_path, "freqwalk_estimates_fh.csv"), show_col_types = FALSE) |>
   transmute(
     area_id,
@@ -508,7 +508,7 @@ bhf_estimates <- final_bhf_results |>
   relocate(direct_estimate, n, .after = time_id)
 ```
 ```{r}
-#| label: plot-bhf-comparison-scatter
+#| label: bhf-plot-comp
 #| echo: false
 #| fig-height: 6
 #| fig-width: 12
@@ -572,7 +572,7 @@ That said, although the model is fitted with unit-level predictors, the aggregat
 This limitation can be addressed by using a poststratification table that contains population counts for the joint distribution of the relevant predictors. This is the logic of **Multilevel Regression with Poststratification (MRP)**, predict the outcome for each poststratification cell, then aggregate those predictions using the corresponding population counts so the final estimates better reflect the target population composition.
 
 ```{r}
-#| label: export-bhf-results
+#| label: bhf-export
 #| code-fold: true
 
 write_csv(final_bhf_results, file.path(base_path, "freqwalk_estimates_bhf.csv"))

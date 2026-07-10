@@ -151,8 +151,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./mrp-context.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+    <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
+ <span class="dropdown-text">Validation diagnostics</span></a>
   </li>  
     </ul>
   </li>
@@ -249,8 +249,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./mrp-context.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+  <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Validation diagnostics</span></a>
   </div>
 </li>
       </ul>
@@ -376,7 +376,7 @@ Note
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="dataprep_files/figure-html/synthetic-geo-counts-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<p><img src="dataprep_files/figure-html/data-geo-counts-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
 </figure>
 </div>
 </div>
@@ -456,12 +456,8 @@ Target estimand
 <li>Use <code>SampleTravelWeight</code> in survey waves where this question was asked to a subsample and the corresponding weight for this module exists,</li>
 <li>Use <code>SampleAdultWeight</code> in survey waves where this question was asked to the main sample.</li>
 </ul>
-<p>The walking survey indicator clean file has <em>one row per respondent-wave</em> and keeps the unit predictors needed for unit-level SAE:</p>
+<p>The walking survey indicator input has <em>one row per respondent-wave</em>:</p>
 <table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Column</th>
@@ -487,23 +483,11 @@ Target estimand
 </tr>
 <tr class="odd">
 <td><code>indicator</code></td>
-<td>Binary walking response</td>
+<td>Binary response (i.e., <code>freq_walker</code>)</td>
 </tr>
 <tr class="even">
 <td><code>weight</code></td>
 <td>Matched weight</td>
-</tr>
-<tr class="odd">
-<td><code>age</code></td>
-<td>Respondent age</td>
-</tr>
-<tr class="even">
-<td><code>sex</code></td>
-<td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
-</tr>
-<tr class="odd">
-<td><code>car_access</code></td>
-<td>Binary household car access predictor (<code>1</code> for car/van available, <code>0</code> for none available)</td>
 </tr>
 </tbody>
 </table>
@@ -538,9 +522,39 @@ Target estimand
 </section>
 <section id="preparing-auxiliary-data" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</h3>
-<section id="area-predictors-and-area-summaries" class="level4" data-number="2.3.1">
-<h4 data-number="2.3.1" class="anchored" data-anchor-id="area-predictors-and-area-summaries"><span class="header-section-number">2.3.1</span> Area Predictors and Area Summaries</h4>
-<p>SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. The table keeps raw variables for interpretation and z-scored <code>scaled_*</code> variables for modelling. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or occupation patterns.</p>
+<section id="unit-level-predictors" class="level4" data-number="2.3.1">
+<h4 data-number="2.3.1" class="anchored" data-anchor-id="unit-level-predictors"><span class="header-section-number">2.3.1</span> Unit-Level Predictors</h4>
+<p>Unit-level SAE models need respondent predictors that can be used to model the target outcome. For this example, to model individual <code>freq_walker</code>, we extract or transform these unit-level predictors from the survey microdata <em>for each individual respondent row</em>:</p>
+<table class="table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>age</code></td>
+<td>Respondent age</td>
+</tr>
+<tr class="even">
+<td><code>sex</code></td>
+<td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
+</tr>
+<tr class="odd">
+<td><code>car_access</code></td>
+<td>Binary household car access predictor (<code>1</code> for car/van available, <code>0</code> for none available)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="area-predictors-and-area-summaries" class="level4" data-number="2.3.2">
+<h4 data-number="2.3.2" class="anchored" data-anchor-id="area-predictors-and-area-summaries"><span class="header-section-number">2.3.2</span> Area Predictors and Area Summaries</h4>
+<p>SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The six area predictors are drawn from <a href="https://www.nomisweb.co.uk/sources/census_2021_bulk">Census 2021 bulk tables</a> at MSOA level. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or study patterns.</p>
 <table class="table">
 <colgroup>
 <col style="width: 33%">
@@ -556,36 +570,23 @@ Target estimand
 </thead>
 <tbody>
 <tr class="odd">
-<td>Demographic summaries</td>
+<td>Demographic</td>
 <td>Female share; mean adult age</td>
 <td>Capture broad differences in population composition</td>
 </tr>
 <tr class="even">
-<td>Core area predictors</td>
+<td>Core</td>
 <td>Population density; share of households with at least one car or van</td>
 <td>Capture urban form and car access</td>
 </tr>
 <tr class="odd">
-<td>Additional area predictors</td>
-<td>Share working from home; share full-time students; share in routine or semi-routine occupations</td>
-<td>Capture wider socioeconomic and work-pattern differences related to travel behaviour</td>
+<td>Additional</td>
+<td>Share working from home; share full-time students</td>
+<td>Capture wider work- and study-pattern differences related to travel behaviour</td>
 </tr>
 </tbody>
 </table>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>These MSOA-level summaries can also be used as aggregation inputs after fitting a unit-level model to the survey microdata. See <a href="./bhf-unit.html">BHF unit-level model</a>.</p>
-</div>
-</div>
-<p>The area-predictor output <em>has one row per MSOA</em>:</p>
+<p>The area-predictor input <em>has one row per MSOA</em>:</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -604,19 +605,19 @@ Note
 </tr>
 <tr class="odd">
 <td><code>raw_*</code></td>
-<td>Raw predictors and summaries used in the models</td>
+<td>Raw predictors</td>
 </tr>
 <tr class="even">
 <td><code>scaled_*</code></td>
-<td>Z-scored versions of the raw predictors</td>
+<td>Z-scored versions for model input</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="poststratification-table" class="level4" data-number="2.3.2">
-<h4 data-number="2.3.2" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.2</span> Poststratification Table</h4>
-<p>A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics">ONS MSOA quinary age-by-sex population estimates</a> for the corresponding time periods, namely 2021, 2023, and 2025.</p>
-<p>The poststratification output <em>has one row per area-time-age-sex combination, or MSOA–year–age–sex in this example:</em></p>
+<section id="poststratification-table" class="level4" data-number="2.3.3">
+<h4 data-number="2.3.3" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.3.3</span> Poststratification Table</h4>
+<p>A population poststratification table is needed to apply the fitted estimation model to the target population. We use a three-variable poststratification table with <code>age_band</code>, <code>sex</code>, and <code>car_access</code>, sourced from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>. Because this detailed table is only observed for 2021, the 2021 age-sex-car composition is reused for the 2023 and 2025 estimands.</p>
+<p>The richer poststratification output <em>has one row per area-time-age-sex-car-access combination</em>:</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -635,13 +636,17 @@ Note
 </tr>
 <tr class="odd">
 <td><code>age_band</code></td>
-<td>5-year age band</td>
+<td>Census age band</td>
 </tr>
 <tr class="even">
 <td><code>sex</code></td>
 <td>Sex category (<code>1</code> for Male, <code>2</code> for Female)</td>
 </tr>
 <tr class="odd">
+<td><code>car_access</code></td>
+<td>Household car-access category</td>
+</tr>
+<tr class="even">
 <td><code>pop_count</code></td>
 <td>Population count</td>
 </tr>
@@ -657,7 +662,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The youngest available ONS age band is <code>15 to 19</code>, so age 15+ is used as the closest available match to the NSW adult definition of age 16+.</p>
+<p>We also demonstrate a shallower poststratification setup where counts are available for more years but only by age and sex. An example is the <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics">ONS MSOA quinary age-by-sex population estimates</a>.</p>
 </div>
 </div>
 

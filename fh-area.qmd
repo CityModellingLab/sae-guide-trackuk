@@ -1,5 +1,5 @@
 ---
-title: Area-Level SAE Modeling (Fay--Herriot)"
+title: Area-Level SAE Modeling (Fay--Herriot)
 subtitle: "A Bayesian spatio-temporal extension"
 ---
 
@@ -14,7 +14,7 @@ $$
 where $\psi_{jt}$ is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:
 
 $$
-\mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j.
+\mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j + v_t.
 $$
 
 Here $u_j$ borrows strength across areas while the target remains the area-time quantity $\mu_{jt}$. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. 
@@ -30,7 +30,7 @@ Here $u_j$ borrows strength across areas while the target remains the area-time 
 :::
 
 ```{r}
-#| label: setup-fh
+#| label: fh-setup
 library(dplyr)
 library(readr)
 library(stringr)
@@ -60,7 +60,7 @@ msoa_boundaries <- st_read(
 ```
 
 ```{r}
-#| label: plotting-config
+#| label: fh-plot-config
 #| echo: false
 variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
@@ -99,14 +99,14 @@ map_annotation_theme <- theme(
 
 Area-level SAE starts from the direct estimates created in the previous step. The Fay--Herriot model treats each direct estimate for an area-time cell, an *MSOA-year cell* in this example, as a noisy observation of the underlying frequent-walking rate, using its sampling variance to control how much confidence the model places in that value.
 
-The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with scaled MSOA-level predictors from ONS UK Census 2021, including age and sex summaries, population density, car-access household share, working-from-home share, student share, and occupation profile. This stabilises weak or missing direct estimates while retaining survey-design information.
+The model then borrows strength across MSOAs and survey years using spatial and temporal random effects, together with six scaled MSOA-level predictors from ONS UK Census 2021: age and sex summaries, population density, car-access household share, working-from-home share, and student share. This stabilises weak or missing direct estimates while retaining survey-design information.
 
 ## Prepare modelling data
 
 First we import the complete area-time direct-estimates, then load the area predictors.
 
 ```{r}
-#| label: load-direct-estimates
+#| label: fh-load-direct
 direct_walk <- read_csv(file.path(base_path, "freqwalk_estimates_direct.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
@@ -122,7 +122,7 @@ direct_walk <- read_csv(file.path(base_path, "freqwalk_estimates_direct.csv"), s
 head(direct_walk)
 ```
 ```{r}
-#| label: load-area-predictors
+#| label: fh-load-predictors
 area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
@@ -132,8 +132,7 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqwalk.csv
       "scaled_population_density",
       "scaled_car_access_hhshare",
       "scaled_share_work_from_home",
-      "scaled_share_students",
-      "scaled_share_routine_semiroutine"
+      "scaled_share_students"
     ))
   )
 head(area_predictors)
@@ -145,7 +144,7 @@ The missing or zero sampling variances of direct estimates need to be handled, b
 - Because the outcome is binary (`1` for walking daily, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
 
 ```{r}
-#| label: prepare-sampling-variance
+#| label: fh-variance
 #| code-fold: false
 
 max_variance <- max(direct_walk$variance[direct_walk$variance > 0], na.rm = TRUE)
@@ -164,7 +163,7 @@ direct_walk_model <- direct_walk |>
 `INLA` uses numeric indices to encode space and time, so we create `time_inla_id` and `area_inla_id` to index survey years and MSOAs. We also provide an adjacency graph for the structured spatial effect. Here, we use Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
 
 ```{r}
-#| label: define-model-index
+#| label: fh-index
 #| code-fold: false
 
 area_levels <- sort(unique(domain_frame[["area_id"]]))
@@ -181,7 +180,7 @@ time_index <- tibble(
 )
 ```
 ```{r}
-#| label: build-spatial-graph
+#| label: fh-graph
 #| code-fold: false
 
 msoa_boundaries_sorted <- msoa_boundaries |>
@@ -207,7 +206,7 @@ nb2INLA(
 Finally, we assemble the modelling data for `INLA` by comining the direct estimates with the area predictors and the numeric indices for the temporal and spatial effects.
 
 ```{r}
-#| label: prepare-model-data
+#| label: fh-model-data
 
 model_data <- direct_walk_model |>
   left_join(area_predictors, by = "area_id") |>
@@ -227,7 +226,7 @@ Each model uses the direct estimate as the response. The sampling variance from 
 | M0 | Baseline | Intercept plus independent area effect |
 | M1 | +Demographic | M0 plus mean age and proportion female |
 | M2 | +Core predictors | M1 plus population density and car-access household share |
-| M3 | +All predictors | M2 plus economic activities (full-time students, semi-routine/routine occupation, WFH) |
+| M3 | +All predictors | M2 plus working-from-home and full-time student shares |
 | M4 | +TempSpatial | M3 plus temporal random walk and BYM2 spatial MSOA effect |
 
 The choice of spatial and temporal models should reflect assumptions about how residual variation is structured across space and time.
@@ -246,7 +245,7 @@ The choice of spatial and temporal models should reflect assumptions about how r
 With only three survey years, `rw1` is suitable because it smooths neighbouring waves. Spatially, `bym2` is appropriate because it allows the model to borrow strength from neighbouring MSOAs while still capturing unstructured local variability.
 
 ```{r}
-#| label: fit-fh-models
+#| label: fh-fit
 #| code-fold: false
 
 m0_formula <- direct_estimate ~
@@ -272,7 +271,6 @@ m3_formula <- direct_estimate ~
   scaled_car_access_hhshare +
   scaled_share_work_from_home +
   scaled_share_students +
-  scaled_share_routine_semiroutine +
   f(area_inla_id, model = "iid")
 
 m4_formula <- direct_estimate ~
@@ -282,7 +280,6 @@ m4_formula <- direct_estimate ~
   scaled_car_access_hhshare +
   scaled_share_work_from_home +
   scaled_share_students +
-  scaled_share_routine_semiroutine +
   f(
     area_inla_id,
     model = "bym2",
@@ -331,7 +328,7 @@ When fitting area-level FH models with `INLA`, these arguments are needed:
 To compare the fitted models' overall performance, we use `WAIC` or (Widely Applicable Information Criterion) as a first check. It is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity.
 
 ```{r}
-#| label: compare-fh-waic
+#| label: fh-waic
 model_waic <- imap_dfr(
   fh_fits,
   \(fit, model_name) {
@@ -353,7 +350,7 @@ M4 has the lowest WAIC and M0 is the weakest model, suggesting that the full set
 To extract the estimates for this model, we take the fitted-value summary from the `INLA` object and bind it back to the area-time rows used in the model fit. For transparency, the output also retains the direct estimates, sample sizes, and direct-estimate variances. The final model estimates are reported with uncertainty, shown here using the width of the posterior 95% credible interval.
 
 ```{r}
-#| label: extract-fh-final-results
+#| label: fh-results
 #| code-fold: false
 
 model_output_frame <- model_data |>
@@ -380,7 +377,7 @@ final_fh_results <- bind_cols(model_output_frame, fitted_values) |>
 head(final_fh_results)
 ```
 ```{r}
-#| label: map-fh-final-results
+#| label: fh-map
 #| echo: false
 #| fig-width: 16
 #| fig-height: 16
@@ -457,7 +454,7 @@ Here we see that the Fay--Herriot estimates produce a more plausible spatial pat
 To better understand how the FH results are produced, we can inspect the contribution of each of the model components. The diagnostics below examine how estimates change as predictors, spatial structure, and temporal structure are added, and then review uncertainty and hyperparameters to understand where the model is borrowing strength most strongly.
 
 ```{r}
-#| label: collate-fh-model-results
+#| label: fh-collate
 
 model_output_frame <- model_data |>
   select(
@@ -500,7 +497,7 @@ fh_results <- imap_dfr(
 We start by comparing the direct estimates with M0, the baseline Fay-Herriot model with no area predictors, spatial structure, or temporal structure to understand how the FH models fundamentally handle noisy direct estimates. 
 
 ```{r}
-#| label: prepare-fh-baseline-comparison
+#| label: fh-baseline-data
 
 fh_wide <- fh_results |>
   # One row per area-time cell, with model outputs in separate columns.
@@ -531,7 +528,7 @@ wave_years <- sort(unique(fh_wide$time_id))
 ```
 
 ```{r}
-#| label: plot-fh-baseline-comparison
+#| label: fh-baseline-plot
 #| echo: false
 #| fig-width: 16
 #| fig-height: 12
@@ -652,7 +649,7 @@ direct_to_m0_ranked_plot <- ggplot(
 Area-time cells with high sampling variance contain less reliable local information, so M0 pulls them more strongly toward its baseline prediction. The Bayesian FH fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
 
 ```{r}
-#| label: summarise-fh-missing-direct
+#| label: fh-missing-direct
 fh_wide |>
   filter(is.na(direct_estimate) | is.na(variance)) |>
   transmute(
@@ -672,10 +669,10 @@ fh_wide |>
 
 After the WAIC comparison, we inspect local estimate changes to see where the model moves the target estimates and whether those movements are substantively plausible. In Fay-Herriot SAE, adding predictors changes the expected value for each area-time cell, and unstable direct estimates are pulled more strongly toward those updated model predictions when the predictors are relevant.
 
-For example, moving from M2 to M3 adds the occupation and work-pattern predictors. We map where M3 changes the estimates relative to M2, then summarise the predictor profiles of the areas with the largest upward and downward shifts (top and bottom 10%).
+For example, moving from M2 to M3 adds the work-from-home and student predictors. We map where M3 changes the estimates relative to M2, then summarise the predictor profiles of the areas with the largest upward and downward shifts (top and bottom 10%).
 
 ```{r}
-#| label: calculate-fh-predictor-change
+#| label: fh-predictor-change
 
 m2_to_m3 <- fh_wide |>
   transmute(
@@ -687,7 +684,7 @@ m2_to_m3 <- fh_wide |>
   distinct(area_id, .keep_all = TRUE)
 ```
 ```{r}
-#| label: map-fh-predictor-change
+#| label: fh-map-change
 #| echo: false
 #| fig-width: 8
 #| fig-height: 6
@@ -725,13 +722,12 @@ m2_to_m3_map_data |>
   map_text_theme
 ```
 ```{r}
-#| label: summarise-fh-predictor-change
+#| label: fh-change-summary
 m2_to_m3_drivers <- model_data |>
   select(
     area_id,
     work_from_home = scaled_share_work_from_home,
-    students = scaled_share_students,
-    routine_semiroutine = scaled_share_routine_semiroutine
+    students = scaled_share_students
   ) |>
   distinct(area_id, .keep_all = TRUE) |>
   left_join(m2_to_m3, by = "area_id") |>
@@ -751,16 +747,15 @@ m2_to_m3_drivers |>
   summarise(
     `Work from home` = mean(work_from_home, na.rm = TRUE),
     `Students` = mean(students, na.rm = TRUE),
-    `Routine or semi-routine` = mean(routine_semiroutine, na.rm = TRUE),
     .groups = "drop"
   )
 ```
-The areas whose estimates are raised most by M3 have higher work-from-home and student shares, and lower routine/semi-routine occupation shares. This pattern is plausible: students and remote workers may have more flexible daily routines, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport.
+The areas whose estimates are raised most by M3 have higher work-from-home and student shares. This pattern is plausible: students and remote workers may have more flexible daily schedules, shorter local trips, or lower car dependence, all of which could be associated with more walking for transport.
 
 The coefficient table below reports the fixed-effect terms from the final model M4. Because the predictors are standardised, each coefficient can be read as the expected percentage-point change in daily walking associated with a one-standard-deviation increase in that predictor.
 
 ```{r}
-#| label: summarise-fh-final-coefficients
+#| label: fh-fixed
 
 fh_fits[["M4 +TempSpatial"]]$summary.fixed |>
   as_tibble(rownames = "term") |>
@@ -773,8 +768,7 @@ fh_fits[["M4 +TempSpatial"]]$summary.fixed |>
       scaled_population_density = "Population density",
       scaled_car_access_hhshare = "Car-access household share",
       scaled_share_work_from_home = "Work from home",
-      scaled_share_students = "Full-time students",
-      scaled_share_routine_semiroutine = "Routine/semi-routine occupations"
+      scaled_share_students = "Full-time students"
     )
   ) |>
   transmute(
@@ -795,7 +789,7 @@ The contribution of the temporal and spatial effects on the model prediction can
 - `phi` is the BYM2 mixing parameter: it indicates how much of the area random effect is assigned to the structured spatial component versus the unstructured component. A value of `0.5` means the structured and unstructured components contribute roughly equally to the area random effect.
 
 ```{r}
-#| label: diagnose-fh-hyperparameters
+#| label: fh-hyper
 
 fh_fits[["M4 +TempSpatial"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
@@ -807,7 +801,7 @@ fh_fits[["M4 +TempSpatial"]]$summary.hyperpar |>
 The temporal effect has a higher `tau` than the spatial effect, indicating smaller differences between survey waves than between MSOAs. Meanwhile, the low spatial `phi` (less than `0.5`) indicates that only a small share of the remaining between-area variation follows the spatial weights; most of it remains unstructured.
 
 ```{r}
-#| label: export-fh-results
+#| label: fh-export
 #| code-fold: true
 write_csv(final_fh_results, file.path(base_path, "freqwalk_estimates_fh.csv"))
 ```

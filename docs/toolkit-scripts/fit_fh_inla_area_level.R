@@ -33,8 +33,7 @@ config <- list(
   ),
   extra_covariates = c(
     "scaled_share_work_from_home",
-    "scaled_share_students",
-    "scaled_share_routine_semiroutine"
+    "scaled_share_students"
   )
 )
 

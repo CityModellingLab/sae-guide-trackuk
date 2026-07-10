@@ -4,7 +4,7 @@ subtitle: "Define the estimand, area-time domain, survey indicator, and model in
 ---
 
 ```{r}
-#| label: setup-data-preparation
+#| label: data-setup
 #| code-fold: true
 
 library(dplyr)
@@ -34,7 +34,7 @@ msoa_boundaries <- st_read(
 ```
 
 ```{r}
-#| label: plotting-config
+#| label: data-plot-config
 #| echo: false
 missing_fill <- "grey85"
 legend_bar_width <- grid::unit(4.5, "cm")
@@ -47,6 +47,14 @@ count_map_theme <- theme_void(base_size = 11) +
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   )
+
+chart_text_theme <- theme(
+  plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 11, hjust = 0.5, colour = "grey30"),
+  axis.title = element_text(size = 12),
+  axis.text = element_text(size = 11),
+  legend.text = element_text(size = 11)
+)
 ```
 
 This data preparation step introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.
@@ -69,7 +77,7 @@ From here on, the survey period labels are simplified to their end year. For exa
 :::
 
 ```{r}
-#| label: synthetic-geo-counts
+#| label: data-geo-counts
 #| echo: false
 #| fig-width: 12
 #| fig-height: 7
@@ -158,7 +166,7 @@ Since the survey question was administered to all respondents during some survey
 - Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists, 
 - Use `SampleAdultWeight` in survey waves where this question was asked to the main sample. 
 
-The walking survey indicator clean file has *one row per respondent-wave* and keeps the unit predictors needed for unit-level SAE:
+The walking survey indicator input has *one row per respondent-wave*:
 
 | Column | Meaning |
 |---|---|
@@ -166,11 +174,8 @@ The walking survey indicator clean file has *one row per respondent-wave* and ke
 | `time_id` | Survey year |
 | `area_id` | Synthetic MSOA assignment |
 | `strata` | Local Authority stratum |
-| `indicator` | Binary walking response |
+| `indicator` | Binary response (i.e., `freq_walker`) |
 | `weight` | Matched weight |
-| `age` | Respondent age |
-| `sex` | Respondent sex (`1` for Male, `2` for Female) |
-| `car_access` | Binary household car access predictor (`1` for car/van available, `0` for none available) |
 
 As an overview, the current cleaned data give the following usable observations for the walking estimand:
 
@@ -183,43 +188,50 @@ As an overview, the current cleaned data give the following usable observations 
 Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
+#### Unit-Level Predictors
+
+Unit-level SAE models need respondent predictors that can be used to model the target outcome. For this example, to model individual `freq_walker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
+
+| Column | Meaning |
+|---|---|
+| `age` | Respondent age |
+| `sex` | Respondent sex (`1` for Male, `2` for Female) |
+| `car_access` | Binary household car access predictor (`1` for car/van available, `0` for none available) |
+
 #### Area Predictors and Area Summaries
 
-SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. The table keeps raw variables for interpretation and z-scored `scaled_*` variables for modelling. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or occupation patterns.
+SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The six area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or study patterns.
 
 | Group | Variables | Why include |
 |---|---|---|
-| Demographic summaries | Female share; mean adult age | Capture broad differences in population composition |
-| Core area predictors | Population density; share of households with at least one car or van | Capture urban form and car access |
-| Additional area predictors | Share working from home; share full-time students; share in routine or semi-routine occupations | Capture wider socioeconomic and work-pattern differences related to travel behaviour |
+| Demographic | Female share; mean adult age | Capture broad differences in population composition |
+| Core | Population density; share of households with at least one car or van | Capture urban form and car access |
+| Additional | Share working from home; share full-time students | Capture wider work- and study-pattern differences related to travel behaviour |
 
-:::{.callout-note}
-These MSOA-level summaries can also be used as aggregation inputs after fitting a unit-level model to the survey microdata. See [BHF unit-level model](bhf-unit.qmd).
-:::
-
-The area-predictor output *has one row per MSOA*:
+The area-predictor input *has one row per MSOA*:
 
 | Column | Meaning |
 |---|---|
 | `area_id` | MSOA estimation area |
 | `msoa_name` | MSOA name |
-| `raw_*` | Raw predictors and summaries used in the models |
-| `scaled_*` | Z-scored versions of the raw predictors |
+| `raw_*` | Raw predictors |
+| `scaled_*` | Z-scored versions for model input |
 
 #### Poststratification Table
 
-A population poststratification table is needed to apply the fitted estimation model to the target population. We built our poststratification tables from [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics) for the corresponding time periods, namely 2021, 2023, and 2025. 
+A population poststratification table is needed to apply the fitted estimation model to the target population. We use a three-variable poststratification table with `age_band`, `sex`, and `car_access`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census). Because this detailed table is only observed for 2021, the 2021 age-sex-car composition is reused for the 2023 and 2025 estimands.
 
-The poststratification output *has one row per area-time-age-sex combination, or MSOA--year--age--sex in this example:*
+The richer poststratification output *has one row per area-time-age-sex-car-access combination*:
 
 | Column | Meaning |
 |---|---|
 | `area_id` | MSOA estimation area |
 | `time_id` | Survey year |
-| `age_band` | 5-year age band |
+| `age_band` | Census age band |
 | `sex` | Sex category (`1` for Male, `2` for Female) |
+| `car_access` | Household car-access category |
 | `pop_count` | Population count |
 
 ::: {.callout-note}
-The youngest available ONS age band is `15 to 19`, so age 15+ is used as the closest available match to the NSW adult definition of age 16+.
+We also demonstrate a shallower poststratification setup where counts are available for more years but only by age and sex. An example is the [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics).
 :::
