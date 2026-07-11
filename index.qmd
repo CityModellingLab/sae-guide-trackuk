@@ -9,7 +9,7 @@ Small area estimation for Urban Analytics
 :::
 Urban researchers often want to use survey data at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. This may involve comparing places, monitoring change over time, identifying local inequalities, or linking survey outcomes to area-level conditions. The problem is that most surveys are not designed to support reliable estimates at all geographic levels and time periods. When responses are broken down by area and year, some cells have only a few respondents and others have none.
 
-This tutorial presents a workflow for choosing **spatio-temporal Bayesian small-area estimation (SAE)** methods for urban analytics. It focuses on method choice and shows how these approaches can be implemented in `INLA`.
+This gudie sets out a workflow for choosing **spatio-temporal Bayesian small-area estimation (SAE)** methods for urban analytics. It focuses on method choice and shows how these approaches can be implemented in `INLA`.
 :::
 
 ::: {.home-section}
@@ -17,17 +17,17 @@ This tutorial presents a workflow for choosing **spatio-temporal Bayesian small-
 Bayesian inference and INLA
 :::
 
-Bayesian inference is used to combine survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. One advantage is that uncertainty of a modelled estimate is returned as posterior distributions for each estimate, which faciliates interpretation in policy contexts.
+Bayesian inference is used to combine survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. One advantage is that uncertainty of a modelled estimate is returned as posterior distributions for each estimate, which facilitates interpretation in policy contexts.
 
 For code implementation, the examples are fitted with `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.
 :::
 
 ::: {.home-section}
 ::: {.section-label}
-Tutorial structure
+Contents
 :::
 
-The tutorial is selective. It covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.
+The practical guide covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.
 
 ![](assets/sae_method_select.png)
 
@@ -52,9 +52,7 @@ The tutorial is selective. It covers the SAE methods most relevant to common Urb
 Tutorial data
 :::
 
-The tutorial uses synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales).
-
-The maps and estimates illustrate the workflow and should not be interpreted as empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the [estimation setup step](dataprep.qmd).
+The worked data are synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales). The maps and estimates are workflow outputs, not empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the [estimation setup step](dataprep.qmd).
 :::
 
 ::: {.home-section}

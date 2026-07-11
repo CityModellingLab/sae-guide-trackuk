@@ -1,5 +1,5 @@
 ---
-title: "Validation Diagnostics"
+title: "Diagnostics"
 ---
 
 
@@ -99,43 +99,43 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
 }
 
 obs <- read_csv(
-  file.path(base_path, "clean", "validation_adult_walk_share.csv"),
+  file.path(base_path, "clean", "validation_bicycle_to_work_share.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
     area_id,
     time_id,
     msoa_name,
-    obs = validation_adult_walk_share
+    obs = validation_bicycle_to_work_share
   )
 
 estimate_sets <- bind_rows(
   read_estimate_set(
-    file.path(base_path, "freqwalk_estimates_direct.csv"),
+    file.path(base_path, "freqbike_estimates_direct.csv"),
     "Direct",
     "direct_estimate",
     variance_col = "variance"
   ),
   read_estimate_set(
-    file.path(base_path, "freqwalk_estimates_fh.csv"),
+    file.path(base_path, "freqbike_estimates_fh.csv"),
     "FH",
     "fh_estimate",
     ci_width_col = "fh_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqwalk_estimates_bhf.csv"),
+    file.path(base_path, "freqbike_estimates_bhf.csv"),
     "BHF",
     "bhf_estimate",
     ci_width_col = "bhf_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqwalk_estimates_mrp_shallow.csv"),
+    file.path(base_path, "freqbike_estimates_mrp_shallow.csv"),
     "MRP Shallow",
     "shallow_mrp_estimate",
     ci_width_col = "shallow_mrp_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqwalk_estimates_mrp_rich.csv"),
+    file.path(base_path, "freqbike_estimates_mrp_rich.csv"),
     "MRP Rich",
     "mrp_estimate",
     ci_width_col = "mrp_ci_width"
@@ -178,40 +178,94 @@ ci_width_axis_limits <- safe_limit(validation_residuals$ci_width)
 ## Estimate Distributions
 
 ```{r}
-#| label: val-estimate-density
+#| label: val-estimate-dist-rank
 #| echo: false
-#| fig-width: 12
+#| fig-width: 14
 #| fig-height: 20
 #| out-width: "100%"
 
-estimate_sets |>
+estimate_plot_data <- estimate_sets |>
   filter(!is.na(estimate)) |>
   mutate(
     method = factor(method, levels = method_levels),
     time_id = factor(time_id, levels = sort(unique(time_id)))
-  ) |>
-  ggplot(aes(x = estimate, colour = time_id, fill = time_id)) +
-  geom_density(linewidth = 0.8, alpha = 0.2) +
-  facet_wrap(vars(method), ncol = 1) +
-  scale_x_continuous(labels = share_label, limits = c(0, 1)) +
-  scale_colour_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
-  scale_fill_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
-  labs(
-    title = "Distribution of estimates",
-    subtitle = "Density curves compare MSOA estimates across survey years",
-    x = "Estimated share",
-    y = "Density",
-    colour = "Survey year",
-    fill = "Survey year"
-  ) +
-  chart_theme +
-  theme(panel.grid.minor = element_blank())
+  )
+
+rank_reference_year <- levels(estimate_plot_data$time_id)[1]
+
+estimate_rank <- estimate_plot_data |>
+  group_by(method) |>
+  filter(time_id == rank_reference_year) |>
+  arrange(estimate, .by_group = TRUE) |>
+  mutate(msoa_rank = row_number()) |>
+  ungroup() |>
+  select(method, area_id, msoa_rank)
+
+ranked_estimate_data <- estimate_plot_data |>
+  inner_join(estimate_rank, by = c("method", "area_id")) |>
+  mutate(method = factor(method, levels = method_levels))
+
+method_plots <- unlist(lapply(method_levels, function(method_name) {
+  show_year_legend <- method_name == method_levels[1]
+
+  distribution_plot <- estimate_plot_data |>
+    filter(method == method_name) |>
+    ggplot(aes(x = estimate, colour = time_id, fill = time_id)) +
+    geom_density(linewidth = 0.8, alpha = 0.2, show.legend = show_year_legend) +
+    scale_x_continuous(labels = share_label, limits = c(0, 0.1)) +
+    scale_colour_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
+    scale_fill_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
+    guides(fill = "none") +
+    labs(
+      title = method_name,
+      x = "Estimate",
+      y = "Density",
+      colour = "Survey year"
+    ) +
+    chart_theme +
+    theme(
+      panel.grid.minor = element_blank(),
+      plot.title = element_text(size = 12, face = "bold", hjust = 0),
+      legend.position = "bottom"
+    )
+
+  rank_plot <- ranked_estimate_data |>
+    filter(method == method_name) |>
+    ggplot(aes(x = msoa_rank, y = estimate, colour = time_id, group = time_id)) +
+    geom_line(linewidth = 0.5, alpha = 0.9, show.legend = FALSE) +
+    scale_y_continuous(labels = share_label, limits = c(0, 0.1)) +
+    scale_colour_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
+    labs(
+      x = "Ranked MSOA",
+      y = "Estimate",
+      colour = "Survey year"
+    ) +
+    chart_theme +
+    theme(
+      panel.grid.minor = element_blank(),
+      plot.title = element_blank(),
+      legend.position = "bottom"
+    )
+
+  list(distribution_plot, rank_plot)
+}), recursive = FALSE)
+
+wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
+  plot_annotation(
+    title = "Estimate distributions and ranked MSOAs",
+    subtitle = "Each row shows one method; MSOA ranks are ordered by the 2021 estimate within that method",
+    theme = annotation_theme
+  ) &
+  theme(legend.position = "bottom")
 ```
 
 ## Validation Residuals
 
 $$
-\text{obs} = \frac{\text{walk-to-work count}}{\text{total commuters}}
+\text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
+$$
+$$
+\text{residual} = \frac{\text{obs} - \text{estimate}}{\sqrt{estimate}}
 $$
 ```{r}
 #| label: val-resid-summary
@@ -264,8 +318,6 @@ map_data |>
   ) +
   plot_annotation(
     title = "Validation residuals",
-    subtitle = "Residual = (walk-to-work count / total commuters - 2021 estimate) / sqrt(2021 estimate)",
-    caption = "Blue: underestimation. Red: overestimation.",
     theme = annotation_theme
   )
 ```
@@ -302,12 +354,16 @@ validation_residuals |>
     x = "Residual",
     y = "MSOAs"
   ) +
-  chart_theme
+  chart_theme +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_blank()
+  )
 ```
+## CI width
 
 ```{r}
 #| label: val-ci-summary
-
 validation_residuals |>
   group_by(method) |>
   summarise(
@@ -354,7 +410,6 @@ map_data |>
   ) +
   plot_annotation(
     title = "CI widths",
-    subtitle = "Direct CI width is approximated from variance; model CI widths use exported intervals",
     theme = annotation_theme
   )
 ```
@@ -384,5 +439,9 @@ validation_residuals |>
     y = "MSOAs"
   ) +
   chart_theme +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_blank()
+  ) +
   theme(legend.position = "none")
 ```

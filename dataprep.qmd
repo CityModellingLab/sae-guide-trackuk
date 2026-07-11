@@ -61,15 +61,15 @@ This data preparation step introduces the survey source, defines the estimand, d
 
 ## The Survey Microdata
 
-The tutorial uses a synthetic teaching dataset based on the three survey waves of the **National Survey for Wales (NSW) in 2020-2021, 2022-2023, and 2024-2025**. 
+The analysis uses a synthetic teaching dataset based on three waves of the **National Survey for Wales (NSW): 2020-2021, 2022-2023, and 2024-2025**.
 
 The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. The cleaned microdata combine three survey periods into one harmonised survey microdata.
 
-Since the survey responses are originally geo-indexed at the Local Authority level, but the practical tutorial estimates indicators at MSOA level, we use a synthetic MSOA assignment. The cleaned survey file keeps each respondent's Local Authority and assigns a synthetic MSOA within that Local Authority using deterministic random allocation. As such, estimates produced from these data should not be read as substantive findings about individual MSOAs in Wales.
+The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. These MSOA assignments are for teaching and workflow development only, so the resulting MSOA estimates should not be interpreted as substantive findings about individual places.
 
 This design has two purposes:
 
-- **Higher spatial resolution for tutorial purposes.** Possible to demonstrate MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
+- **Higher spatial resolution.** The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
 - **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so we avoid presenting fine-grained respondent locations. 
 
 ::: {.callout-note}
@@ -151,14 +151,14 @@ In this tutorial, the estimand is:
 
 ### Preparing The Survey Indicator
 
-Since we are interested in whether our respondents walk frequently as the main mode of transport, we can code the indicator from `AtFrqWlk10`, the active-travel frequency question for walking. 
+Since we are interested in whether adult respondents cycle frequently as a means of transport, we can code the indicator from `AtFrqBke`, the active-travel frequency question for cycling. 
 
 | Field | Definition |
 |---|---|
-| Indicator name | `freq_walker` |
-| Raw survey variable | `AtFrqWlk10` |
-| Positive case | `AtFrqWlk10 == 1`, walking daily |
-| Negative case | Walking but not daily |
+| Indicator name | `freq_biker` |
+| Raw survey variable | `AtFrqBke` |
+| Positive case | `AtFrqBke` is `1` or `2`, treated as frequent cycling |
+| Negative case | Less frequent cycling or never cycling |
 | Missing | Missing, invalid, or not asked |
 
 Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding `weight` variable selection rule is as follows:
@@ -166,7 +166,7 @@ Since the survey question was administered to all respondents during some survey
 - Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists, 
 - Use `SampleAdultWeight` in survey waves where this question was asked to the main sample. 
 
-The walking survey indicator input has *one row per respondent-wave*:
+The cycling survey indicator input has *one row per respondent-wave*:
 
 | Column | Meaning |
 |---|---|
@@ -174,23 +174,23 @@ The walking survey indicator input has *one row per respondent-wave*:
 | `time_id` | Survey year |
 | `area_id` | Synthetic MSOA assignment |
 | `strata` | Local Authority stratum |
-| `indicator` | Binary response (i.e., `freq_walker`) |
+| `indicator` | Binary response for adults aged 16+ (i.e., `freq_biker`) |
 | `weight` | Matched weight |
 
-As an overview, the current cleaned data give the following usable observations for the walking estimand:
+As an overview, the current cleaned data give the following usable observations for the cycling estimand:
 
 | Year | Usable observations | MSOAs with usable observations |
 |---:|---:|---:|
-| 2021 | 3,450 | 408 |
-| 2023 (subsampled) | 1,999 | 406 |
-| 2025 | 5,893 | 408 |
+| 2021 | 3,438 | 408 |
+| 2023 (subsampled) | 1,989 | 405 |
+| 2025 | 5,886 | 408 |
 
 Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
 #### Unit-Level Predictors
 
-Unit-level SAE models need respondent predictors that can be used to model the target outcome. For this example, to model individual `freq_walker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
+Unit-level SAE models need respondent predictors that can be used to model the target outcome. For this example, to model individual `freq_biker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
 
 | Column | Meaning |
 |---|---|
@@ -200,13 +200,7 @@ Unit-level SAE models need respondent predictors that can be used to model the t
 
 #### Area Predictors and Area Summaries
 
-SAE models sometimes call for area-level predictors that plausibly explain spatial differences in daily walking. The six area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. These variables are chosen because daily walking is likely to vary with population composition, density, car access, and local work or study patterns.
-
-| Group | Variables | Why include |
-|---|---|---|
-| Demographic | Female share; mean adult age | Capture broad differences in population composition |
-| Core | Population density; share of households with at least one car or van | Capture urban form and car access |
-| Additional | Share working from home; share full-time students | Capture wider work- and study-pattern differences related to travel behaviour |
+SAE models sometimes call for area-level predictors that plausibly explain spatial differences in frequent cycling. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, car access, and urban form.
 
 The area-predictor input *has one row per MSOA*:
 
@@ -214,14 +208,14 @@ The area-predictor input *has one row per MSOA*:
 |---|---|
 | `area_id` | MSOA estimation area |
 | `msoa_name` | MSOA name |
-| `raw_*` | Raw predictors |
-| `scaled_*` | Z-scored versions for model input |
+| Raw predictors | `mean_age_adult`; `prob_female`; `population_density`; `car_access_hhshare`  |
+| Scaled predictors | Z-scored versions for model input |
 
 #### Poststratification Table
 
 A population poststratification table is needed to apply the fitted estimation model to the target population. We use a three-variable poststratification table with `age_band`, `sex`, and `car_access`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census). Because this detailed table is only observed for 2021, the 2021 age-sex-car composition is reused for the 2023 and 2025 estimands.
 
-The richer poststratification output *has one row per area-time-age-sex-car-access combination*:
+The poststratification output *has one row per area-time-age-sex-car-access combination*:
 
 | Column | Meaning |
 |---|---|
@@ -230,8 +224,8 @@ The richer poststratification output *has one row per area-time-age-sex-car-acce
 | `age_band` | Census age band |
 | `sex` | Sex category (`1` for Male, `2` for Female) |
 | `car_access` | Household car-access category |
-| `pop_count` | Population count |
+| `pop_count` | Adult population count |
 
 ::: {.callout-note}
-We also demonstrate a shallower poststratification setup where counts are available for more years but only by age and sex. An example is the [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics).
+A shallower poststratification setup is also possible when population counts are available for more years but only by age and sex. One example is the [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics).
 :::

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Validation Diagnostics</title>
+<title>Small Area Estimation for Urban Analytics - Diagnostics</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -306,6 +306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul>
   <li><a href="#estimate-distributions" id="toc-estimate-distributions" class="nav-link active" data-scroll-target="#estimate-distributions"><span class="header-section-number">1</span> Estimate Distributions</a></li>
   <li><a href="#validation-residuals" id="toc-validation-residuals" class="nav-link" data-scroll-target="#validation-residuals"><span class="header-section-number">2</span> Validation Residuals</a></li>
+  <li><a href="#ci-width" id="toc-ci-width" class="nav-link" data-scroll-target="#ci-width"><span class="header-section-number">3</span> CI width</a></li>
   </ul>
 </nav>
     </div>
@@ -314,7 +315,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Validation Diagnostics</h1>
+<h1 class="title">Diagnostics</h1>
 </div>
 
 
@@ -329,20 +330,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>The validation residual is <code>(obs - estimate) / sqrt(estimate)</code>, where <code>obs</code> is the walk-to-work count divided by total commuters:</p>
-<p><span class="math display">
-\text{obs} = \frac{\text{walk-to-work count}}{\text{total commuters}}
-</span></p>
 <section id="estimate-distributions" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="estimate-distributions"><span class="header-section-number">1</span> Estimate Distributions</h2>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-estimate-density-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="diagnostics_files/figure-html/val-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 </section>
 <section id="validation-residuals" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="validation-residuals"><span class="header-section-number">2</span> Validation Residuals</h2>
+<p><span class="math display">
+\text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
+</span> <span class="math display">
+\text{residual} = \frac{\text{obs} - \text{estimate}}{\sqrt{estimate}}
+</span></p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -380,37 +382,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td style="text-align: left;">Direct</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">0.31</td>
-<td style="text-align: right;">0.30</td>
-<td style="text-align: right;">0.58</td>
+<td style="text-align: right;">0.33</td>
+<td style="text-align: right;">0.29</td>
+<td style="text-align: right;">0.51</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">FH</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">0.16</td>
-<td style="text-align: right;">0.17</td>
-<td style="text-align: right;">0.27</td>
+<td style="text-align: right;">0.18</td>
+<td style="text-align: right;">0.19</td>
+<td style="text-align: right;">0.22</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">BHF</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">0.19</td>
-<td style="text-align: right;">0.21</td>
-<td style="text-align: right;">0.29</td>
+<td style="text-align: right;">0.10</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">0.15</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">MRP Shallow</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">0.20</td>
-<td style="text-align: right;">0.22</td>
-<td style="text-align: right;">0.30</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">0.15</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">MRP Rich</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">0.19</td>
-<td style="text-align: right;">0.21</td>
-<td style="text-align: right;">0.29</td>
+<td style="text-align: right;">0.10</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">0.14</td>
 </tr>
 </tbody>
 </table>
@@ -427,6 +429,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><img src="diagnostics_files/figure-html/val-resid-density-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+</section>
+<section id="ci-width" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="ci-width"><span class="header-section-number">3</span> CI width</h2>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -464,37 +469,37 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td style="text-align: left;">Direct</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">32.95</td>
-<td style="text-align: right;">27.60</td>
-<td style="text-align: right;">80.50</td>
+<td style="text-align: right;">6.78</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">27.14</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">FH</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">15.17</td>
-<td style="text-align: right;">15.91</td>
-<td style="text-align: right;">17.57</td>
+<td style="text-align: right;">4.15</td>
+<td style="text-align: right;">4.03</td>
+<td style="text-align: right;">4.72</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">BHF</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">9.99</td>
-<td style="text-align: right;">9.74</td>
-<td style="text-align: right;">11.69</td>
+<td style="text-align: right;">3.93</td>
+<td style="text-align: right;">3.86</td>
+<td style="text-align: right;">4.59</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">MRP Shallow</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">9.95</td>
-<td style="text-align: right;">9.43</td>
-<td style="text-align: right;">12.61</td>
+<td style="text-align: right;">3.56</td>
+<td style="text-align: right;">3.22</td>
+<td style="text-align: right;">4.82</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">MRP Rich</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">9.51</td>
-<td style="text-align: right;">9.08</td>
-<td style="text-align: right;">12.13</td>
+<td style="text-align: right;">3.45</td>
+<td style="text-align: right;">3.12</td>
+<td style="text-align: right;">4.92</td>
 </tr>
 </tbody>
 </table>

@@ -9,7 +9,7 @@ $$
 \mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
 $$
 
-If respondent $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio estimate is:
+If respondent $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio direct estimate for area-time cell $(j,t)$ is:
 
 $$
 \hat{\mu}^{w}_{jt} =
@@ -79,27 +79,27 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave. For each *MSOA-year cell*, we calculate a Horvitz--Thompson weighted proportion using the respondent walking outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.
+Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave. For each *MSOA-year cell*, we calculate a Horvitz--Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.
 
 The output is a transparent survey-based baseline: a direct estimate, sampling variance, and usable sample size for each observed *MSOA-year cell*. These estimates show where the survey evidence is strong, sparse, missing, or unstable, helping us decide whether model-based small area estimation is needed.
 
 ## Prepare survey data
 
-We use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:
+We use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the cycling estimand. After filtering, each retained row has a valid binary cycling response, matched weight, MSOA assignment, wave label, and survey stratum:
 
 | Column | Role |
 |---|---|
 | `area_id` | Estimation area |
 | `time_id` | Survey wave / year |
-| `indicator` | Binary response:<br>`1` if the adult walks for transport daily,<br>`0` otherwise |
+| `indicator` | Binary response:<br>`1` if the adult cycles for transport frequently,<br>`0` otherwise |
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
 #| label: direct-load
-survey_walk <- read_csv(file.path(base_path, "clean", "surveyind_freqwalk.csv"), show_col_types = FALSE) |>
+survey_bike <- read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
   drop_na(indicator, weight, area_id, strata)
   
-head(survey_walk)
+head(survey_bike)
 ```
 
 ## Calculate direct estimates
@@ -111,18 +111,18 @@ We use `svyby()` from the `survey` package to compute the weighted share and its
 #| code-fold: false
 
 # Define survey design
-walk_design <- svydesign(
+bike_design <- svydesign(
   ids = as.formula("~1"),
   strata = as.formula("~strata"),
   weights = as.formula("~weight"),
-  data = survey_walk
+  data = survey_bike
 )
 
 # Calculate direct estimate and uncertainty
-direct_walk_estimates <- svyby(
+direct_bike_estimates <- svyby(
   formula = as.formula("~indicator"),
   by = as.formula("~area_id + time_id"),
-  design = walk_design,
+  design = bike_design,
   FUN = svymean,
   vartype = "se",
   na.rm = TRUE,
@@ -137,17 +137,17 @@ direct_walk_estimates <- svyby(
   )
 
 # Calculate sample size per area-time cell
-direct_walk_counts <- survey_walk |>
+direct_bike_counts <- survey_bike |>
   group_by(across(all_of(c("area_id", "time_id")))) |>
   summarise(n = n(), .groups = "drop")
 
 # Join together
-direct_walk <- domain_frame |>
-  left_join(direct_walk_estimates, by = c("area_id", "time_id")) |>
-  left_join(direct_walk_counts, by = c("area_id", "time_id")) |>
+direct_bike <- domain_frame |>
+  left_join(direct_bike_estimates, by = c("area_id", "time_id")) |>
+  left_join(direct_bike_counts, by = c("area_id", "time_id")) |>
   mutate(n = replace_na(n, 0L))
 
-head(direct_walk)
+head(direct_bike)
 ```
 
 ## Assess precision and coverage
@@ -168,7 +168,7 @@ Direct estimation provides a useful starting point because it makes three limita
 
 # Plotting functions
 base_map <- function(wave) {
-  wave_direct <- direct_walk[direct_walk[["time_id"]] == wave, ]
+  wave_direct <- direct_bike[direct_bike[["time_id"]] == wave, ]
 
   wave_data <- msoa_boundaries |>
     left_join(wave_direct, by = "area_id")
@@ -197,7 +197,7 @@ plot_uncertainty <- function(wave) {
       palette = "Oranges",
       direction = 1,
       na.value = missing_fill,
-      limits = c(0, max(direct_walk$variance, na.rm = TRUE)),
+      limits = c(0, max(direct_bike$variance, na.rm = TRUE)),
       labels = variance_label,
       name = "Variance"
     )
@@ -209,7 +209,7 @@ plot_sample <- function(wave) {
     scale_fill_gradient(
       low = "#fff8e1",
       high = "#4f3b10",
-      limits = c(0, max(direct_walk$n, na.rm = TRUE)),
+      limits = c(0, max(direct_bike$n, na.rm = TRUE)),
       na.value = missing_fill,
       name = "Sample size"
     )
@@ -245,31 +245,32 @@ diagnostic_panel <- wrap_plots(
   ncol = 3, nrow = 3
 ) +
   plot_annotation(
-    title = "Share of adults who walk for transport daily",
+    title = "Share of adults who cycle for transport frequently",
     subtitle = "Direct estimates, sampling variance, and usable sample size by wave",
     theme = map_annotation_theme
   )
 
 diagnostic_panel
 ```
+In case of unstable or unavailable direct estimates (median `n = 4`, 3 missing direct estimates) at the target area-time scale as seen above, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. 
+
+There are two approaches: 
+
+- **Area-level SAE models** stabilise direct area estimates, and
+- **Unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
+
+The choice between the two should be based on the quality of the direct estimates as modelling input and whether the survey microdata can provide unit-level predictors that can explain the individual variability of the indicator in question.
 
 ```{r}
 #| label: direct-summary
-direct_summary_by_wave <- direct_walk |>
+direct_summary_by_wave <- direct_bike |>
   group_by(time_id) |>
   summarise(
     `Usable observations` = sum(n),
     `MSOAs without direct estimates` = sum(is.na(direct_estimate)),
+    `MSOAs without variance` = sum(is.na(variance)),
     `MSOAs with zero variance` = sum(variance == 0, na.rm = TRUE),
     `Median sample size` = median(n),
-    `Median direct estimate` = round(
-      median(direct_estimate, na.rm = TRUE),
-      3
-    ),
-    `Median variance` = round(
-      median(variance, na.rm = TRUE),
-      5
-    ),
     .groups = "drop"
   ) |>
   rename(`Wave` = all_of("time_id"))
@@ -277,10 +278,12 @@ direct_summary_by_wave <- direct_walk |>
 direct_summary_by_wave
 ```
 
-In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: **Area-level SAE models** stabilise direct area estimates, while **unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
+The summary suggests that area-level modelling has important limitations in this setting. Because the outcome is binary, many MSOA-year cells have little direct survey information because small binary samples often produce all-zero/all-one responses. It therefore motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before estimates are aggregated back to areas.
+
+That said, we still fit the area-level model at the next step to demonstrate how much stabilisation is possible before moving to unit-level modelling.
 
 ```{r}
 #| label: direct-export
 #| code-fold: true
-write_csv(direct_walk, file.path(base_path, "freqwalk_estimates_direct.csv"))
+write_csv(direct_bike, file.path(base_path, "freqbike_estimates_direct.csv"))
 ```

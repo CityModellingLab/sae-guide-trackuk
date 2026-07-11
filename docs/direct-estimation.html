@@ -167,7 +167,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./std-resid-map.html" rel="" target="">
+    <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
  <span class="dropdown-text">Validation diagnostics</span></a>
   </li>  
     </ul>
@@ -265,7 +265,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./std-resid-map.html" class="sidebar-item-text sidebar-link">
+  <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Validation diagnostics</span></a>
   </div>
 </li>
@@ -346,7 +346,7 @@ Theory in brief
 <p><span class="math display">
 \mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
 </span></p>
-<p>If respondent <span class="math inline">i</span> has inclusion probability <span class="math inline">\pi_{ijt}</span> and design weight <span class="math inline">w_{ijt}=1/\pi_{ijt}</span>, the Horvitz–Thompson ratio estimate is:</p>
+<p>If respondent <span class="math inline">i</span> has inclusion probability <span class="math inline">\pi_{ijt}</span> and design weight <span class="math inline">w_{ijt}=1/\pi_{ijt}</span>, the Horvitz–Thompson ratio direct estimate for area-time cell <span class="math inline">(j,t)</span> is:</p>
 <p><span class="math display">
 \hat{\mu}^{w}_{jt} =
 \frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
@@ -393,19 +393,19 @@ Target estimand
 <div class="callout-body-container callout-body">
 <div class="estimand-grid">
 <ul>
-<li><strong>Outcome and Population:</strong> Share of Adults who walk for transport daily</li>
+<li><strong>Outcome and Population:</strong> Share of adults who cycle for transport frequently</li>
 <li><strong>Geography:</strong> MSOAs in Wales</li>
 <li><strong>Time:</strong> 2021, 2023, and 2025</li>
 </ul>
 </div>
 </div>
 </div>
-<p>Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or <em>MSOA-year cell</em> in this example, is calculated only from the survey respondents observed in that area and wave. For each <em>MSOA-year cell</em>, we calculate a Horvitz–Thompson weighted proportion using the respondent walking outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.</p>
+<p>Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or <em>MSOA-year cell</em> in this example, is calculated only from the survey respondents observed in that area and wave. For each <em>MSOA-year cell</em>, we calculate a Horvitz–Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.</p>
 <p>The output is a transparent survey-based baseline: a direct estimate, sampling variance, and usable sample size for each observed <em>MSOA-year cell</em>. These estimates show where the survey evidence is strong, sparse, missing, or unstable, helping us decide whether model-based small area estimation is needed.</p>
 </section>
 <section id="prepare-survey-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-survey-data"><span class="header-section-number">1</span> Prepare survey data</h2>
-<p>We use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the walking estimand. After filtering, each retained row has a valid binary walking response, matched weight, MSOA assignment, wave label, and survey stratum:</p>
+<p>We use a Horvitz–Thompson weighted proportion among usable adult respondents. The cleaned survey microdata input has one row per respondent-wave for the cycling estimand. After filtering, each retained row has a valid binary cycling response, matched weight, MSOA assignment, wave label, and survey stratum:</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -428,7 +428,7 @@ Target estimand
 </tr>
 <tr class="odd">
 <td><code>indicator</code></td>
-<td>Binary response:<br><code>1</code> if the adult walks for transport daily,<br><code>0</code> otherwise</td>
+<td>Binary response:<br><code>1</code> if the adult cycles for transport frequently,<br><code>0</code> otherwise</td>
 </tr>
 <tr class="even">
 <td><code>weight</code></td>
@@ -443,10 +443,10 @@ Target estimand
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>survey_walk <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqwalk.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>survey_bike <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqbike.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(indicator, weight, area_id, strata)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(survey_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(survey_bike)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -514,7 +514,7 @@ Target estimand
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: left;">W06000001</td>
-<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">0.4728312</td>
 <td style="text-align: right;">1</td>
 <td style="text-align: right;">52</td>
@@ -553,18 +553,18 @@ Target estimand
 <p>We use <code>svyby()</code> from the <code>survey</code> package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define survey design</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>walk_design <span class="ot">&lt;-</span> <span class="fu">svydesign</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>bike_design <span class="ot">&lt;-</span> <span class="fu">svydesign</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">ids =</span> <span class="fu">as.formula</span>(<span class="st">"~1"</span>),</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">strata =</span> <span class="fu">as.formula</span>(<span class="st">"~strata"</span>),</span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">weights =</span> <span class="fu">as.formula</span>(<span class="st">"~weight"</span>),</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> survey_walk</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> survey_bike</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate direct estimate and uncertainty</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>direct_walk_estimates <span class="ot">&lt;-</span> <span class="fu">svyby</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>direct_bike_estimates <span class="ot">&lt;-</span> <span class="fu">svyby</span>(</span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">as.formula</span>(<span class="st">"~indicator"</span>),</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">as.formula</span>(<span class="st">"~area_id + time_id"</span>),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> walk_design,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> bike_design,</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">FUN =</span> svymean,</span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">vartype =</span> <span class="st">"se"</span>,</span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">na.rm =</span> <span class="cn">TRUE</span>,</span>
@@ -579,26 +579,26 @@ Target estimand
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate sample size per area-time cell</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>direct_walk_counts <span class="ot">&lt;-</span> survey_walk <span class="sc">|&gt;</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>direct_bike_counts <span class="ot">&lt;-</span> survey_bike <span class="sc">|&gt;</span></span>
 <span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(<span class="fu">across</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)))) <span class="sc">|&gt;</span></span>
 <span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">n =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
 <span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="co"># Join together</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>direct_walk <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_walk_counts, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>direct_bike <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_bike_estimates, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(direct_bike_counts, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"area_id"</span>, <span class="st">"time_id"</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">n =</span> <span class="fu">replace_na</span>(n, 0L))</span>
 <span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_walk)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(direct_bike)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
 <col style="width: 14%">
 <col style="width: 11%">
-<col style="width: 30%">
+<col style="width: 31%">
 <col style="width: 23%">
-<col style="width: 14%">
+<col style="width: 13%">
 <col style="width: 4%">
 </colgroup>
 <thead>
@@ -616,48 +616,48 @@ Target estimand
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: right;">0.0000000</td>
-<td style="text-align: right;">0.0000000</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">6</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: right;">0.1856526</td>
-<td style="text-align: right;">0.0160569</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">9</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: right;">0.0094000</td>
-<td style="text-align: right;">0.0000933</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">22</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: right;">0.4319654</td>
-<td style="text-align: right;">0.0406652</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">9</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: right;">0.4885359</td>
-<td style="text-align: right;">0.0332991</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">8</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2025</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: right;">0.0511807</td>
-<td style="text-align: right;">0.0013595</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
 <td style="text-align: right;">26</td>
 </tr>
 </tbody>
@@ -683,91 +683,87 @@ Target estimand
 </div>
 </div>
 </div>
+<p>In case of unstable or unavailable direct estimates (median <code>n = 4</code>, 3 missing direct estimates) at the target area-time scale as seen above, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors.</p>
+<p>There are two approaches:</p>
+<ul>
+<li><strong>Area-level SAE models</strong> stabilise direct area estimates, and</li>
+<li><strong>Unit-level SAE models</strong> estimate the individual outcome from survey records and aggregate predictions to target area-years.</li>
+</ul>
+<p>The choice between the two should be based on the quality of the direct estimates as modelling input and whether the survey microdata can provide unit-level predictors that can explain the individual variability of the indicator in question.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave <span class="ot">&lt;-</span> direct_walk <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave <span class="ot">&lt;-</span> direct_bike <span class="sc">|&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(time_id) <span class="sc">|&gt;</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Usable observations</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(n),</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MSOAs without direct estimates</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(direct_estimate)),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MSOAs with zero variance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(variance <span class="sc">==</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median sample size</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(n),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median direct estimate</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">median</span>(direct_estimate, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>      <span class="dv">3</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median variance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">round</span>(</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>      <span class="fu">median</span>(variance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>      <span class="dv">5</span></span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Wave</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">all_of</span>(<span class="st">"time_id"</span>))</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MSOAs without variance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(<span class="fu">is.na</span>(variance)),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">MSOAs with zero variance</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sum</span>(variance <span class="sc">==</span> <span class="dv">0</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median sample size</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">median</span>(n),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Wave</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">all_of</span>(<span class="st">"time_id"</span>))</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>direct_summary_by_wave</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 3%">
-<col style="width: 14%">
-<col style="width: 22%">
-<col style="width: 17%">
-<col style="width: 13%">
+<col style="width: 4%">
 <col style="width: 16%">
-<col style="width: 11%">
+<col style="width: 25%">
+<col style="width: 18%">
+<col style="width: 20%">
+<col style="width: 15%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: right;">Wave</th>
 <th style="text-align: right;">Usable observations</th>
 <th style="text-align: right;">MSOAs without direct estimates</th>
+<th style="text-align: right;">MSOAs without variance</th>
 <th style="text-align: right;">MSOAs with zero variance</th>
 <th style="text-align: right;">Median sample size</th>
-<th style="text-align: right;">Median direct estimate</th>
-<th style="text-align: right;">Median variance</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">3450</td>
+<td style="text-align: right;">3438</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">163</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">349</td>
 <td style="text-align: right;">8</td>
-<td style="text-align: right;">0.077</td>
-<td style="text-align: right;">0.00496</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2023</td>
-<td style="text-align: right;">1999</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">205</td>
+<td style="text-align: right;">1989</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">345</td>
 <td style="text-align: right;">4</td>
-<td style="text-align: right;">0.040</td>
-<td style="text-align: right;">0.00000</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">2025</td>
-<td style="text-align: right;">5893</td>
+<td style="text-align: right;">5886</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: right;">60</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">247</td>
 <td style="text-align: right;">13</td>
-<td style="text-align: right;">0.130</td>
-<td style="text-align: right;">0.00833</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<p>In case of unstable or unavailable direct estimates at the target area-time scale as seen above in this example, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. There are two large families of SAE methods: <strong>Area-level SAE models</strong> stabilise direct area estimates, while <strong>unit-level SAE models</strong> estimate the individual outcome from survey records and aggregate predictions to target area-years.</p>
+<p>The summary suggests that area-level modelling has important limitations in this setting. Because the outcome is binary, many MSOA-year cells have little direct survey information because small binary samples often produce all-zero/all-one responses. It therefore motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before estimates are aggregated back to areas.</p>
+<p>That said, we still fit the area-level model at the next step to demonstrate how much stabilisation is possible before moving to unit-level modelling.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(direct_walk, <span class="fu">file.path</span>(base_path, <span class="st">"freqwalk_estimates_direct.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(direct_bike, <span class="fu">file.path</span>(base_path, <span class="st">"freqbike_estimates_direct.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 
