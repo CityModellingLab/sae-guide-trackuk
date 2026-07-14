@@ -1,5 +1,6 @@
 ---
-title: "Diagnostics"
+title: "Comparative diagnostics"
+subtitle: "Benefits and trade-offs"
 ---
 
 
@@ -25,6 +26,7 @@ method_levels <- c("Direct", "FH", "BHF", "MRP Shallow", "MRP Rich")
 missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
 overestimate_colour <- "#b2182b"
+year_colours <- c("#2166ac", "#b2182b", "#4d9221")
 
 residual_label <- label_number(accuracy = 0.01)
 ci_width_label <- label_number(accuracy = 1, scale = 100, suffix = " pp")
@@ -52,7 +54,9 @@ safe_limit <- function(x, fallback = 0.01, symmetric = FALSE, p = NULL) {
 }
 
 map_text_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 11, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 10, hjust = 0.5, colour = "grey30"),
   axis.title.y = element_text(
     size = 12,
     face = "bold",
@@ -64,6 +68,7 @@ map_text_theme <- theme(
 )
 
 annotation_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
   plot.caption = element_text(size = 10, hjust = 0.5, colour = "grey30")
@@ -71,11 +76,31 @@ annotation_theme <- theme(
 
 chart_theme <- theme_minimal(base_size = 12) +
   theme(
+    plot.title.position = "plot",
     strip.text = element_text(size = 12, face = "bold"),
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
     legend.position = "bottom"
   )
+
+colourbar_guide <- guide_colourbar(
+  title.position = "top",
+  barwidth = grid::unit(5, "cm"),
+  barheight = grid::unit(0.35, "cm")
+)
+
+method_map <- function(data, fill_col) {
+  data |>
+    ggplot() +
+    geom_sf(aes(fill = .data[[fill_col]]), colour = "transparent") +
+    facet_wrap(vars(method), nrow = 1) +
+    theme_void() +
+    map_text_theme +
+    theme(
+      strip.text = element_text(size = 12, face = "bold"),
+      legend.position = "bottom"
+    )
+}
 
 read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NULL, variance_col = NULL) {
   estimate_data <- read_csv(path, show_col_types = FALSE)
@@ -173,9 +198,53 @@ residual_colour_limits <- safe_limit(validation_residuals$residual, symmetric = 
 residual_axis_limits <- safe_limit(validation_residuals$residual, symmetric = TRUE)
 ci_width_colour_limits <- safe_limit(validation_residuals$ci_width, p = 0.95)
 ci_width_axis_limits <- safe_limit(validation_residuals$ci_width)
+
+method_summary <- validation_residuals |>
+  group_by(method) |>
+  summarise(
+    area_time_cells = n(),
+    median_estimate_pp = median(estimate, na.rm = TRUE) * 100,
+    estimate_iqr_pp = IQR(estimate, na.rm = TRUE) * 100,
+    mean_abs_residual = mean(abs_residual, na.rm = TRUE),
+    median_abs_residual = median(abs_residual, na.rm = TRUE),
+    p90_abs_residual = quantile(abs_residual, 0.9, na.rm = TRUE, names = FALSE),
+    mean_ci_width_pp = mean(ci_width, na.rm = TRUE) * 100,
+    median_ci_width_pp = median(ci_width, na.rm = TRUE) * 100,
+    p90_ci_width_pp = quantile(ci_width, 0.9, na.rm = TRUE, names = FALSE) * 100,
+    .groups = "drop"
+  ) |>
+  mutate(across(where(is.numeric), \(x) round(x, 2)))
 ```
 
-## Estimate Distributions
+This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE, and poststratified unit-level SAE. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, external validation residuals, uncertainty, and local residual structure used by the models.
+
+## Method Trade-Offs
+
+| Method | Main input | Main trade-off |
+|---|---|---|
+| Direct | Survey-weighted area-time estimates | Preserves the survey design most directly, but sparse MSOA-year cells can be unstable or missing. |
+| FH | Weighted direct estimates and sampling variances | Uses the survey design through the direct estimates, but inherits their sparsity and degenerate variance issues. |
+| BHF | Respondent records with unit-level predictors | Uses individual outcomes directly, but the fitted likelihood does not use survey weights. |
+| MRP Shallow | Respondent records plus age-sex population cells and contextual predictors | Adds population reweighting, but only over the available poststratification cells. |
+| MRP Rich | Respondent records plus age-sex-car population cells | Gives the closest alignment between model predictors and population composition, but holds the 2021 poststratification structure across later waves. |
+
+```{r}
+#| label: val-method-summary
+
+method_summary |>
+  select(
+    method,
+    area_time_cells,
+    median_estimate_pp,
+    estimate_iqr_pp,
+    median_abs_residual,
+    median_interval_width_pp = median_ci_width_pp
+  )
+```
+
+## Estimate Scale and Smoothing
+
+The distribution and rank plots show how much each method changes the spread of MSOA-year estimates. Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.
 
 ```{r}
 #| label: val-estimate-dist-rank
@@ -213,8 +282,8 @@ method_plots <- unlist(lapply(method_levels, function(method_name) {
     ggplot(aes(x = estimate, colour = time_id, fill = time_id)) +
     geom_density(linewidth = 0.8, alpha = 0.2, show.legend = show_year_legend) +
     scale_x_continuous(labels = share_label, limits = c(0, 0.1)) +
-    scale_colour_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
-    scale_fill_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
+    scale_colour_manual(values = year_colours) +
+    scale_fill_manual(values = year_colours) +
     guides(fill = "none") +
     labs(
       title = method_name,
@@ -234,7 +303,7 @@ method_plots <- unlist(lapply(method_levels, function(method_name) {
     ggplot(aes(x = msoa_rank, y = estimate, colour = time_id, group = time_id)) +
     geom_line(linewidth = 0.5, alpha = 0.9, show.legend = FALSE) +
     scale_y_continuous(labels = share_label, limits = c(0, 0.1)) +
-    scale_colour_manual(values = c("#2166ac", "#b2182b", "#4d9221")) +
+    scale_colour_manual(values = year_colours) +
     labs(
       x = "Ranked MSOA",
       y = "Estimate",
@@ -259,7 +328,62 @@ wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
   theme(legend.position = "bottom")
 ```
 
-## Validation Residuals
+## Method Agreement
+
+MRP Rich is used here as a modelling reference because it uses the fullest poststratification structure available in the workflow. It is not an external benchmark; disagreement with it indicates how much the other methods differ from the richest unit-level specification.
+
+```{r}
+#| label: val-method-agreement
+#| echo: false
+#| fig-width: 18
+#| fig-height: 5
+#| out-width: "100%"
+
+reference_method <- "MRP Rich"
+
+method_agreement <- estimate_sets |>
+  filter(method != reference_method) |>
+  inner_join(
+    estimate_sets |>
+      filter(method == reference_method) |>
+      select(area_id, time_id, reference_estimate = estimate),
+    by = c("area_id", "time_id")
+  ) |>
+  mutate(
+    method = factor(method, levels = setdiff(method_levels, reference_method)),
+    time_id = factor(time_id, levels = sort(unique(time_id)))
+  ) |>
+  filter(!is.na(estimate), !is.na(reference_estimate))
+
+agreement_limits <- safe_limit(
+  c(method_agreement$estimate, method_agreement$reference_estimate),
+  fallback = 0.1,
+  p = 0.99
+)
+
+method_agreement |>
+  ggplot(aes(x = estimate, y = reference_estimate, colour = time_id)) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey55") +
+  geom_point(alpha = 0.55, size = 1.2) +
+  facet_wrap(vars(method), nrow = 1) +
+  coord_equal(xlim = agreement_limits, ylim = agreement_limits) +
+  scale_x_continuous(labels = share_label) +
+  scale_y_continuous(labels = share_label) +
+  scale_colour_manual(values = year_colours) +
+  labs(
+    title = "Agreement with MRP Rich",
+    subtitle = "Dashed line shows equality; points are MSOA-year cells",
+    x = "Comparison estimate",
+    y = "MRP Rich estimate",
+    colour = "Survey year"
+  ) +
+  chart_theme +
+  theme(panel.grid.minor = element_blank())
+```
+
+## External Validation Residuals
+
+The validation benchmark is the Census bicycle-to-work share. It is related to frequent cycling for transport but does not measure the same target outcome, so the residuals should be read as a directional comparison rather than a direct accuracy test.
 
 $$
 \text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
@@ -270,16 +394,14 @@ $$
 ```{r}
 #| label: val-resid-summary
 
-validation_residuals |>
-  group_by(method) |>
-  summarise(
-    msoas = n(),
-    mean_abs_residual = mean(abs_residual, na.rm = TRUE),
-    median_abs_residual = median(abs_residual, na.rm = TRUE),
-    p90_abs_residual = quantile(abs_residual, 0.9, na.rm = TRUE, names = FALSE),
-    .groups = "drop"
-  ) |>
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
+method_summary |>
+  select(
+    method,
+    area_time_cells,
+    mean_abs_residual,
+    median_abs_residual,
+    p90_abs_residual
+  )
 ```
 
 ```{r}
@@ -289,10 +411,7 @@ validation_residuals |>
 #| fig-height: 8
 #| out-width: "100%"
 
-map_data |>
-  ggplot() +
-  geom_sf(aes(fill = residual), colour = "transparent") +
-  facet_wrap(vars(method), nrow = 1) +
+method_map(map_data, "residual") +
   scale_fill_gradient2(
     low = overestimate_colour,
     mid = "white",
@@ -304,17 +423,7 @@ map_data |>
     labels = residual_label,
     na.value = missing_fill,
     name = "Residual",
-    guide = guide_colourbar(
-      title.position = "top",
-      barwidth = grid::unit(5, "cm"),
-      barheight = grid::unit(0.35, "cm")
-    )
-  ) +
-  theme_void() +
-  map_text_theme +
-  theme(
-    strip.text = element_text(size = 12, face = "bold"),
-    legend.position = "bottom"
+    guide = colourbar_guide
   ) +
   plot_annotation(
     title = "Validation residuals",
@@ -352,7 +461,7 @@ validation_residuals |>
   scale_x_continuous(labels = residual_label) +
   labs(
     x = "Residual",
-    y = "MSOAs"
+    y = "MSOA-year cells"
   ) +
   chart_theme +
   theme(
@@ -360,20 +469,20 @@ validation_residuals |>
     strip.text = element_blank()
   )
 ```
-## CI width
+## Uncertainty Width
+
+Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect design-based sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.
 
 ```{r}
 #| label: val-ci-summary
-validation_residuals |>
-  group_by(method) |>
-  summarise(
-    msoas = n(),
-    mean_ci_width_pp = mean(ci_width, na.rm = TRUE) * 100,
-    median_ci_width_pp = median(ci_width, na.rm = TRUE) * 100,
-    p90_ci_width_pp = quantile(ci_width, 0.9, na.rm = TRUE, names = FALSE) * 100,
-    .groups = "drop"
-  ) |>
-  mutate(across(where(is.numeric), ~ round(.x, 2)))
+method_summary |>
+  select(
+    method,
+    area_time_cells,
+    mean_ci_width_pp,
+    median_ci_width_pp,
+    p90_ci_width_pp
+  )
 ```
 
 ```{r}
@@ -383,10 +492,7 @@ validation_residuals |>
 #| fig-height: 8
 #| out-width: "100%"
 
-map_data |>
-  ggplot() +
-  geom_sf(aes(fill = ci_width), colour = "transparent") +
-  facet_wrap(vars(method), nrow = 1) +
+method_map(map_data, "ci_width") +
   scale_fill_distiller(
     palette = "YlGnBu",
     direction = 1,
@@ -396,17 +502,7 @@ map_data |>
     labels = ci_width_label,
     na.value = missing_fill,
     name = "CI width",
-    guide = guide_colourbar(
-      title.position = "top",
-      barwidth = grid::unit(5, "cm"),
-      barheight = grid::unit(0.35, "cm")
-    )
-  ) +
-  theme_void() +
-  map_text_theme +
-  theme(
-    strip.text = element_text(size = 12, face = "bold"),
-    legend.position = "bottom"
+    guide = colourbar_guide
   ) +
   plot_annotation(
     title = "CI widths",
@@ -436,7 +532,7 @@ validation_residuals |>
   scale_x_continuous(labels = ci_width_label) +
   labs(
     x = "CI width",
-    y = "MSOAs"
+    y = "MSOA-year cells"
   ) +
   chart_theme +
   theme(
@@ -444,4 +540,63 @@ validation_residuals |>
     strip.text = element_blank()
   ) +
   theme(legend.position = "none")
+```
+
+## Local Residual Effects
+
+The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal structure.
+
+```{r}
+#| label: val-area-effect-map
+#| echo: false
+#| fig-width: 18
+#| fig-height: 7
+#| out-width: "100%"
+
+area_effect_method_levels <- c("FH", "BHF", "MRP Shallow", "MRP Rich")
+area_effect_files <- c(
+  "freqbike_area_effects_fh.csv",
+  "freqbike_area_effects_bhf.csv",
+  "freqbike_area_effects_mrp_shallow.csv",
+  "freqbike_area_effects_mrp_rich.csv"
+)
+
+area_effects <- area_effect_files |>
+  lapply(\(file_name) read_csv(file.path(base_path, file_name), show_col_types = FALSE)) |>
+  bind_rows() |>
+  filter(component == "Unstructured") |>
+  mutate(
+    method = factor(method, levels = area_effect_method_levels)
+  )
+
+area_effect_limits <- safe_limit(
+  area_effects$effect,
+  fallback = 0.01,
+  symmetric = TRUE,
+  p = 0.98
+)
+
+area_effect_label_accuracy <- if (max(abs(area_effect_limits)) < 0.01) 0.0001 else 0.01
+
+msoa_boundaries |>
+  select(area_id) |>
+  left_join(area_effects, by = "area_id") |>
+  method_map("effect") +
+  scale_fill_gradient2(
+    low = underestimate_colour,
+    mid = "white",
+    high = overestimate_colour,
+    midpoint = 0,
+    limits = area_effect_limits,
+    oob = squish,
+    labels = label_number(accuracy = area_effect_label_accuracy),
+    na.value = missing_fill,
+    name = "Effect",
+    guide = colourbar_guide
+  ) +
+  plot_annotation(
+    title = "Unstructured area effects",
+    subtitle = "Posterior mean local area effect by method",
+    theme = annotation_theme
+  )
 ```

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - A practical guide to Small Area Estimation for Urban Analytics</title>
+<title>Small Area Estimation for Urban Analytics - A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -105,11 +105,11 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level (FH)</span></a>
+ <span class="dropdown-text">Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level (BHF)</span></a>
+ <span class="dropdown-text">Unit-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
@@ -117,7 +117,7 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Validation diagnostics</span></a>
+ <span class="dropdown-text">Diagnostics</span></a>
   </li>  
     </ul>
   </li>
@@ -129,10 +129,6 @@ ul.task-list li input[type="checkbox"] {
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
  <span class="dropdown-text">Toolkit</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
- <span class="dropdown-text">Bibliography</span></a>
   </li>  
     </ul>
   </li>
@@ -197,13 +193,13 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level (FH)</span></a>
+ <span class="menu-text">Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level (BHF)</span></a>
+ <span class="menu-text">Unit-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -215,7 +211,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Validation diagnostics</span></a>
+ <span class="menu-text">Diagnostics</span></a>
   </div>
 </li>
       </ul>
@@ -235,12 +231,6 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Toolkit</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bibliography</span></a>
-  </div>
-</li>
       </ul>
   </li>
     </ul>
@@ -256,8 +246,8 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">A practical guide to Small Area Estimation for Urban Analytics</h1>
-<p class="subtitle lead">With Bayesian inference implemented through R-INLA</p>
+<h1 class="title">A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</h1>
+<p class="subtitle lead">From sparse survey data to reliable small-area estimates</p>
 </div>
 
 
@@ -272,43 +262,42 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<p><img src="assets/banner.png" class="img-fluid" style="width:100.0%"></p>
 <div class="home-section">
 <div class="section-label">
 <p>Small area estimation for Urban Analytics</p>
 </div>
-<p>Urban researchers often want to use survey data at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. This may involve comparing places, monitoring change over time, identifying local inequalities, or linking survey outcomes to area-level conditions. The problem is that most surveys are not designed to support reliable estimates at all geographic levels and time periods. When responses are broken down by area and year, some cells have only a few respondents and others have none.</p>
-<p>This gudie sets out a workflow for choosing <strong>spatio-temporal Bayesian small-area estimation (SAE)</strong> methods for urban analytics. It focuses on method choice and shows how these approaches can be implemented in <code>INLA</code>.</p>
+<p>Urban researchers often need survey estimates at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. These estimates may be used to compare places, monitor change over time, identify local inequalities, or link survey outcomes to area-level conditions. Most surveys are not designed for reliable estimation at every local geography and time period, so area-year cells can contain only a few respondents or none at all.</p>
+<p>This guide sets out a workflow for choosing <strong>spatio-temporal Bayesian small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>INLA</code>.</p>
 </div>
 <div class="home-section">
 <div class="section-label">
 <p>Bayesian inference and INLA</p>
 </div>
-<p>Bayesian inference is used to combine survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. One advantage is that uncertainty of a modelled estimate is returned as posterior distributions for each estimate, which facilitates interpretation in policy contexts.</p>
-<p>For code implementation, the examples are fitted with <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.</p>
+<p>Bayesian inference combines survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. Modelled estimates are returned as posterior distributions, which makes uncertainty explicit.</p>
+<p>The examples use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.</p>
 </div>
 <div class="home-section">
 <div class="section-label">
-<p>Contents</p>
+<p>Navigating the guide</p>
 </div>
-<p>The practical guide covers the SAE methods most relevant to common Urban Analytics survey and auxiliary datasets, with the choice driven by outcome type, available survey information, auxiliary data, and population structure.</p>
+<p>The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.</p>
 <p><img src="assets/sae_method_select.png" class="img-fluid"></p>
 <ol type="1">
-<li><p><strong><a href="./dataprep.html">Estimation setup</a></strong><br>
-Start by specifying the estimand: outcome, target population, areas, and time periods. This defines the area-time cells that need estimates and the inputs required for each possible route.</p></li>
-<li><p><strong><a href="./direct-estimation.html">Direct estimation</a></strong><br>
-Compute survey design-based estimates and sampling variances for observed area-time cells. If these estimates are precise enough and have adequate coverage, direct estimation may be sufficient.</p></li>
-<li><p><strong><a href="./fh-area.html">Fay–Herriot area-level model</a></strong><br>
-Use this route when direct estimates exist but are too noisy or incomplete, and the available auxiliary data are area-level predictors. The model smooths direct estimates across predictors, neighbouring areas, and time periods.</p></li>
-<li><p><strong><a href="./bhf-unit.html">Battese–Harter–Fuller unit-level model</a></strong> Use this route when survey microdata are available and the outcome can be modelled at respondent or household level. The fitted unit-level relationship is then aggregated to area-time estimates using area-level summaries of the predictors.</p></li>
-<li><p><strong><a href="./mrp-rich.html">Multilevel Regression with Poststratification (MRP)</a></strong><br>
-Use this route when population counts are available for poststratification cells, such as area by age by sex. The model predicts outcomes for each population cell and weights those predictions back to area-time estimates.</p></li>
+<li><strong><a href="./dataprep.html">Estimation setup</a></strong></li>
+<li><strong><a href="./direct-estimation.html">Direct estimation</a></strong></li>
+<li><strong><a href="./fh-area.html">Modelling: Area-level (Fay–Herriot)</a></strong></li>
+<li><strong><a href="./bhf-unit.html">Modelling: Unit-level (Battese–Harter–Fuller)</a></strong></li>
+<li><strong><a href="./mrp-rich.html">Modelling: SAE with poststratification (MRP)</a></strong></li>
+<li><strong><a href="./diagnostics.html">Comparative diagnostics</a></strong></li>
+<li><strong><a href="./toolkit.html">Toolkit</a></strong></li>
 </ol>
 </div>
 <div class="home-section">
 <div class="section-label">
-<p>Tutorial data</p>
+<p>Data</p>
 </div>
-<p>The worked data are synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>. The maps and estimates are workflow outputs, not empirical findings for specific places in Wales. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">estimation setup step</a>.</p>
+<p>The worked data are synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>. The maps and estimates are workflow outputs, not empirical findings about specific places in Wales. Auxiliary predictors, boundaries, and poststratification tables are derived from the Office for National Statistics (ONS), including ONS UK Census 2021. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">estimation setup</a>.</p>
 </div>
 <div class="home-section">
 <div class="section-label">
@@ -322,6 +311,35 @@ Use this route when population counts are available for poststratification cells
 <li><strong>Anna Freni-Sterrantino</strong> - The Alan Turing Institute</li>
 <li><strong>Esra Suel</strong> - University College London; University of Zurich</li>
 </ul>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Bibliography</p>
+</div>
+<section id="survey-estimation-and-small-area-estimation" class="level4" data-number="0.0.1">
+<h4 data-number="0.0.1" class="anchored" data-anchor-id="survey-estimation-and-small-area-estimation"><span class="header-section-number">0.0.1</span> Survey Estimation And Small Area Estimation</h4>
+<ul>
+<li>Horvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” <em>Journal of the American Statistical Association</em>, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.</li>
+<li>Fay, R. E., and Herriot, R. A. (1979). “Estimates of Income for Small Places: An Application of James-Stein Procedures to Census Data.” <em>Journal of the American Statistical Association</em>, 74(366), 269-277. doi:10.1080/01621459.1979.10482505.</li>
+<li>Battese, G. E., Harter, R. M., and Fuller, W. A. (1988). “An Error-Components Model for Prediction of County Crop Areas Using Survey and Satellite Data.” <em>Journal of the American Statistical Association</em>, 83(401), 28-36. doi:10.1080/01621459.1988.10478561.</li>
+<li>Molina, I., and Rao, J. N. K. (2010). “Small Area Estimation of Poverty Indicators.” <em>The Canadian Journal of Statistics</em>, 38(3), 369-385. doi:10.1002/cjs.10051.</li>
+</ul>
+</section>
+<section id="multilevel-regression-and-poststratification" class="level4" data-number="0.0.2">
+<h4 data-number="0.0.2" class="anchored" data-anchor-id="multilevel-regression-and-poststratification"><span class="header-section-number">0.0.2</span> Multilevel Regression And Poststratification</h4>
+<ul>
+<li>Gelman, A., and Little, T. C. (1997). “Poststratification into Many Categories Using Hierarchical Logistic Regression.” <em>Survey Methodology</em>, 23(2), 127-135.</li>
+<li>Park, D. K., Gelman, A., and Bafumi, J. (2004). “Bayesian Multilevel Estimation with Poststratification: State-Level Estimates from National Polls.” <em>Political Analysis</em>, 12(4), 375-385. doi:10.1093/pan/mph002.</li>
+</ul>
+</section>
+<section id="bayesian-spatial-and-spatio-temporal-modelling" class="level4" data-number="0.0.3">
+<h4 data-number="0.0.3" class="anchored" data-anchor-id="bayesian-spatial-and-spatio-temporal-modelling"><span class="header-section-number">0.0.3</span> Bayesian Spatial And Spatio-Temporal Modelling</h4>
+<ul>
+<li>Besag, J., York, J., and Mollie, A. (1991). “Bayesian Image Restoration, with Two Applications in Spatial Statistics.” <em>Annals of the Institute of Statistical Mathematics</em>, 43(1), 1-20. doi:10.1007/BF00116466.</li>
+<li>Rue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” <em>Journal of the Royal Statistical Society: Series B</em>, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.</li>
+<li>Riebler, A., Sorbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” <em>Statistical Methods in Medical Research</em>, 25(4), 1145-1165. doi:10.1177/0962280216660421.</li>
+</ul>
+</section>
 </div>
 
 

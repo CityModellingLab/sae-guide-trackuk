@@ -14,6 +14,7 @@ library(sf)
 library(ggplot2)
 library(patchwork)
 library(scales)
+library(spdep)
 
 base_path <- here::here("data")
 survey_microdata <- read_csv(file.path(base_path, "clean", "survey_microdata_msoayear.csv"), show_col_types = FALSE)
@@ -29,7 +30,10 @@ msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  transmute(area_id = MSOA21CD) |>
+  transmute(
+    area_id = MSOA21CD,
+    msoa_name = MSOA21NM
+  ) |>
   filter(str_starts(area_id, "W"))
 ```
 
@@ -42,13 +46,16 @@ legend_bar_height <- grid::unit(0.35, "cm")
 
 count_map_theme <- theme_void(base_size = 11) +
   theme(
+    plot.title.position = "plot",
     plot.title = element_text(face = "bold", size = 13, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5, colour = "grey30"),
     legend.position = "bottom",
     legend.title = element_text(size = 10),
     legend.text = element_text(size = 9)
   )
 
 chart_text_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 11, hjust = 0.5, colour = "grey30"),
   axis.title = element_text(size = 12),
@@ -57,15 +64,13 @@ chart_text_theme <- theme(
 )
 ```
 
-This data preparation step introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.
-
 ## The Survey Microdata
 
 The analysis uses a synthetic teaching dataset based on three waves of the **National Survey for Wales (NSW): 2020-2021, 2022-2023, and 2024-2025**.
 
 The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. The cleaned microdata combine three survey periods into one harmonised survey microdata.
 
-The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. These MSOA assignments are for teaching and workflow development only, so the resulting MSOA estimates should not be interpreted as substantive findings about individual places.
+The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. The resulting MSOA estimates should not be interpreted as substantive findings about individual places.
 
 This design has two purposes:
 
@@ -85,15 +90,15 @@ From here on, the survey period labels are simplified to their end year. For exa
 #| fig-align: "center"
 
 la_response_counts <- survey_microdata |>
-  filter(!is.na(la_code), !is.na(la_name)) |>
-  count(la_code, name = "responses")
+  filter(!is.na(strata)) |>
+  count(strata, name = "responses")
 
 msoa_response_counts <- survey_microdata |>
   filter(!is.na(area_id)) |>
   count(area_id, name = "responses")
 
 la_count_map_data <- la_boundaries |>
-  left_join(la_response_counts, by = "la_code")
+  left_join(la_response_counts, by = c("la_code" = "strata"))
 
 msoa_count_map_data <- msoa_boundaries |>
   left_join(msoa_response_counts, by = c("area_id" = "area_id"))
@@ -145,7 +150,7 @@ The estimand is the quantity we want to estimate. It should be defined before pr
 
 In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*. 
 
-In this tutorial, the estimand is:
+The estimand used here is:
 
 {{< include assets/target-estimand.qmd >}}
 
@@ -157,7 +162,7 @@ Since we are interested in whether adult respondents cycle frequently as a means
 |---|---|
 | Indicator name | `freq_biker` |
 | Raw survey variable | `AtFrqBke` |
-| Positive case | `AtFrqBke` is `1` or `2`, treated as frequent cycling |
+| Positive case | `AtFrqBke` is `1` or `2` (at least several times a week) |
 | Negative case | Less frequent cycling or never cycling |
 | Missing | Missing, invalid, or not asked |
 
@@ -207,7 +212,6 @@ The area-predictor input *has one row per MSOA*:
 | Column | Meaning |
 |---|---|
 | `area_id` | MSOA estimation area |
-| `msoa_name` | MSOA name |
 | Raw predictors | `mean_age_adult`; `prob_female`; `population_density`; `car_access_hhshare`  |
 | Scaled predictors | Z-scored versions for model input |
 
@@ -229,3 +233,60 @@ The poststratification output *has one row per area-time-age-sex-car-access comb
 ::: {.callout-note}
 A shallower poststratification setup is also possible when population counts are available for more years but only by age and sex. One example is the [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics).
 :::
+
+### Preparing the Domain Frame, INLA Indices, and Spatial Graph
+
+The domain frame defines the complete MSOA-year grid, which combines the Wales MSOA boundaries with the survey years present in the cleaned microdata, so each MSOA-year cell exists even when the survey has no respondents in that cell. It also stores the numeric area and time indices required by `INLA`.
+
+```{r}
+#| label: data-inla-indices
+#| code-fold: false
+
+area_frame <- msoa_boundaries |>
+  st_drop_geometry() |>
+  distinct(area_id, msoa_name) |>
+  arrange(area_id)
+
+area_index <- area_frame |>
+  select(area_id) |>
+  arrange(area_id) |>
+  mutate(area_inla_id = row_number())
+
+time_index <- survey_microdata |>
+  distinct(time_id) |>
+  arrange(time_id) |>
+  mutate(time_inla_id = row_number())
+
+domain_frame <- tidyr::crossing(area_index, time_index) |>
+  left_join(area_frame, by = "area_id") |>
+  select(area_id, time_id, area_inla_id, time_inla_id, msoa_name)
+
+write_csv(domain_frame, file.path(base_path, "clean", "domain_msoayear.csv"))
+head(domain_frame)
+```
+
+The spatial graph must use the same MSOA ordering as `area_inla_id`, because `INLA` reads the graph by numeric node position. We therefore sort the boundaries by `area_inla_id` before writing the graph. The graph uses Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
+
+![](assets/spatial_weights_example.png)
+
+```{r}
+#| label: data-inla-graph
+#| code-fold: false
+
+msoa_boundaries_sorted <- msoa_boundaries |>
+  inner_join(area_index, by = "area_id") |>
+  arrange(area_inla_id)
+
+msoa_neighbours <- poly2nb(
+  msoa_boundaries_sorted,
+  queen = TRUE,
+  row.names = msoa_boundaries_sorted$area_id
+)
+
+# Write the Queen-contiguity graph in INLA's .adj format.
+spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
+nb2INLA(
+  file = spatial_graph_file,
+  nb = msoa_neighbours
+)
+```

@@ -156,11 +156,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level (FH)</span></a>
+ <span class="dropdown-text">Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level (BHF)</span></a>
+ <span class="dropdown-text">Unit-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
@@ -168,7 +168,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Validation diagnostics</span></a>
+ <span class="dropdown-text">Diagnostics</span></a>
   </li>  
     </ul>
   </li>
@@ -180,10 +180,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
  <span class="dropdown-text">Toolkit</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
- <span class="dropdown-text">Bibliography</span></a>
   </li>  
     </ul>
   </li>
@@ -248,13 +244,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level (FH)</span></a>
+ <span class="menu-text">Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level (BHF)</span></a>
+ <span class="menu-text">Unit-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -266,7 +262,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Validation diagnostics</span></a>
+ <span class="menu-text">Diagnostics</span></a>
   </div>
 </li>
       </ul>
@@ -284,12 +280,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Toolkit</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bibliography</span></a>
   </div>
 </li>
       </ul>
@@ -400,7 +390,7 @@ Target estimand
 </div>
 </div>
 </div>
-<p>Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or <em>MSOA-year cell</em> in this example, is calculated only from the survey respondents observed in that area and wave. For each <em>MSOA-year cell</em>, we calculate a Horvitz–Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.</p>
+<p>Direct estimation is the starting point for the SAE workflow. Each area-time estimate, or <em>MSOA-year cell</em> in this example, is calculated only from the survey respondents observed in that area and wave. For each <em>MSOA-year cell</em>, we calculate a Horvitz–Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.</p>
 <p>The output is a transparent survey-based baseline: a direct estimate, sampling variance, and usable sample size for each observed <em>MSOA-year cell</em>. These estimates show where the survey evidence is strong, sparse, missing, or unstable, helping us decide whether model-based small area estimation is needed.</p>
 </section>
 <section id="prepare-survey-data" class="level2" data-number="1">
@@ -594,17 +584,21 @@ Target estimand
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 14%">
-<col style="width: 11%">
-<col style="width: 31%">
-<col style="width: 23%">
+<col style="width: 10%">
+<col style="width: 8%">
 <col style="width: 13%">
-<col style="width: 4%">
+<col style="width: 13%">
+<col style="width: 22%">
+<col style="width: 17%">
+<col style="width: 9%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
 <th style="text-align: right;">time_id</th>
+<th style="text-align: right;">area_inla_id</th>
+<th style="text-align: right;">time_inla_id</th>
 <th style="text-align: left;">msoa_name</th>
 <th style="text-align: right;">direct_estimate</th>
 <th style="text-align: right;">variance</th>
@@ -615,6 +609,8 @@ Target estimand
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -623,6 +619,8 @@ Target estimand
 <tr class="even">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2023</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -631,6 +629,8 @@ Target estimand
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2025</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
 <td style="text-align: left;">Isle of Anglesey 001</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -639,6 +639,8 @@ Target estimand
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -647,6 +649,8 @@ Target estimand
 <tr class="odd">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2023</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -655,6 +659,8 @@ Target estimand
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2025</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
 <td style="text-align: left;">Isle of Anglesey 002</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
@@ -683,13 +689,12 @@ Target estimand
 </div>
 </div>
 </div>
-<p>In case of unstable or unavailable direct estimates (median <code>n = 4</code>, 3 missing direct estimates) at the target area-time scale as seen above, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors.</p>
-<p>There are two approaches:</p>
+<p>Sparse and uneven survey coverage limits how far direct estimates can be used on their own. At the target MSOA-year scale, many estimates are unstable or unavailable, so the next step is to use model-based SAE methods that borrow strength across areas, years, and auxiliary predictors.</p>
+<p>Two model-based options follow:</p>
 <ul>
-<li><strong>Area-level SAE models</strong> stabilise direct area estimates, and</li>
+<li><strong>Area-level SAE models</strong> stabilise direct area estimates using sampling variances to control how much weight each direct estimate receives.</li>
 <li><strong>Unit-level SAE models</strong> estimate the individual outcome from survey records and aggregate predictions to target area-years.</li>
 </ul>
-<p>The choice between the two should be based on the quality of the direct estimates as modelling input and whether the survey microdata can provide unit-level predictors that can explain the individual variability of the indicator in question.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -758,8 +763,8 @@ Target estimand
 </div>
 </div>
 </div>
-<p>The summary suggests that area-level modelling has important limitations in this setting. Because the outcome is binary, many MSOA-year cells have little direct survey information because small binary samples often produce all-zero/all-one responses. It therefore motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before estimates are aggregated back to areas.</p>
-<p>That said, we still fit the area-level model at the next step to demonstrate how much stabilisation is possible before moving to unit-level modelling.</p>
+<p>The choice between area-level and unit-level modelling should depend on two things: the quality of the direct estimates as model inputs, and whether the survey microdata contain unit-level predictors that help explain individual variation in the indicator.</p>
+<p>In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an <a href="./fh-area.html">area-level model</a> first to show how much stabilisation is possible from direct-estimate inputs before moving to <a href="./bhf-unit.html">unit-level modelling</a>.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1026,7 +1031,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   </div>
   <div class="nav-page nav-page-next">
       <a href="./fh-area.html" class="pagination-link">
-        <span class="nav-page-text">Area-level (FH)</span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">Area-level SAE</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

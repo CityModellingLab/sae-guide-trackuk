@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Diagnostics</title>
+<title>Small Area Estimation for Urban Analytics - Comparative diagnostics</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -156,11 +156,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level (FH)</span></a>
+ <span class="dropdown-text">Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level (BHF)</span></a>
+ <span class="dropdown-text">Unit-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
@@ -168,7 +168,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Validation diagnostics</span></a>
+ <span class="dropdown-text">Diagnostics</span></a>
   </li>  
     </ul>
   </li>
@@ -180,10 +180,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
  <span class="dropdown-text">Toolkit</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
- <span class="dropdown-text">Bibliography</span></a>
   </li>  
     </ul>
   </li>
@@ -198,7 +194,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./diagnostics.html">Validation diagnostics</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./diagnostics.html">Diagnostics</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -248,13 +244,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level (FH)</span></a>
+ <span class="menu-text">Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level (BHF)</span></a>
+ <span class="menu-text">Unit-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -266,7 +262,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Validation diagnostics</span></a>
+ <span class="menu-text">Diagnostics</span></a>
   </div>
 </li>
       </ul>
@@ -286,12 +282,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Toolkit</span></a>
   </div>
 </li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bibliography</span></a>
-  </div>
-</li>
       </ul>
   </li>
     </ul>
@@ -304,9 +294,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#estimate-distributions" id="toc-estimate-distributions" class="nav-link active" data-scroll-target="#estimate-distributions"><span class="header-section-number">1</span> Estimate Distributions</a></li>
-  <li><a href="#validation-residuals" id="toc-validation-residuals" class="nav-link" data-scroll-target="#validation-residuals"><span class="header-section-number">2</span> Validation Residuals</a></li>
-  <li><a href="#ci-width" id="toc-ci-width" class="nav-link" data-scroll-target="#ci-width"><span class="header-section-number">3</span> CI width</a></li>
+  <li><a href="#method-trade-offs" id="toc-method-trade-offs" class="nav-link active" data-scroll-target="#method-trade-offs"><span class="header-section-number">1</span> Method Trade-Offs</a></li>
+  <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</a></li>
+  <li><a href="#method-agreement" id="toc-method-agreement" class="nav-link" data-scroll-target="#method-agreement"><span class="header-section-number">3</span> Method Agreement</a></li>
+  <li><a href="#external-validation-residuals" id="toc-external-validation-residuals" class="nav-link" data-scroll-target="#external-validation-residuals"><span class="header-section-number">4</span> External Validation Residuals</a></li>
+  <li><a href="#uncertainty-width" id="toc-uncertainty-width" class="nav-link" data-scroll-target="#uncertainty-width"><span class="header-section-number">5</span> Uncertainty Width</a></li>
+  <li><a href="#local-residual-effects" id="toc-local-residual-effects" class="nav-link" data-scroll-target="#local-residual-effects"><span class="header-section-number">6</span> Local Residual Effects</a></li>
   </ul>
 </nav>
     </div>
@@ -315,7 +308,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Diagnostics</h1>
+<h1 class="title">Comparative diagnostics</h1>
+<p class="subtitle lead">Benefits and trade-offs</p>
 </div>
 
 
@@ -330,16 +324,152 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="estimate-distributions" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="estimate-distributions"><span class="header-section-number">1</span> Estimate Distributions</h2>
+<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE, and poststratified unit-level SAE. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, external validation residuals, uncertainty, and local residual structure used by the models.</p>
+<section id="method-trade-offs" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="method-trade-offs"><span class="header-section-number">1</span> Method Trade-Offs</h2>
+<table class="table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Main input</th>
+<th>Main trade-off</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Direct</td>
+<td>Survey-weighted area-time estimates</td>
+<td>Preserves the survey design most directly, but sparse MSOA-year cells can be unstable or missing.</td>
+</tr>
+<tr class="even">
+<td>FH</td>
+<td>Weighted direct estimates and sampling variances</td>
+<td>Uses the survey design through the direct estimates, but inherits their sparsity and degenerate variance issues.</td>
+</tr>
+<tr class="odd">
+<td>BHF</td>
+<td>Respondent records with unit-level predictors</td>
+<td>Uses individual outcomes directly, but the fitted likelihood does not use survey weights.</td>
+</tr>
+<tr class="even">
+<td>MRP Shallow</td>
+<td>Respondent records plus age-sex population cells and contextual predictors</td>
+<td>Adds population reweighting, but only over the available poststratification cells.</td>
+</tr>
+<tr class="odd">
+<td>MRP Rich</td>
+<td>Respondent records plus age-sex-car population cells</td>
+<td>Gives the closest alignment between model predictors and population composition, but holds the 2021 poststratification structure across later waves.</td>
+</tr>
+</tbody>
+</table>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    median_estimate_pp,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    estimate_iqr_pp,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    median_abs_residual,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_interval_width_pp =</span> median_ci_width_pp</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<colgroup>
+<col style="width: 11%">
+<col style="width: 14%">
+<col style="width: 17%">
+<col style="width: 14%">
+<col style="width: 18%">
+<col style="width: 23%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">method</th>
+<th style="text-align: right;">area_time_cells</th>
+<th style="text-align: right;">median_estimate_pp</th>
+<th style="text-align: right;">estimate_iqr_pp</th>
+<th style="text-align: right;">median_abs_residual</th>
+<th style="text-align: right;">median_interval_width_pp</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Direct</td>
+<td style="text-align: right;">408</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">0.29</td>
+<td style="text-align: right;">0.00</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FH</td>
+<td style="text-align: right;">408</td>
+<td style="text-align: right;">5.22</td>
+<td style="text-align: right;">0.91</td>
+<td style="text-align: right;">0.19</td>
+<td style="text-align: right;">3.97</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">BHF</td>
+<td style="text-align: right;">408</td>
+<td style="text-align: right;">2.27</td>
+<td style="text-align: right;">0.49</td>
+<td style="text-align: right;">0.10</td>
+<td style="text-align: right;">2.83</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">MRP Shallow</td>
+<td style="text-align: right;">408</td>
+<td style="text-align: right;">2.59</td>
+<td style="text-align: right;">0.55</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">3.18</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">MRP Rich</td>
+<td style="text-align: right;">408</td>
+<td style="text-align: right;">2.56</td>
+<td style="text-align: right;">0.56</td>
+<td style="text-align: right;">0.11</td>
+<td style="text-align: right;">3.14</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="estimate-scale-and-smoothing" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</h2>
+<p>The distribution and rank plots show how much each method changes the spread of MSOA-year estimates. Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/val-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 </section>
-<section id="validation-residuals" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="validation-residuals"><span class="header-section-number">2</span> Validation Residuals</h2>
+<section id="method-agreement" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="method-agreement"><span class="header-section-number">3</span> Method Agreement</h2>
+<p>MRP Rich is used here as a modelling reference because it uses the fullest poststratification structure available in the workflow. It is not an external benchmark; disagreement with it indicates how much the other methods differ from the richest unit-level specification.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/val-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+</section>
+<section id="external-validation-residuals" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="external-validation-residuals"><span class="header-section-number">4</span> External Validation Residuals</h2>
+<p>The validation benchmark is the Census bicycle-to-work share. It is related to frequent cycling for transport but does not measure the same target outcome, so the residuals should be read as a directional comparison rather than a direct accuracy test.</p>
 <p><span class="math display">
 \text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
 </span> <span class="math display">
@@ -348,31 +478,29 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>validation_residuals <span class="sc">|&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(method) <span class="sc">|&gt;</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">msoas =</span> <span class="fu">n</span>(),</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_abs_residual =</span> <span class="fu">mean</span>(abs_residual, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_abs_residual =</span> <span class="fu">median</span>(abs_residual, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">p90_abs_residual =</span> <span class="fu">quantile</span>(abs_residual, <span class="fl">0.9</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>, <span class="at">names =</span> <span class="cn">FALSE</span>),</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">2</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    mean_abs_residual,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    median_abs_residual,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    p90_abs_residual</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 16%">
-<col style="width: 8%">
+<col style="width: 14%">
+<col style="width: 19%">
+<col style="width: 21%">
 <col style="width: 24%">
-<col style="width: 27%">
-<col style="width: 23%">
+<col style="width: 20%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">method</th>
-<th style="text-align: right;">msoas</th>
+<th style="text-align: right;">area_time_cells</th>
 <th style="text-align: right;">mean_abs_residual</th>
 <th style="text-align: right;">median_abs_residual</th>
 <th style="text-align: right;">p90_abs_residual</th>
@@ -396,9 +524,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td style="text-align: left;">BHF</td>
 <td style="text-align: right;">408</td>
+<td style="text-align: right;">0.09</td>
 <td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">0.15</td>
+<td style="text-align: right;">0.13</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">MRP Shallow</td>
@@ -412,7 +540,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td style="text-align: right;">408</td>
 <td style="text-align: right;">0.10</td>
 <td style="text-align: right;">0.11</td>
-<td style="text-align: right;">0.14</td>
+<td style="text-align: right;">0.15</td>
 </tr>
 </tbody>
 </table>
@@ -430,36 +558,35 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="ci-width" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="ci-width"><span class="header-section-number">3</span> CI width</h2>
+<section id="uncertainty-width" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="uncertainty-width"><span class="header-section-number">5</span> Uncertainty Width</h2>
+<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect design-based sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>validation_residuals <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(method) <span class="sc">|&gt;</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">msoas =</span> <span class="fu">n</span>(),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">mean_ci_width_pp =</span> <span class="fu">mean</span>(ci_width, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_ci_width_pp =</span> <span class="fu">median</span>(ci_width, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">p90_ci_width_pp =</span> <span class="fu">quantile</span>(ci_width, <span class="fl">0.9</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>, <span class="at">names =</span> <span class="cn">FALSE</span>) <span class="sc">*</span> <span class="dv">100</span>,</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">2</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    mean_ci_width_pp,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    median_ci_width_pp,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    p90_ci_width_pp</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 17%">
-<col style="width: 8%">
-<col style="width: 24%">
-<col style="width: 27%">
-<col style="width: 22%">
+<col style="width: 15%">
+<col style="width: 20%">
+<col style="width: 21%">
+<col style="width: 23%">
+<col style="width: 20%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">method</th>
-<th style="text-align: right;">msoas</th>
+<th style="text-align: right;">area_time_cells</th>
 <th style="text-align: right;">mean_ci_width_pp</th>
 <th style="text-align: right;">median_ci_width_pp</th>
 <th style="text-align: right;">p90_ci_width_pp</th>
@@ -476,30 +603,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="even">
 <td style="text-align: left;">FH</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">4.15</td>
-<td style="text-align: right;">4.03</td>
-<td style="text-align: right;">4.72</td>
+<td style="text-align: right;">4.08</td>
+<td style="text-align: right;">3.97</td>
+<td style="text-align: right;">4.59</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">BHF</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">3.93</td>
-<td style="text-align: right;">3.86</td>
-<td style="text-align: right;">4.59</td>
+<td style="text-align: right;">3.09</td>
+<td style="text-align: right;">2.83</td>
+<td style="text-align: right;">4.23</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">MRP Shallow</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">3.56</td>
-<td style="text-align: right;">3.22</td>
-<td style="text-align: right;">4.82</td>
+<td style="text-align: right;">3.52</td>
+<td style="text-align: right;">3.18</td>
+<td style="text-align: right;">4.75</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">MRP Rich</td>
 <td style="text-align: right;">408</td>
-<td style="text-align: right;">3.45</td>
-<td style="text-align: right;">3.12</td>
-<td style="text-align: right;">4.92</td>
+<td style="text-align: right;">3.44</td>
+<td style="text-align: right;">3.14</td>
+<td style="text-align: right;">4.65</td>
 </tr>
 </tbody>
 </table>
@@ -514,6 +641,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/val-ci-density-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+</section>
+<section id="local-residual-effects" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="local-residual-effects"><span class="header-section-number">6</span> Local Residual Effects</h2>
+<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal structure.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/val-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 

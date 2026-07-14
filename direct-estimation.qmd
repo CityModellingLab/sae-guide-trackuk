@@ -50,7 +50,9 @@ variance_label <- label_number(accuracy = 0.001)
 missing_fill <- "grey85"
 
 map_text_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = 10, hjust = 0.5, colour = "grey30"),
   axis.title.y = element_text(
     size = 12,
     face = "bold",
@@ -62,11 +64,13 @@ map_text_theme <- theme(
 )
 
 map_annotation_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
 )
 
 chart_text_theme <- theme(
+  plot.title.position = "plot",
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
   plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
   axis.title = element_text(size = 14),
@@ -79,7 +83,7 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Direct estimation is the starting point for the SAE workflow. At this stage, each area-time estimate, or *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave. For each *MSOA-year cell*, we calculate a Horvitz--Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.
+Direct estimation is the starting point for the SAE workflow. Each area-time estimate, or *MSOA-year cell* in this example, is calculated only from the survey respondents observed in that area and wave. For each *MSOA-year cell*, we calculate a Horvitz--Thompson weighted proportion using the respondent cycling outcome, matched survey weight, survey stratum, MSOA assignment, and wave year.
 
 The output is a transparent survey-based baseline: a direct estimate, sampling variance, and usable sample size for each observed *MSOA-year cell*. These estimates show where the survey evidence is strong, sparse, missing, or unstable, helping us decide whether model-based small area estimation is needed.
 
@@ -252,14 +256,13 @@ diagnostic_panel <- wrap_plots(
 
 diagnostic_panel
 ```
-In case of unstable or unavailable direct estimates (median `n = 4`, 3 missing direct estimates) at the target area-time scale as seen above, we turn to model-based SAE methods which borrow strength across areas and years and auxiliary predictors. 
+Sparse and uneven survey coverage limits how far direct estimates can be used on their own. At the target MSOA-year scale, many estimates are unstable or unavailable, so the next step is to use model-based SAE methods that borrow strength across areas, years, and auxiliary predictors.
 
-There are two approaches: 
+Two model-based options follow:
 
-- **Area-level SAE models** stabilise direct area estimates, and
+- **Area-level SAE models** stabilise direct area estimates using sampling variances to control how much weight each direct estimate receives.
 - **Unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
 
-The choice between the two should be based on the quality of the direct estimates as modelling input and whether the survey microdata can provide unit-level predictors that can explain the individual variability of the indicator in question.
 
 ```{r}
 #| label: direct-summary
@@ -278,9 +281,9 @@ direct_summary_by_wave <- direct_bike |>
 direct_summary_by_wave
 ```
 
-The summary suggests that area-level modelling has important limitations in this setting. Because the outcome is binary, many MSOA-year cells have little direct survey information because small binary samples often produce all-zero/all-one responses. It therefore motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before estimates are aggregated back to areas.
+The choice between area-level and unit-level modelling should depend on two things: the quality of the direct estimates as model inputs, and whether the survey microdata contain unit-level predictors that help explain individual variation in the indicator.
 
-That said, we still fit the area-level model at the next step to demonstrate how much stabilisation is possible before moving to unit-level modelling.
+In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an [area-level model](fh-area.qmd) first to show how much stabilisation is possible from direct-estimate inputs before moving to [unit-level modelling](bhf-unit.qmd).
 
 ```{r}
 #| label: direct-export

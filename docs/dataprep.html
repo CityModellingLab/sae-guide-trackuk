@@ -140,11 +140,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./fh-area.html" rel="" target="">
- <span class="dropdown-text">Area-level (FH)</span></a>
+ <span class="dropdown-text">Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
- <span class="dropdown-text">Unit-level (BHF)</span></a>
+ <span class="dropdown-text">Unit-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
@@ -152,7 +152,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Validation diagnostics</span></a>
+ <span class="dropdown-text">Diagnostics</span></a>
   </li>  
     </ul>
   </li>
@@ -164,10 +164,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
  <span class="dropdown-text">Toolkit</span></a>
-  </li>  
-        <li>
-    <a class="dropdown-item" href="./bibliography.html" rel="" target="">
- <span class="dropdown-text">Bibliography</span></a>
   </li>  
     </ul>
   </li>
@@ -232,13 +228,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level (FH)</span></a>
+ <span class="menu-text">Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level (BHF)</span></a>
+ <span class="menu-text">Unit-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -250,7 +246,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Validation diagnostics</span></a>
+ <span class="menu-text">Diagnostics</span></a>
   </div>
 </li>
       </ul>
@@ -268,12 +264,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Toolkit</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./bibliography.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Bibliography</span></a>
   </div>
 </li>
       </ul>
@@ -294,6 +284,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">2.1</span> Defining The Estimand</a></li>
   <li><a href="#preparing-the-survey-indicator" id="toc-preparing-the-survey-indicator" class="nav-link" data-scroll-target="#preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing The Survey Indicator</a></li>
   <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</a></li>
+  <li><a href="#preparing-the-domain-frame-inla-indices-and-spatial-graph" id="toc-preparing-the-domain-frame-inla-indices-and-spatial-graph" class="nav-link" data-scroll-target="#preparing-the-domain-frame-inla-indices-and-spatial-graph"><span class="header-section-number">2.4</span> Preparing the Domain Frame, INLA Indices, and Spatial Graph</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -329,31 +320,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoayear.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">la_code =</span> LAD21CD) <span class="sc">|&gt;</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(la_code, <span class="st">"W"</span>))</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">area_id =</span> MSOA21CD) <span class="sc">|&gt;</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(spdep)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoayear.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(<span class="at">la_code =</span> LAD21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(la_code, <span class="st">"W"</span>))</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_id =</span> MSOA21CD,</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">msoa_name =</span> MSOA21NM</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<p>This data preparation step introduces the survey source, defines the estimand, documents the synthetic geography, and explains the analysis-ready datasets used by the estimation workflows that follow.</p>
 <section id="the-survey-microdata" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</h2>
 <p>The analysis uses a synthetic teaching dataset based on three waves of the <strong>National Survey for Wales (NSW): 2020-2021, 2022-2023, and 2024-2025</strong>.</p>
 <p>The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. The cleaned microdata combine three survey periods into one harmonised survey microdata.</p>
-<p>The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. These MSOA assignments are for teaching and workflow development only, so the resulting MSOA estimates should not be interpreted as substantive findings about individual places.</p>
+<p>The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. The resulting MSOA estimates should not be interpreted as substantive findings about individual places.</p>
 <p>This design has two purposes:</p>
 <ul>
 <li><strong>Higher spatial resolution.</strong> The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.</li>
@@ -397,7 +391,7 @@ Note
 <p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
 <p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
-<p>In this tutorial, the estimand is:</p>
+<p>The estimand used here is:</p>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -443,7 +437,7 @@ Target estimand
 </tr>
 <tr class="odd">
 <td>Positive case</td>
-<td><code>AtFrqBke</code> is <code>1</code> or <code>2</code>, treated as frequent cycling</td>
+<td><code>AtFrqBke</code> is <code>1</code> or <code>2</code> (at least several times a week)</td>
 </tr>
 <tr class="even">
 <td>Negative case</td>
@@ -581,14 +575,10 @@ Target estimand
 <td>MSOA estimation area</td>
 </tr>
 <tr class="even">
-<td><code>msoa_name</code></td>
-<td>MSOA name</td>
-</tr>
-<tr class="odd">
 <td>Raw predictors</td>
 <td><code>mean_age_adult</code>; <code>prob_female</code>; <code>population_density</code>; <code>car_access_hhshare</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>Scaled predictors</td>
 <td>Z-scored versions for model input</td>
 </tr>
@@ -646,9 +636,115 @@ Note
 <p>A shallower poststratification setup is also possible when population counts are available for more years but only by age and sex. One example is the <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics">ONS MSOA quinary age-by-sex population estimates</a>.</p>
 </div>
 </div>
-
-
 </section>
+</section>
+<section id="preparing-the-domain-frame-inla-indices-and-spatial-graph" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="preparing-the-domain-frame-inla-indices-and-spatial-graph"><span class="header-section-number">2.4</span> Preparing the Domain Frame, INLA Indices, and Spatial Graph</h3>
+<p>The domain frame defines the complete MSOA-year grid, which combines the Wales MSOA boundaries with the survey years present in the cleaned microdata, so each MSOA-year cell exists even when the survey has no respondents in that cell. It also stores the numeric area and time indices required by <code>INLA</code>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>area_frame <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(area_id, msoa_name) <span class="sc">|&gt;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_id)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>area_index <span class="ot">&lt;-</span> area_frame <span class="sc">|&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id) <span class="sc">|&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_id) <span class="sc">|&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">area_inla_id =</span> <span class="fu">row_number</span>())</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>time_index <span class="ot">&lt;-</span> survey_microdata <span class="sc">|&gt;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(time_id) <span class="sc">|&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(time_id) <span class="sc">|&gt;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">time_inla_id =</span> <span class="fu">row_number</span>())</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>domain_frame <span class="ot">&lt;-</span> tidyr<span class="sc">::</span><span class="fu">crossing</span>(area_index, time_index) <span class="sc">|&gt;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(area_frame, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, area_inla_id, time_inla_id, msoa_name)</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(domain_frame, <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"domain_msoayear.csv"</span>))</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(domain_frame)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="kable-table">
+<table class="table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">area_id</th>
+<th style="text-align: right;">time_id</th>
+<th style="text-align: right;">area_inla_id</th>
+<th style="text-align: right;">time_inla_id</th>
+<th style="text-align: left;">msoa_name</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000001</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Isle of Anglesey 001</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2021</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2023</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">W02000002</td>
+<td style="text-align: right;">2025</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">Isle of Anglesey 002</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<p>The spatial graph must use the same MSOA ordering as <code>area_inla_id</code>, because <code>INLA</code> reads the graph by numeric node position. We therefore sort the boundaries by <code>area_inla_id</code> before writing the graph. The graph uses Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.</p>
+<p><img src="assets/spatial_weights_example.png" class="img-fluid"></p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>msoa_boundaries_sorted <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_inla_id)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>msoa_neighbours <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  msoa_boundaries_sorted,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">queen =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> msoa_boundaries_sorted<span class="sc">$</span>area_id</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the Queen-contiguity graph in INLA's .adj format.</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"msoa_queen.adj"</span>)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">nb2INLA</span>(</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> spatial_graph_file,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">nb =</span> msoa_neighbours</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+
+
 </section>
 </section>
 

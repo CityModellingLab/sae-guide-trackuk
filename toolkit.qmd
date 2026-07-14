@@ -4,11 +4,11 @@ subtitle: "Bring your own survey into the workflow"
 number-sections: false
 ---
 
-This SAE toolkit shows how to adapt the SAE workflow to your own survey, geography, and outcome by mapping your data to a common schema and applying reusable scripts.
+This SAE toolkit shows how to adapt the SAE workflow to another survey, geography, or outcome by mapping the inputs to a common schema and running the workflow pages in sequence.
 
 ## 1. Define the estimates you need
 
-Start by defining the estimand that covers:
+Start by defining the estimand:
 
 - what outcome is being estimated;
 - who is in the target population;
@@ -19,21 +19,31 @@ In a spatio-temporal SAE workflow, the target estimate is produced for every are
 
 ## 2. Prepare the input tables
 
-The workflow expects a set of datasets, linked by `area_id` and `time_id` values, with `unit_id` as the survey respondent identifier.
+The workflow expects a small set of linked tables. Area-time inputs use `area_id` and `time_id`; respondent-level survey inputs also use `unit_id`.
 
 ### Domain frame
 
-One row for every area-time cell that should receive an estimate. This table defines the target grid, including cells with no survey respondents.
+One row for every area-time cell that should receive an estimate. This table defines the target grid, including cells with no survey respondents, and stores the numeric indices used by `INLA`.
 
 | Column | Meaning |
 |---|---|
 | `area_id` | Area to estimate |
 | `time_id` | Time period to estimate |
-| labels | Optional area or period labels |
+| `area_inla_id` | Numeric area index for `INLA` |
+| `time_inla_id` | Numeric time index for `INLA` |
+| labels | Optional area or period labels for display |
 
-### Survey indicator
+### Spatial graph
 
-One row per respondent-period for the outcome being estimated, together with the unit-level predictors.
+Spatial random effects need an adjacency graph with the same area ordering as `area_inla_id`.
+
+| File | Meaning |
+|---|---|
+| `*.adj` | `INLA` adjacency graph, ordered by `area_inla_id` |
+
+### Survey indicator and unit-level predictors (if applicable)
+
+One row per respondent-period for the outcome being estimated, together with the survey design fields and unit-level predictors.
 
 | Column | Meaning |
 |---|---|
@@ -41,23 +51,23 @@ One row per respondent-period for the outcome being estimated, together with the
 | `area_id` | Area assigned to the respondent |
 | `time_id` | Survey period |
 | `indicator` | Outcome used in estimation (binary or continuous) |
-| `weight` | Survey design weight |
-| `strata` | Survey stratum, if available |
-| predictors | Unit predictors (age, sex, car access, etc.) |
+| `weight` | Survey design weight for direct estimation |
+| `strata` | Survey stratum for direct estimation, if available |
+| predictors | Unit predictors (age, sex, car access, etc.) if applicable |
 
 ### Area predictors
 
-One row per area, with predictors used to explain spatial differences in the outcome. These are used in area-level SAE and can also support unit-level SAE, when they provide the area-level summaries to aggregate predictions.
+One row per area, with predictors used to explain spatial differences in the outcome. These are used in area-level SAE and can also support unit-level SAE as area-level summaries or contextual predictors.
 
 | Column | Meaning |
 |---|---|
 | `area_id` | Area identifier |
 | `scaled_*` | Predictors transformed for modelling |
-| `raw_*` | Predictors in original units for interpretation and aggregation |
+| `raw_*` | Predictors in original units for interpretation |
 
 ### Poststratification table
 
-Used when model predictions are aggregated over population groups to produce the final estimate in the Multilevel Regression with Poststratification (MRP) workflow.
+Used when model predictions are aggregated over population groups to produce the final estimate in the Multilevel Regression with Poststratification (MRP) workflow. The population cells must match the categorical predictors used for poststratification.
 
 | Column | Meaning |
 |---|---|
@@ -70,21 +80,22 @@ Used when model predictions are aggregated over population groups to produce the
 
 ![](assets/sae_method_select.png)
 
-## 4. Use the scripts
+## 4. Run the workflow pages
 
-[wip]
+...
 
 ## 5. Expected outputs
 
-All method outputs should keep the same identifying columns so estimates can be compared, mapped, and joined back to other urban datasets.
+After each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.
 
 | Column | Meaning |
 |---|---|
 | `area_id` | Estimated area |
 | `time_id` | Estimated period |
+| `method` | Direct, Fay--Herriot, BHF, MRP, etc. |
 | `estimate` | Direct or model-based point estimate |
 | `variance` | Sampling or posterior variance |
 | `lower`, `upper` | Uncertainty interval bounds |
+| `ci_width` | Uncertainty interval width |
 | `n` | Sample size |
-| `method` | Direct, Fay--Herriot, etc. |
-| remark | Model specification or other notes |
+| `model` | Model specification or other notes |
