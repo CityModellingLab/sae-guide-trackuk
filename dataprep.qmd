@@ -74,11 +74,11 @@ The raw survey geography and stratification variable is Local Authority, while t
 
 This design has two purposes:
 
-- **Higher spatial resolution.** The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.
+- **Higher spatial resolution.** The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and unit-level SAE with poststratification.
 - **Privacy and disclosure protection.** The assigned MSOA is not the respondent's true MSOA, so we avoid presenting fine-grained respondent locations. 
 
 ::: {.callout-note}
-From here on, the survey period labels are simplified to their end year. For example, the `2020-2021` survey wave is labelled as and referred to as the `2021` wave.
+Survey period labels use their end year. For example, the `2020-2021` survey wave is labelled as the `2021` wave.
 :::
 
 ```{r}
@@ -148,7 +148,7 @@ The estimand is the quantity we want to estimate. It should be defined before pr
 
 > Estimate **what outcome among which population**, across **which geography** and **time period**.
 
-In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*. 
+In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. Here, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*.
 
 The estimand used here is:
 
@@ -156,7 +156,7 @@ The estimand used here is:
 
 ### Preparing The Survey Indicator
 
-Since we are interested in whether adult respondents cycle frequently as a means of transport, we can code the indicator from `AtFrqBke`, the active-travel frequency question for cycling. 
+The frequent-cycling indicator is coded from `AtFrqBke`, the active-travel frequency question for cycling.
 
 | Field | Definition |
 |---|---|

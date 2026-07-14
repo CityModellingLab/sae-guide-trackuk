@@ -1,6 +1,6 @@
 ---
-title: "Small Area Estimation with Poststratification"
-subtitle: "A Bayesian spatio-temporal extension"
+title: "Unit-level SAE model with poststratification"
+subtitle: "A Bayesian spatio-temporal extension of Multilevel Regression with Poststratification (MRP)"
 ---
 
 ::: {.callout-note title="Theory in brief"}
@@ -25,7 +25,7 @@ $$
 
 The poststratification step combines those cell predictions with population counts $N_{jtc}$ available or estimated for the same cells. Area-time estimates are then population-weighted averages of the cell predictions.
 $$
-\hat{\mu}_{jt}^{\mathrm{MRP}}
+\hat{\mu}_{jt}^{\mathrm{post}}
 =
 \frac{\sum_c N_{jtc}\hat{\pi}_{jtc}}
 {\sum_c N_{jtc}}.
@@ -103,7 +103,7 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-SAE with poststratification (MRP) extends the unit-level SAE workflow by combining a respondent-level outcome model with a poststratification table describing the target population. For this estimand, we model the binary frequent-cycling indicator using `age_band`, `sex`, `car_access`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `car_access` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+Unit-level SAE with poststratification combines an outcome model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells. For this estimand, we model the binary frequent-cycling indicator using `age_band`, `sex`, `car_access`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `car_access` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
 
 Here, the poststratification table is sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census), giving the 2021 population count for each `age_band` x `sex` x `car_access` cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, $N_{jtc} = N_{jc,2021}$ for all three waves.
 
@@ -112,7 +112,7 @@ Here, the poststratification table is sourced from [ONS UK Census 2021](https://
 There are two inputs when performing unit-level SAE with poststratification:
 
 - `poststrat_data`, the population cells over which predictions are averaged.
-- `model_data`, the sampled respondent records used to fit the model.
+- `model_data`, the survey microdata used to fit the model.
 
 It is essential for the unit-level predictors to be identical to the ones present in the poststratification table. Therefore, age is grouped into the same broad Census age bands and sex is also recoded as Male and Female.
 
@@ -197,7 +197,7 @@ poststrat_data <- poststrat_data |>
 
 ## Fit and evaluate models
 
-We fit binomial unit-level models to respondent records, then use them to predict area-time means. We specify three unit-level models to evaluate at the next step:
+We fit binomial unit-level models to the survey microdata, then use them to predict area-time means. We specify three unit-level models to evaluate at the next step:
 
 | Model | Name | Specification |
 |---|---|---|
@@ -254,7 +254,7 @@ fit_mrp_model <- function(formula) {
 mrp_fits <- lapply(model_formulas, fit_mrp_model)
 ```
 
-As before, we use `WAIC` as an initial model check. The fixed-effect table reports the selected model's predictor terms providing a directional check on whether the modelled relationships are consistent with expected cycling patterns.
+Model fit is compared with `WAIC` as an initial check. The fixed-effect table reports the selected model's predictor terms and gives a directional check on whether the modelled relationships align with expected cycling patterns.
 
 ```{r}
 #| label: mrp-waic
@@ -294,7 +294,7 @@ mrp_final_fit$summary.fixed |>
 
 ## Poststratification with posterior draws
 
-As with the previous model-based methods, the final *MSOA-year* estimates are obtained by aggregating predictions across posterior draws. The key difference is that the unit-level model is fitted to respondent records, so its predictions can still reflect the composition of the survey sample instead of the real-world population if left unadjusted as done in the previous method. Poststratification addresses this by evaluating the fitted model over known population groups and reweighting those predictions by population counts, so the final estimates are aligned with the target population structure.
+As with the previous model-based methods, the final *MSOA-year* estimates are obtained by aggregating predictions across posterior draws. The key difference is that the unit-level model is fitted to survey microdata, so its predictions can still reflect the composition of the survey sample instead of the real-world population if left unadjusted as done in the previous method. Poststratification addresses this by evaluating the fitted model over known population groups and reweighting those predictions by population counts, so the final estimates are aligned with the target population structure.
 
 ```{r}
 #| label: mrp-composition
@@ -362,7 +362,7 @@ bind_rows(
   )
 ```
 
-The poststratification step uses posterior draws from the selected `INLA` fit to produce MSOA-year estimates. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every `age_band` x `sex` x `car_access` population cell, weight those cell predictions by `pop_count`, and summarise the resulting MSOA-year draws.
+Posterior draws from the selected `INLA` fit produce MSOA-year estimates. Each draw provides fixed effects, spatial area effects, and temporal effects. The fitted model is evaluated over every `age_band` x `sex` x `car_access` population cell, transformed to the response scale, weighted by `pop_count`, and summarised as MSOA-year draws.
 
 :::{.callout-note}
 Each posterior draw stores the fixed effects, spatial area effect, and temporal effect together in `INLA`'s latent vector. Fixed effects are labelled as `term:1`, while random effects are labelled as `effect:index`.
@@ -404,71 +404,61 @@ time_draws <- sapply(posterior_draws, \(draw) {
 })
 ```
 
-For each posterior draw, we rebuild the fitted model for every poststratification cell.
+Each posterior draw is evaluated over every poststratification cell. The cell predictions are then weighted by population count and aggregated within each MSOA-year.
 
 ```{r}
 #| label: mrp-predict
 #| code-fold: false
 
-cell_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
-  fixed_part <- fixed_draws["(Intercept)", draw_id] +
-    as.integer(poststrat_data$age_band == "25_34") * fixed_draws["age_band25_34", draw_id] +
-    as.integer(poststrat_data$age_band == "35_49") * fixed_draws["age_band35_49", draw_id] +
-    as.integer(poststrat_data$age_band == "50_64") * fixed_draws["age_band50_64", draw_id] +
-    as.integer(poststrat_data$age_band == "65_plus") * fixed_draws["age_band65_plus", draw_id] +
-    as.integer(poststrat_data$sex == "Female") * fixed_draws["sexFemale", draw_id] +
-    poststrat_data$car_access * fixed_draws["car_access", draw_id]
+# Rebuild fitted model for each cell
+prediction_matrix <- model.matrix(
+  ~ age_band + sex + car_access,
+  data = poststrat_data
+)[, fixed_terms, drop = FALSE]
 
-  cell_log_odds <- fixed_part +
+cell_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
+  cell_log_odds <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
     area_draws[as.character(poststrat_data$area_inla_id), draw_id] +
     time_draws[as.character(poststrat_data$time_inla_id), draw_id]
 
-  plogis(cell_log_odds)
+  plogis(cell_log_odds) # For binomial model
 })
-```
 
-We then apply the poststratification weights by multiplying each cell prediction by its population count and aggregating within each MSOA-year.
-
-```{r}
-#| label: mrp-weight
-#| code-fold: false
-
+# Aggregate and apply poststrat weight for each area-time
 area_year_id <- paste(poststrat_data$area_id, poststrat_data$time_id, sep = "__")
 
-weighted_sums <- rowsum(
-  cell_draws * poststrat_data$pop_count,
-  group = area_year_id,
-  reorder = FALSE
-)
+aggregate_draws <- function(draw_matrix, weights, group) {
+  weighted_sums <- rowsum(draw_matrix * weights, group = group, reorder = FALSE)
+  population_totals <- rowsum(weights, group = group, reorder = FALSE)
+  weighted_sums / as.numeric(population_totals)
+}
 
-populations <- rowsum(
-  poststrat_data$pop_count,
-  group = area_year_id,
-  reorder = FALSE
+prediction_draws <- aggregate_draws(
+  draw_matrix = cell_draws,
+  weights = poststrat_data$pop_count,
+  group = area_year_id
 )
-
-area_year_draws <- weighted_sums / as.numeric(populations)
 ```
 
-Finally, we summarise the MSOA-year draws into the final estimate, variance, and 95% credible interval.
+The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
 
 ```{r}
 #| label: mrp-results
 #| code-fold: false
 
-mrp_summary <- tibble(
-  area_year_id = rownames(area_year_draws),
-  mrp_estimate = rowMeans(area_year_draws),
-  mrp_variance = apply(area_year_draws, 1, var),
-  mrp_lower = apply(area_year_draws, 1, quantile, probs = 0.025, names = FALSE),
-  mrp_upper = apply(area_year_draws, 1, quantile, probs = 0.975, names = FALSE)
-) |>
-  mutate(mrp_ci_width = mrp_upper - mrp_lower) |>
-  separate(area_year_id, into = c("area_id", "time_id"), sep = "__", convert = TRUE)
-
-final_mrp_results <- domain_frame |>
-  select(area_id, msoa_name, time_id) |>
-  left_join(mrp_summary, by = c("area_id", "time_id"))
+final_mrp_results <- tibble(area_year_id = rownames(prediction_draws)) |>
+  separate(area_year_id, into = c("area_id", "time_id"), sep = "__", convert = TRUE) |>
+  bind_cols(
+    tibble(
+      mrp_estimate = rowMeans(prediction_draws),
+      mrp_variance = apply(prediction_draws, 1, var),
+      mrp_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      mrp_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
+    )
+  ) |>
+  mutate(
+    mrp_ci_width = mrp_upper - mrp_lower
+  )
 
 head(final_mrp_results)
 ```
@@ -537,7 +527,7 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
   plot_annotation(
     title = "Share of adults who cycle for transport frequently",
-    subtitle = "MRP final model and 95% credible interval width",
+    subtitle = "Selected model and 95% credible interval width",
     theme = map_annotation_theme
   )
 ```
@@ -546,9 +536,9 @@ Note that these estimates with the fact that we are reusing the same age-sex-car
 
 ## Appendix: Enhance shallow poststratification with contextual predictors
 
-Sometimes the population table is available for every target year but only at a shallow cell grain. For example, ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `car_access`. In that setting we can still use MRP, but the model may only specify two unit-level predictors represented in the poststratification table.
+Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `car_access`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table.
 
-Contextual predictors can still help explain between-area or between-year variation. Since these predictors vary by MSOA, not by respondent within an MSOA, this is weaker than having unit-level predictors and matching poststratification cells because they cannot represent how cycling behaviour differs between adults with and without car access inside the same age-sex cell.
+Contextual predictors can explain between-area or between-year variation, but they do not describe respondent composition within an MSOA. They cannot represent how cycling behaviour differs between adults with and without car access inside the same age-sex cell.
 
 ```{r}
 #| label: mrp-load-shallow
@@ -655,13 +645,13 @@ rich_shallow_waic <- bind_rows(
   model_waic |>
     filter(model == mrp_best_model) |>
     transmute(
-      workflow = "Rich MRP",
+      workflow = "Rich poststratification",
       model = "Age + Sex + CarAccess",
       waic,
       eff_params
     ),
   tibble(
-    workflow = "Shallow MRP",
+    workflow = "Shallow poststratification",
     model = "Age + Sex (+Area context)",
     waic = shallow_context_fit$waic$waic,
     eff_params = shallow_context_fit$waic$p.eff
@@ -672,11 +662,12 @@ rich_shallow_waic <- bind_rows(
 rich_shallow_waic
 ```
 
-The shallow **poststratification** step weights the fitted cell predictions only by the age-sex population counts for each MSOA-year.
+The shallow **poststratification** step uses the same posterior-draw workflow, but weights fitted cell predictions only by the age-sex population counts for each MSOA-year.
 
 ```{r}
-#| label: shallow-draws
+#| label: shallow-results
 
+# Posterior draws
 set.seed(101)
 shallow_draws <- inla.posterior.sample(
   n = 300,
@@ -704,65 +695,50 @@ shallow_time_draws <- sapply(shallow_draws, \(draw) {
     time_ids
   )
 })
-```
 
-```{r}
-#| label: shallow-predict
-
-shallow_cell_matrix <- model.matrix(
+# Predict
+shallow_prediction_matrix <- model.matrix(
   ~ age_band + sex + population_density + car_access_hhshare,
   data = shallow_poststrat_data
 )[, shallow_fixed_terms, drop = FALSE]
 
 shallow_cell_draws <- sapply(seq_along(shallow_draws), \(draw_id) {
   shallow_cell_log_odds <- as.numeric(
-    shallow_cell_matrix %*% shallow_fixed_draws[, draw_id]
+    shallow_prediction_matrix %*% shallow_fixed_draws[, draw_id]
   ) +
     shallow_area_draws[as.character(shallow_poststrat_data$area_inla_id), draw_id] +
     shallow_time_draws[as.character(shallow_poststrat_data$time_inla_id), draw_id]
 
   plogis(shallow_cell_log_odds)
 })
-```
 
-```{r}
-#| label: shallow-weight
-
+# Weight (poststrat)
 shallow_area_year_id <- paste(
   shallow_poststrat_data$area_id,
   shallow_poststrat_data$time_id,
   sep = "__"
 )
 
-shallow_weighted_sums <- rowsum(
-  shallow_cell_draws * shallow_poststrat_data$pop_count,
-  group = shallow_area_year_id,
-  reorder = FALSE
+shallow_prediction_draws <- aggregate_draws(
+  draw_matrix = shallow_cell_draws,
+  weights = shallow_poststrat_data$pop_count,
+  group = shallow_area_year_id
 )
-shallow_populations <- rowsum(
-  shallow_poststrat_data$pop_count,
-  group = shallow_area_year_id,
-  reorder = FALSE
-)
-shallow_area_year_draws <- shallow_weighted_sums / as.numeric(shallow_populations)
-```
 
-```{r}
-#| label: shallow-results
-
-shallow_summary <- tibble(
-  area_year_id = rownames(shallow_area_year_draws),
-  shallow_mrp_estimate = rowMeans(shallow_area_year_draws),
-  shallow_mrp_variance = apply(shallow_area_year_draws, 1, var),
-  shallow_mrp_lower = apply(shallow_area_year_draws, 1, quantile, probs = 0.025, names = FALSE),
-  shallow_mrp_upper = apply(shallow_area_year_draws, 1, quantile, probs = 0.975, names = FALSE)
-) |>
-  mutate(shallow_mrp_ci_width = shallow_mrp_upper - shallow_mrp_lower) |>
-  separate(area_year_id, into = c("area_id", "time_id"), sep = "__", convert = TRUE)
-
-shallow_mrp_results <- domain_frame |>
-  select(area_id, msoa_name, time_id) |>
-  left_join(shallow_summary, by = c("area_id", "time_id"))
+# Results
+shallow_mrp_results <- tibble(area_year_id = rownames(shallow_prediction_draws)) |>
+  separate(area_year_id, into = c("area_id", "time_id"), sep = "__", convert = TRUE) |>
+  bind_cols(
+    tibble(
+      shallow_mrp_estimate = rowMeans(shallow_prediction_draws),
+      shallow_mrp_variance = apply(shallow_prediction_draws, 1, var),
+      shallow_mrp_lower = apply(shallow_prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      shallow_mrp_upper = apply(shallow_prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
+    )
+  ) |>
+  mutate(
+    shallow_mrp_ci_width = shallow_mrp_upper - shallow_mrp_lower
+  )
 
 head(shallow_mrp_results)
 ```
@@ -829,13 +805,13 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 
 wrap_plots(c(shallow_estimate_maps, shallow_uncertainty_maps), ncol = length(mrp_wave_years)) +
   plot_annotation(
-    title = "Shallow MRP with contextual predictors",
-    subtitle = "Age-sex poststratification with area-level covariates",
+    title = "Shallow poststratification with area summaries",
+    subtitle = "Age-sex poststratification with area summaries",
     theme = map_annotation_theme
   )
 ```
 
-Compared with the richer three-predictor MRP model, the local differences show whether estimates are driven more by detailed population composition or broader area context. The shallow model may raise estimates in areas where contextual predictors suggest favourable cycling conditions (e.g., high population density), while the rich model may lower them if the poststratification cells contain more residents with car access than the area-level car-ownership contextual predictor implies.
+Compared with the richer three-predictor poststratified model, the local differences show whether estimates are driven more by detailed population composition or broader area context. The shallow model may raise estimates in areas where contextual predictors suggest favourable cycling conditions (e.g., high population density), while the rich model may lower them if the poststratification cells contain more residents with car access than the area-level car-ownership contextual predictor implies.
 
 ```{r}
 #| label: mrp-map-rich-shallow
@@ -899,7 +875,7 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 
 wrap_plots(rich_minus_shallow_maps, ncol = 3) +
   plot_annotation(
-    title = "Rich MRP minus shallow MRP",
+    title = "Rich minus shallow poststratification",
     theme = map_annotation_theme
   )
 ```

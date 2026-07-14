@@ -1,6 +1,6 @@
 ---
-title: "Unit-Level SAE Modelling (Battese--Harter--Fuller)"
-subtitle: "A Bayesian spatio-temporal extension"
+title: "Unit-level SAE model with area summaries"
+subtitle: "A Bayesian spatio-temporal extension of the Battese--Harter--Fuller unit-level model"
 ---
 
 ::: {.callout-note title="Theory in brief"}
@@ -14,7 +14,7 @@ where $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, and $v_
 To estimate the target for an area-time cell, the fitted model is evaluated using the corresponding population-level auxiliary summaries $\bar{x}_{jt}$:
 
 $$
-\hat{\mu}_{jt}^{\mathrm{BHF}}
+\hat{\mu}_{jt}^{\mathrm{unit}}
 =
 \widehat{\mathbb{E}}(Y \mid j,t,\bar{x}_{jt}).
 $$
@@ -86,15 +86,15 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE models respondent records directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator is modelled from survey records using temporal and spatial random effects, with unit-level `age`, `sex`, and `car_access` added across model specifications.
+Unit-level SAE with area summaries models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `car_access` added across model specifications.
 
-The approach follows the Battese--Harter--Fuller nested-error regression model, where the individual outcome is modelled using predictors present in the survey microdata. It is then evaluated using MSOA-level summaries of the predictors extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) summaries to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it introduces a different assumption that the area-level summaries of `age`, `sex`, and `car_access` must adequately represent the target population composition in each *MSOA-year* cell.
+This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model but uses a generalised mixed model to handle both binary and continuous outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of `age`, `sex`, and `car_access` adequately represent the target population composition in each *MSOA-year* cell.
 
 ## Prepare model and aggregation data
 
 There are two inputs when performing unit-level SAE:
 
-- `model_data` contains the sampled respondent records used to fit the model.
+- `model_data` contains the survey microdata used to fit the model.
 - `aggregation_data` contains one row for each area-time cell we want to estimate.
 
 
@@ -176,7 +176,7 @@ aggregation_data <- aggregation_data |>
 
 ## Fit and evaluate models
 
-We fit binomial unit-level models to respondent records, then use them to predict area-time means. We specify three unit-level models to evaluate at the next step:
+We fit binomial unit-level models to the survey microdata, then use them to predict area-time means. We specify three unit-level models to evaluate at the next step:
 
 | Model | Name | Specifications |
 |---|---|---|
@@ -235,7 +235,7 @@ bhf_fits <- lapply(model_formulas, fit_bhf_model)
 ```
 
 :::{.callout-note}
-When fitting unit-level BHF models with `INLA`, these arguments are needed:
+When fitting unit-level SAE models with `INLA`, these arguments are needed:
 
 - `control.predictor = list(compute = TRUE)` returns fitted values for the respondent rows used in the likelihood.
 - `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
@@ -291,11 +291,11 @@ bhf_fits[[bhf_best_model]]$summary.hyperpar |>
   mutate(across(where(is.numeric), ~ round(.x, 3)))
 ```
 
-The random-effect table reports the posterior summaries for the temporal and spatial components in the selected BHF specification. Higher precision means less residual variation in that component, while the BYM2 `phi` indicates how much of the area effect is spatially structured.
+The random-effect table reports the posterior summaries for the temporal and spatial components in the selected unit-level specification. Higher precision means less residual variation in that component, while the BYM2 `phi` indicates how much of the area effect is spatially structured.
 
 ## Estimation and aggregation with posterior draws
 
-The aggregation step uses posterior draws from the selected `INLA` fit to produce BHF estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.
+The aggregation step uses posterior draws from the selected `INLA` fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.
 
 :::{.callout-note}
 Each posterior draw stores the fixed effects, spatial area effect, and temporal effect together in `INLA`'s latent vector. Fixed effects are labelled as `term:1`, while random effects are labelled as `effect:index`.
@@ -305,7 +305,7 @@ Each posterior draw stores the fixed effects, spatial area effect, and temporal 
 #| label: bhf-draws
 #| code-fold: false
 
-# Draw 300 posterior samples from the selected BHF fit.
+# Draw 300 posterior samples from the selected fit.
 set.seed(100)
 posterior_draws <- inla.posterior.sample(
   n = 300,
@@ -338,38 +338,40 @@ time_draws <- sapply(posterior_draws, \(draw) {
 })
 ```
 
-For each posterior draw, we rebuild the fitted model for every MSOA-year row.
+Each posterior draw is evaluated over the MSOA-year aggregation frame.
 
 ```{r}
 #| label: bhf-predict
 #| code-fold: false
 
+prediction_matrix <- model.matrix(
+  ~ age + female + car_access,
+  data = aggregation_data
+)[, fixed_terms, drop = FALSE]
+
 prediction_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
-  log_odds <- fixed_draws["(Intercept)", draw_id] +
-    aggregation_data$age * fixed_draws["age", draw_id] +
-    aggregation_data$female * fixed_draws["female", draw_id] +
-    aggregation_data$car_access * fixed_draws["car_access", draw_id] +
+  log_odds <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
     area_draws[as.character(aggregation_data$area_inla_id), draw_id] +
     time_draws[as.character(aggregation_data$time_inla_id), draw_id]
 
-  plogis(log_odds) # Convert log-odds to probability.
+  plogis(log_odds) # For binomial model
 })
 ```
 
-Finally, we summarise the draws into the final estimate, variance, and 95% credible interval.
+The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
 
 ```{r}
 #| label: bhf-results
 #| code-fold: false
 
 final_bhf_results <- aggregation_data |>
-  select(area_id, msoa_name, time_id) |>
+  select(area_id, time_id) |>
   bind_cols(
     tibble(
       bhf_estimate = rowMeans(prediction_draws),
       bhf_variance = apply(prediction_draws, 1, var),
-      bhf_lower = apply(prediction_draws, 1, quantile, probs = 0.025),
-      bhf_upper = apply(prediction_draws, 1, quantile, probs = 0.975)
+      bhf_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      bhf_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
     )
   ) |>
   mutate(
@@ -443,7 +445,7 @@ for (i in seq_len(length(bhf_wave_years) - 1)) {
 wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(bhf_wave_years)) +
   plot_annotation(
     title = "Share of adults who cycle for transport frequently",
-    subtitle = paste0("Selected BHF model (", bhf_best_model, ") and 95% CI width"),
+    subtitle = paste0("Selected model (", bhf_best_model, ") and 95% CI width"),
     theme = map_annotation_theme
   )
 ```

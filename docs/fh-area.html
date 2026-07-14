@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Area-Level SAE Modeling (Fay–Herriot)</title>
+<title>Small Area Estimation for Urban Analytics - Area-level SAE model</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -164,7 +164,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
@@ -256,7 +256,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">Unit-level SAE with Poststrat</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -300,7 +300,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#estimation-with-posterior-draws" id="toc-estimation-with-posterior-draws" class="nav-link" data-scroll-target="#estimation-with-posterior-draws"><span class="header-section-number">3</span> Estimation with posterior draws</a></li>
   <li><a href="#comparative-analysis" id="toc-comparative-analysis" class="nav-link" data-scroll-target="#comparative-analysis"><span class="header-section-number">4</span> Comparative analysis</a>
   <ul class="collapse">
-  <li><a href="#how-the-fayherriot-model-smooths-direct-estimates" id="toc-how-the-fayherriot-model-smooths-direct-estimates" class="nav-link" data-scroll-target="#how-the-fayherriot-model-smooths-direct-estimates"><span class="header-section-number">4.1</span> How the Fay–Herriot model smooths direct estimates</a></li>
+  <li><a href="#how-the-area-level-model-smooths-direct-estimates" id="toc-how-the-area-level-model-smooths-direct-estimates" class="nav-link" data-scroll-target="#how-the-area-level-model-smooths-direct-estimates"><span class="header-section-number">4.1</span> How the area-level model smooths direct estimates</a></li>
   <li><a href="#adding-temporal-and-spatial-effects" id="toc-adding-temporal-and-spatial-effects" class="nav-link" data-scroll-target="#adding-temporal-and-spatial-effects"><span class="header-section-number">4.2</span> Adding Temporal and Spatial Effects</a></li>
   <li><a href="#adding-predictors" id="toc-adding-predictors" class="nav-link" data-scroll-target="#adding-predictors"><span class="header-section-number">4.3</span> Adding Predictors</a></li>
   </ul></li>
@@ -312,8 +312,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Area-Level SAE Modeling (Fay–Herriot)</h1>
-<p class="subtitle lead">A Bayesian spatio-temporal extension</p>
+<h1 class="title">Area-level SAE model</h1>
+<p class="subtitle lead">A Bayesian spatio-temporal extension of the Fay–Herriot area-level model</p>
 </div>
 
 
@@ -338,7 +338,7 @@ Theory in brief
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The Fay–Herriot model treats each direct estimate as a noisy observation of the true area-time quantity:</p>
+<p>The area-level model treats each direct estimate as a noisy observation of the true area-time quantity:</p>
 <p><span class="math display">
 \hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
 e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
@@ -349,7 +349,7 @@ e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
 </span></p>
 <p>Here <span class="math inline">u_j</span> borrows strength across areas while the target remains the area-time quantity <span class="math inline">\mu_{jt}</span>. The area effect can be replaced by a structured spatial effect, and a temporal effect <span class="math inline">v_t</span> can be added to represent wave-to-wave dependence. The fitted model gives an area-time estimate by combining the direct estimate with the model prediction:</p>
 <p><span class="math display">
-\hat{\mu}_{jt}^{\mathrm{FH}}
+\hat{\mu}_{jt}^{\mathrm{area}}
 =
 \widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, x_{jt}).
 </span></p>
@@ -411,7 +411,7 @@ Target estimand
 </div>
 </div>
 </div>
-<p>Area-level SAE uses direct estimates as the modelling input. In the Fay–Herriot model, each direct estimate for an <em>MSOA-year</em> cell is treated as a noisy observation of the underlying frequent-cycling rate, with its sampling variance determining how much weight the model gives to that estimate. The model borrows strength across MSOAs and survey years through spatial and temporal random effects, while area-level predictors, obtained from aggregated benchmarked sources such as <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>, help explain systematic differences in the frequent cycling estimand across areas.</p>
+<p>Area-level SAE uses direct estimates as the modelling input. In the Fay–Herriot area-level model, each direct estimate for an <em>MSOA-year</em> cell is treated as a noisy observation of the underlying frequent-cycling rate, with its sampling variance determining how much weight the model gives to that estimate. The model borrows strength across MSOAs and survey years through spatial and temporal random effects, while area-level predictors, obtained from aggregated benchmarked sources such as <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>, help explain systematic differences in the frequent cycling estimand across areas.</p>
 </section>
 <section id="prepare-modelling-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-modelling-data"><span class="header-section-number">1</span> Prepare modelling data</h2>
@@ -581,7 +581,7 @@ Target estimand
 </div>
 </div>
 </div>
-<p>The missing or zero sampling variances of direct estimates need to be handled, because it controls how much weight each direct estimate receives in the FH model.</p>
+<p>The missing or zero sampling variances of direct estimates need to be handled, because this controls how much weight each direct estimate receives in the area-level model.</p>
 <ul>
 <li>For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly determined by the model predictions.</li>
 <li>Because the outcome is binary (<code>1</code> for cycling frequently, <code>0</code> otherwise), very small samples can produce a variance of <code>0</code> when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.</li>
@@ -876,7 +876,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>When fitting area-level FH models with <code>INLA</code>, these arguments are needed:</p>
+<p>When fitting area-level SAE models with <code>INLA</code>, these arguments are needed:</p>
 <ul>
 <li><code>control.predictor = list(compute = TRUE)</code> returns fitted values for every row. In an area-level model, these are the final estimates for each area-time row.</li>
 <li><code>scale</code> passes the inverse sampling variance to <code>INLA</code>, so less precise direct estimates get smoothed more.</li>
@@ -885,7 +885,7 @@ Note
 </ul>
 </div>
 </div>
-<p>To compare the fitted models’ overall performance, we use <code>WAIC</code> or (Widely Applicable Information Criterion) as a first check. It is a global predictive-fit measure returned by <code>INLA</code>; lower values indicate better expected prediction after penalising model complexity.</p>
+<p>Model fit is compared with <code>WAIC</code> (Widely Applicable Information Criterion), a global predictive-fit measure returned by <code>INLA</code>. Lower values indicate better expected prediction after penalising model complexity.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -946,7 +946,7 @@ Note
 </section>
 <section id="estimation-with-posterior-draws" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="estimation-with-posterior-draws"><span class="header-section-number">3</span> Estimation with posterior draws</h2>
-<p>The estimation step uses posterior draws from the selected <code>INLA</code> fit to produce FH estimates for each MSOA-year cell. We first sample from the posterior and extract the fitted values, then summarise the resulting MSOA-year draws into the posterior mean, variance, and 95% credible interval.</p>
+<p>Posterior draws from the selected <code>INLA</code> fit give area-level SAE estimates for each MSOA-year cell. The fitted-value draws are summarised into the posterior mean, variance, and 95% credible interval.</p>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -961,7 +961,7 @@ Note
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw 300 posterior samples from the selected FH fit.</span></span>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw 300 posterior samples from the selected fit.</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
@@ -975,49 +975,39 @@ Note
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[prediction_rows, <span class="dv">1</span>])</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The matrix <code>prediction_draws</code> has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarise posterior draws into estimates and credible intervals.</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>model_output_frame <span class="ot">&lt;-</span> model_data <span class="sc">|&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id, msoa_name, direct_estimate, variance, n)</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>final_fh_results <span class="ot">&lt;-</span> model_output_frame <span class="sc">|&gt;</span></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_estimate =</span> <span class="fu">rowMeans</span>(prediction_draws),</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_variance =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, var),</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_lower =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.025</span>),</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_upper =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.975</span>)</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">fh_ci_width =</span> fh_upper <span class="sc">-</span> fh_lower</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_fh_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>final_fh_results <span class="ot">&lt;-</span> model_data <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id) <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_estimate =</span> <span class="fu">rowMeans</span>(prediction_draws),</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_variance =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, var),</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_lower =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.025</span>, <span class="at">names =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">fh_upper =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.975</span>, <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">fh_ci_width =</span> fh_upper <span class="sc">-</span> fh_lower</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_fh_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 8%">
-<col style="width: 6%">
-<col style="width: 17%">
 <col style="width: 13%">
-<col style="width: 7%">
-<col style="width: 2%">
-<col style="width: 9%">
-<col style="width: 9%">
-<col style="width: 8%">
-<col style="width: 8%">
-<col style="width: 9%">
+<col style="width: 10%">
+<col style="width: 16%">
+<col style="width: 16%">
+<col style="width: 13%">
+<col style="width: 13%">
+<col style="width: 16%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">area_id</th>
 <th style="text-align: right;">time_id</th>
-<th style="text-align: left;">msoa_name</th>
-<th style="text-align: right;">direct_estimate</th>
-<th style="text-align: right;">variance</th>
-<th style="text-align: right;">n</th>
 <th style="text-align: right;">fh_estimate</th>
 <th style="text-align: right;">fh_variance</th>
 <th style="text-align: right;">fh_lower</th>
@@ -1029,80 +1019,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">6</td>
-<td style="text-align: right;">0.0471442</td>
-<td style="text-align: right;">0.0001018</td>
-<td style="text-align: right;">0.0267940</td>
-<td style="text-align: right;">0.0682437</td>
-<td style="text-align: right;">0.0414497</td>
+<td style="text-align: right;">0.0473198</td>
+<td style="text-align: right;">0.0001093</td>
+<td style="text-align: right;">0.0261927</td>
+<td style="text-align: right;">0.0665052</td>
+<td style="text-align: right;">0.0403125</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 002</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">9</td>
-<td style="text-align: right;">0.0402554</td>
-<td style="text-align: right;">0.0001200</td>
-<td style="text-align: right;">0.0216633</td>
-<td style="text-align: right;">0.0635070</td>
-<td style="text-align: right;">0.0418437</td>
+<td style="text-align: right;">0.0394380</td>
+<td style="text-align: right;">0.0001252</td>
+<td style="text-align: right;">0.0189581</td>
+<td style="text-align: right;">0.0623496</td>
+<td style="text-align: right;">0.0433915</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 003</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">11</td>
-<td style="text-align: right;">0.0557415</td>
-<td style="text-align: right;">0.0001599</td>
-<td style="text-align: right;">0.0334684</td>
-<td style="text-align: right;">0.0799953</td>
-<td style="text-align: right;">0.0465270</td>
+<td style="text-align: right;">0.0576703</td>
+<td style="text-align: right;">0.0001438</td>
+<td style="text-align: right;">0.0341106</td>
+<td style="text-align: right;">0.0840121</td>
+<td style="text-align: right;">0.0499015</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 004</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">14</td>
-<td style="text-align: right;">0.0443330</td>
-<td style="text-align: right;">0.0001177</td>
-<td style="text-align: right;">0.0234624</td>
-<td style="text-align: right;">0.0651177</td>
-<td style="text-align: right;">0.0416553</td>
+<td style="text-align: right;">0.0442294</td>
+<td style="text-align: right;">0.0001230</td>
+<td style="text-align: right;">0.0249571</td>
+<td style="text-align: right;">0.0663279</td>
+<td style="text-align: right;">0.0413708</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 005</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">17</td>
-<td style="text-align: right;">0.0408281</td>
-<td style="text-align: right;">0.0001231</td>
-<td style="text-align: right;">0.0209164</td>
-<td style="text-align: right;">0.0616933</td>
-<td style="text-align: right;">0.0407769</td>
+<td style="text-align: right;">0.0393082</td>
+<td style="text-align: right;">0.0001318</td>
+<td style="text-align: right;">0.0180206</td>
+<td style="text-align: right;">0.0630373</td>
+<td style="text-align: right;">0.0450166</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 006</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">19</td>
-<td style="text-align: right;">0.0488422</td>
-<td style="text-align: right;">0.0000925</td>
-<td style="text-align: right;">0.0306874</td>
-<td style="text-align: right;">0.0655912</td>
-<td style="text-align: right;">0.0349038</td>
+<td style="text-align: right;">0.0493634</td>
+<td style="text-align: right;">0.0001004</td>
+<td style="text-align: right;">0.0286253</td>
+<td style="text-align: right;">0.0675933</td>
+<td style="text-align: right;">0.0389680</td>
 </tr>
 </tbody>
 </table>
@@ -1114,7 +1080,7 @@ Note
 <p><img src="fh-area_files/figure-html/fh-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>The Fay–Herriot estimates produce a less jagged pattern across neighbouring areas and show clearer broad regional structure than the direct estimates. However, the weak survey coverage seen in many direct estimates means that, for some areas, the model has to rely heavily on synthetic estimation from area-level predictors rather than direct survey evidence. This is expected in area-level modelling, but it also highlights a limitation: because the model starts from direct estimates, it cannot fully use variation among individual survey respondents. <a href="./bhf-unit.html"><strong>Unit-level models</strong></a> address this by modelling the individual outcome directly using unit-level predictors from the survey respondent data.</p>
+<p>The area-level SAE estimates are less jagged across neighbouring areas and show clearer broad regional structure than the direct estimates. In sparsely sampled MSOA-year cells, the FH estimate depends heavily on area-level predictors and random effects because the direct estimate contributes limited local information. The model therefore cannot use within-area respondent variation beyond what is already captured in the direct estimate. <a href="./bhf-unit.html"><strong>Unit-level models</strong></a> address this by modelling individual outcomes with respondent-level predictors.</p>
 </section>
 <section id="comparative-analysis" class="level2" data-number="4">
 <h2 data-number="4" class="anchored" data-anchor-id="comparative-analysis"><span class="header-section-number">4</span> Comparative analysis</h2>
@@ -1153,9 +1119,9 @@ Note
 <span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<section id="how-the-fayherriot-model-smooths-direct-estimates" class="level3" data-number="4.1">
-<h3 data-number="4.1" class="anchored" data-anchor-id="how-the-fayherriot-model-smooths-direct-estimates"><span class="header-section-number">4.1</span> How the Fay–Herriot model smooths direct estimates</h3>
-<p>We start by comparing the direct estimates with M1, the temporal-spatial Fay-Herriot model with no area predictors, to understand how the FH model handles noisy direct estimates before adding predictors.</p>
+<section id="how-the-area-level-model-smooths-direct-estimates" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="how-the-area-level-model-smooths-direct-estimates"><span class="header-section-number">4.1</span> How the area-level model smooths direct estimates</h3>
+<p>We start by comparing the direct estimates with M1, the temporal-spatial area-level model with no area predictors, to understand how the model handles noisy direct estimates before adding predictors.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1175,7 +1141,7 @@ Note
 <p><img src="fh-area_files/figure-html/fh-baseline-plot-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. The Bayesian FH fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.</p>
+<p>Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. The Bayesian area-level fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1247,9 +1213,9 @@ Note
 </section>
 <section id="adding-temporal-and-spatial-effects" class="level3" data-number="4.2">
 <h3 data-number="4.2" class="anchored" data-anchor-id="adding-temporal-and-spatial-effects"><span class="header-section-number">4.2</span> Adding Temporal and Spatial Effects</h3>
-<p>The selected FH model estimates hyperparameters for the temporal and spatial random effects. These parameters show how much residual variation remains after accounting for the fixed-effect predictors and sampling variances, and how that remaining variation is structured across time and space.</p>
+<p>The selected area-level model estimates hyperparameters for the temporal and spatial random effects. These parameters show how much residual variation remains after accounting for the fixed-effect predictors and sampling variances, and how that remaining variation is structured across time and space.</p>
 <ul>
-<li><p><code>tau</code> is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher temporal <code>tau</code> than spatial indicates a smoother time pattern with smaller differences between neighbouring survey years than between MSOAs. Still, its inclusion as a random effect is important if we are interested in analysing the temporal trend over the survey years of interest, rather than treating observations from three waves as one.</p></li>
+<li><p><code>tau</code> is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher temporal <code>tau</code> than spatial indicates a smoother time pattern with smaller differences between neighbouring survey years than between MSOAs. The temporal random effect keeps wave-to-wave differences explicit instead of pooling the three waves into one period.</p></li>
 <li><p><code>phi</code> is the BYM2 mixing parameter for the area random effect. It describes how much of that residual area effect is spatially structured. A lower <code>phi</code> here (less than <code>0.5</code>) means the remaining area differences are mostly local and less strongly explained by adjacency. This can also be due to sparse direct estimates in many areas, which give the model less reliable area-level evidence for learning a coherent spatial pattern.</p></li>
 </ul>
 <div class="cell">
@@ -1285,11 +1251,11 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">54358.439</td>
-<td style="text-align: right;">105449.326</td>
-<td style="text-align: right;">3159.627</td>
-<td style="text-align: right;">25604.746</td>
-<td style="text-align: right;">288736.855</td>
+<td style="text-align: right;">54358.442</td>
+<td style="text-align: right;">105449.323</td>
+<td style="text-align: right;">3159.626</td>
+<td style="text-align: right;">25604.747</td>
+<td style="text-align: right;">288736.861</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Phi for area_inla_id</td>
@@ -1301,11 +1267,11 @@ Note
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">16251.942</td>
-<td style="text-align: right;">23422.603</td>
+<td style="text-align: right;">16251.944</td>
+<td style="text-align: right;">23422.612</td>
 <td style="text-align: right;">952.136</td>
 <td style="text-align: right;">9151.983</td>
-<td style="text-align: right;">75175.254</td>
+<td style="text-align: right;">75175.273</td>
 </tr>
 </tbody>
 </table>
@@ -1315,7 +1281,7 @@ Note
 </section>
 <section id="adding-predictors" class="level3" data-number="4.3">
 <h3 data-number="4.3" class="anchored" data-anchor-id="adding-predictors"><span class="header-section-number">4.3</span> Adding Predictors</h3>
-<p>Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In a Fay–Herriot model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.</p>
+<p>Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In this area-level model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.</p>
 <p>Here we compare M1 with M3, which adds average age, population density, and car access.</p>
 <div class="cell">
 <details>
@@ -1390,7 +1356,7 @@ Note
 </div>
 </div>
 </div>
-<p>The pattern here suggests that MSOAs with older populations, lower population density, and a higher share of households with car access tend to have lower rates of frequent cycling in the predictor-enriched M3 specification. The table below reports the coefficients, i.e., expected change associated with a 1sd increase in the corresponding predictor. In practice, predictor inclusion should be assessed holistically, using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome being modelled.</p>
+<p>The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of households with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>

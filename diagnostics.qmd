@@ -1,11 +1,11 @@
 ---
-title: "Comparative diagnostics"
+title: "Model diagnostics and comparison"
 subtitle: "Benefits and trade-offs"
 ---
 
 
 ```{r}
-#| label: val-setup
+#| label: diag-setup
 #| include: false
 
 library(dplyr)
@@ -23,12 +23,19 @@ base_path <- if (dir.exists("data")) {
 }
 
 method_levels <- c("Direct", "FH", "BHF", "MRP Shallow", "MRP Rich")
+method_labels <- c(
+  "Direct" = "Direct",
+  "FH" = "Area-level SAE",
+  "BHF" = "Unit-level SAE with area summaries",
+  "MRP Shallow" = "Unit-level SAE with poststratification",
+  "MRP Rich" = "Unit-level SAE with rich poststratification"
+)
+method_labeller <- labeller(method = as_labeller(method_labels))
 missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
 overestimate_colour <- "#b2182b"
 year_colours <- c("#2166ac", "#b2182b", "#4d9221")
 
-residual_label <- label_number(accuracy = 0.01)
 ci_width_label <- label_number(accuracy = 1, scale = 100, suffix = " pp")
 share_label <- label_percent(accuracy = 1)
 
@@ -93,7 +100,7 @@ method_map <- function(data, fill_col) {
   data |>
     ggplot() +
     geom_sf(aes(fill = .data[[fill_col]]), colour = "transparent") +
-    facet_wrap(vars(method), nrow = 1) +
+    facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
     theme_void() +
     map_text_theme +
     theme(
@@ -122,17 +129,6 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
       ci_width = ci_width
     )
 }
-
-obs <- read_csv(
-  file.path(base_path, "clean", "validation_bicycle_to_work_share.csv"),
-  show_col_types = FALSE
-) |>
-  transmute(
-    area_id,
-    time_id,
-    msoa_name,
-    obs = validation_bicycle_to_work_share
-  )
 
 estimate_sets <- bind_rows(
   read_estimate_set(
@@ -167,22 +163,8 @@ estimate_sets <- bind_rows(
   )
 )
 
-validation_residuals <- estimate_sets |>
-  inner_join(obs, by = c("area_id", "time_id")) |>
-  mutate(
-    method = factor(method, levels = method_levels),
-    residual = if_else(estimate > 0, (obs - estimate) / sqrt(estimate), NA_real_),
-    abs_residual = abs(residual),
-    residual_direction = case_when(
-      residual > 0 ~ "Underestimate",
-      residual < 0 ~ "Overestimate",
-      TRUE ~ "Zero"
-    ),
-    residual_direction = factor(
-      residual_direction,
-      levels = c("Overestimate", "Zero", "Underestimate")
-    )
-  )
+diagnostic_estimates <- estimate_sets |>
+  mutate(method = factor(method, levels = method_levels))
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -191,69 +173,36 @@ msoa_boundaries <- st_read(
   rename(area_id = all_of("MSOA21CD")) |>
   filter(str_starts(area_id, "W"))
 
-map_data <- msoa_boundaries |>
-  left_join(validation_residuals, by = "area_id")
-
-residual_colour_limits <- safe_limit(validation_residuals$residual, symmetric = TRUE, p = 0.95)
-residual_axis_limits <- safe_limit(validation_residuals$residual, symmetric = TRUE)
-ci_width_colour_limits <- safe_limit(validation_residuals$ci_width, p = 0.95)
-ci_width_axis_limits <- safe_limit(validation_residuals$ci_width)
-
-method_summary <- validation_residuals |>
-  group_by(method) |>
-  summarise(
-    area_time_cells = n(),
-    median_estimate_pp = median(estimate, na.rm = TRUE) * 100,
-    estimate_iqr_pp = IQR(estimate, na.rm = TRUE) * 100,
-    mean_abs_residual = mean(abs_residual, na.rm = TRUE),
-    median_abs_residual = median(abs_residual, na.rm = TRUE),
-    p90_abs_residual = quantile(abs_residual, 0.9, na.rm = TRUE, names = FALSE),
-    mean_ci_width_pp = mean(ci_width, na.rm = TRUE) * 100,
-    median_ci_width_pp = median(ci_width, na.rm = TRUE) * 100,
-    p90_ci_width_pp = quantile(ci_width, 0.9, na.rm = TRUE, names = FALSE) * 100,
-    .groups = "drop"
-  ) |>
-  mutate(across(where(is.numeric), \(x) round(x, 2)))
+ci_width_colour_limits <- safe_limit(diagnostic_estimates$ci_width, p = 0.95)
+ci_width_axis_limits <- safe_limit(diagnostic_estimates$ci_width)
 ```
 
-This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE, and poststratified unit-level SAE. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, external validation residuals, uncertainty, and local residual structure used by the models.
+This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE with area summaries, and unit-level SAE with poststratification. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, uncertainty, and local residual structure used by the models.
 
-## Method Trade-Offs
+## Method Choice and Trade-Offs
 
-| Method | Main input | Main trade-off |
-|---|---|---|
-| Direct | Survey-weighted area-time estimates | Preserves the survey design most directly, but sparse MSOA-year cells can be unstable or missing. |
-| FH | Weighted direct estimates and sampling variances | Uses the survey design through the direct estimates, but inherits their sparsity and degenerate variance issues. |
-| BHF | Respondent records with unit-level predictors | Uses individual outcomes directly, but the fitted likelihood does not use survey weights. |
-| MRP Shallow | Respondent records plus age-sex population cells and contextual predictors | Adds population reweighting, but only over the available poststratification cells. |
-| MRP Rich | Respondent records plus age-sex-car population cells | Gives the closest alignment between model predictors and population composition, but holds the 2021 poststratification structure across later waves. |
-
-```{r}
-#| label: val-method-summary
-
-method_summary |>
-  select(
-    method,
-    area_time_cells,
-    median_estimate_pp,
-    estimate_iqr_pp,
-    median_abs_residual,
-    median_interval_width_pp = median_ci_width_pp
-  )
-```
+| Method | Main input | Predictors | Limitation |
+|---|---|---|---|
+| Direct | Survey responses within each MSOA-year cell | None | Sparse or missing cells can give unstable estimates. |
+| Area-level SAE | Direct estimates and sampling variances | MSOA-level age, population density, and car access | Stabilises direct estimates, but still depends on weak direct inputs. |
+| Unit-level SAE | Survey microdata with area-level summaries | Age, sex, and car access, represented by MSOA summaries | Uses individual outcomes, but does not consider survey weights and only approximates population composition. |
+| Unit-level SAE with poststratification | Survey microdata plus age-sex population cells | Age and sex | Reweights predictions to the population for all waves using mid-year population estimates, but only across age and sex. |
+| Unit-level SAE with rich poststratification | Survey microdata plus age-sex-car population cells | Age, sex, and car access | Better matches population structure, but reuses the Census 2021 structure across waves. |
 
 ## Estimate Scale and Smoothing
 
-The distribution and rank plots show how much each method changes the spread of MSOA-year estimates. Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.
+The distribution and rank plots show how much each method changes the spread of MSOA-year estimates, and the maps show where each method changes the local pattern of estimated frequent cycling.
+
+Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.
 
 ```{r}
-#| label: val-estimate-dist-rank
+#| label: diag-estimate-dist-rank
 #| echo: false
 #| fig-width: 14
 #| fig-height: 20
 #| out-width: "100%"
 
-estimate_plot_data <- estimate_sets |>
+estimate_plot_data <- diagnostic_estimates |>
   filter(!is.na(estimate)) |>
   mutate(
     method = factor(method, levels = method_levels),
@@ -286,7 +235,7 @@ method_plots <- unlist(lapply(method_levels, function(method_name) {
     scale_fill_manual(values = year_colours) +
     guides(fill = "none") +
     labs(
-      title = method_name,
+      title = method_labels[[method_name]],
       x = "Estimate",
       y = "Density",
       colour = "Survey year"
@@ -321,19 +270,61 @@ method_plots <- unlist(lapply(method_levels, function(method_name) {
 
 wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
   plot_annotation(
-    title = "Estimate distributions and ranked MSOAs",
-    subtitle = "Each row shows one method; MSOA ranks are ordered by the 2021 estimate within that method",
+    title = "Estimate distributions and stackranked",
     theme = annotation_theme
   ) &
   theme(legend.position = "bottom")
 ```
 
-## Method Agreement
 
-MRP Rich is used here as a modelling reference because it uses the fullest poststratification structure available in the workflow. It is not an external benchmark; disagreement with it indicates how much the other methods differ from the richest unit-level specification.
 
 ```{r}
-#| label: val-method-agreement
+#| label: diag-estimate-map
+#| echo: false
+#| fig-width: 18
+#| fig-height: 20
+#| out-width: "100%"
+
+estimate_map_data <- msoa_boundaries |>
+  left_join(diagnostic_estimates, by = "area_id") |>
+  mutate(
+    time_id = factor(time_id, levels = sort(unique(time_id))),
+    method = factor(method, levels = method_levels)
+  )
+
+estimate_colour_limits <- safe_limit(
+  diagnostic_estimates$estimate,
+  fallback = 0.1,
+  p = 0.98
+)
+
+estimate_map_data |>
+  ggplot() +
+  geom_sf(aes(fill = estimate), colour = "transparent") +
+  facet_grid(rows = vars(method), cols = vars(time_id), labeller = method_labeller) +
+  scale_fill_distiller(
+    palette = "YlGnBu",
+    direction = 1,
+    limits = estimate_colour_limits,
+    breaks = pretty_breaks(n = 3),
+    oob = squish,
+    labels = share_label,
+    na.value = missing_fill,
+    name = "Estimate",
+    guide = colourbar_guide
+  ) +
+  theme_void() +
+  map_text_theme +
+  theme(
+    strip.text = element_text(size = 11, face = "bold"),
+    legend.position = "bottom"
+  )
+```
+
+
+
+```{r}
+#| label: diag-method-agreement
 #| echo: false
 #| fig-width: 18
 #| fig-height: 5
@@ -341,10 +332,10 @@ MRP Rich is used here as a modelling reference because it uses the fullest posts
 
 reference_method <- "MRP Rich"
 
-method_agreement <- estimate_sets |>
+method_agreement <- diagnostic_estimates |>
   filter(method != reference_method) |>
   inner_join(
-    estimate_sets |>
+    diagnostic_estimates |>
       filter(method == reference_method) |>
       select(area_id, time_id, reference_estimate = estimate),
     by = c("area_id", "time_id")
@@ -365,134 +356,44 @@ method_agreement |>
   ggplot(aes(x = estimate, y = reference_estimate, colour = time_id)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey55") +
   geom_point(alpha = 0.55, size = 1.2) +
-  facet_wrap(vars(method), nrow = 1) +
+  facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
   coord_equal(xlim = agreement_limits, ylim = agreement_limits) +
   scale_x_continuous(labels = share_label) +
   scale_y_continuous(labels = share_label) +
   scale_colour_manual(values = year_colours) +
   labs(
-    title = "Agreement with MRP Rich",
+    title = "Cross-method comparison",
     subtitle = "Dashed line shows equality; points are MSOA-year cells",
     x = "Comparison estimate",
-    y = "MRP Rich estimate",
+    y = "Reference estimate",
     colour = "Survey year"
   ) +
   chart_theme +
   theme(panel.grid.minor = element_blank())
 ```
 
-## External Validation Residuals
+## Uncertainty CI Width
 
-The validation benchmark is the Census bicycle-to-work share. It is related to frequent cycling for transport but does not measure the same target outcome, so the residuals should be read as a directional comparison rather than a direct accuracy test.
-
-$$
-\text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
-$$
-$$
-\text{residual} = \frac{\text{obs} - \text{estimate}}{\sqrt{estimate}}
-$$
-```{r}
-#| label: val-resid-summary
-
-method_summary |>
-  select(
-    method,
-    area_time_cells,
-    mean_abs_residual,
-    median_abs_residual,
-    p90_abs_residual
-  )
-```
+Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.
 
 ```{r}
-#| label: val-resid-map
+#| label: diag-ci-map
 #| echo: false
 #| fig-width: 18
 #| fig-height: 8
 #| out-width: "100%"
 
-method_map(map_data, "residual") +
-  scale_fill_gradient2(
-    low = overestimate_colour,
-    mid = "white",
-    high = underestimate_colour,
-    midpoint = 0,
-    limits = residual_colour_limits,
-    breaks = pretty_breaks(n = 3),
-    oob = squish,
-    labels = residual_label,
-    na.value = missing_fill,
-    name = "Residual",
-    guide = colourbar_guide
-  ) +
-  plot_annotation(
-    title = "Validation residuals",
-    theme = annotation_theme
+ci_map_data <- msoa_boundaries |>
+  left_join(diagnostic_estimates, by = "area_id") |>
+  mutate(
+    time_id = factor(time_id, levels = sort(unique(time_id))),
+    method = factor(method, levels = method_levels)
   )
-```
 
-```{r}
-#| label: val-resid-density
-#| echo: false
-#| fig-width: 18
-#| fig-height: 4
-#| out-width: "100%"
-
-validation_residuals |>
-  filter(!is.na(residual)) |>
-  ggplot(aes(x = residual, fill = residual_direction)) +
-  geom_histogram(
-    bins = 32,
-    colour = "white",
-    linewidth = 0.15,
-    boundary = 0
-  ) +
-  geom_vline(xintercept = 0, colour = "grey25", linewidth = 0.35) +
-  facet_wrap(vars(method), nrow = 1) +
-  coord_cartesian(xlim = residual_axis_limits) +
-  scale_fill_manual(
-    values = c(
-      "Overestimate" = overestimate_colour,
-      "Zero" = "grey70",
-      "Underestimate" = underestimate_colour
-    ),
-    name = NULL
-  ) +
-  scale_x_continuous(labels = residual_label) +
-  labs(
-    x = "Residual",
-    y = "MSOA-year cells"
-  ) +
-  chart_theme +
-  theme(
-    strip.background = element_blank(),
-    strip.text = element_blank()
-  )
-```
-## Uncertainty Width
-
-Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect design-based sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.
-
-```{r}
-#| label: val-ci-summary
-method_summary |>
-  select(
-    method,
-    area_time_cells,
-    mean_ci_width_pp,
-    median_ci_width_pp,
-    p90_ci_width_pp
-  )
-```
-
-```{r}
-#| label: val-ci-map
-#| echo: false
-#| fig-width: 18
-#| fig-height: 8
-#| out-width: "100%"
-
-method_map(map_data, "ci_width") +
+ci_map_data |>
+  ggplot() +
+  geom_sf(aes(fill = ci_width), colour = "transparent") +
+  facet_grid(rows = vars(method), cols = vars(time_id), labeller = method_labeller) +
   scale_fill_distiller(
     palette = "YlGnBu",
     direction = 1,
@@ -504,20 +405,26 @@ method_map(map_data, "ci_width") +
     name = "CI width",
     guide = colourbar_guide
   ) +
-  plot_annotation(
+  labs(
     title = "CI widths",
-    theme = annotation_theme
+    subtitle = "Rows show methods; columns show survey years"
+  ) +
+  theme_void() +
+  map_text_theme +
+  theme(
+    strip.text = element_text(size = 11, face = "bold"),
+    legend.position = "bottom"
   )
 ```
 
 ```{r}
-#| label: val-ci-density
+#| label: diag-ci-density
 #| echo: false
 #| fig-width: 18
 #| fig-height: 4
 #| out-width: "100%"
 
-validation_residuals |>
+diagnostic_estimates |>
   filter(!is.na(ci_width)) |>
   ggplot(aes(x = ci_width)) +
   geom_histogram(
@@ -527,7 +434,7 @@ validation_residuals |>
     linewidth = 0.15,
     boundary = 0
   ) +
-  facet_wrap(vars(method), nrow = 1) +
+  facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
   coord_cartesian(xlim = ci_width_axis_limits) +
   scale_x_continuous(labels = ci_width_label) +
   labs(
@@ -542,12 +449,12 @@ validation_residuals |>
   theme(legend.position = "none")
 ```
 
-## Local Residual Effects
+## Residual Area Effects
 
-The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal structure.
+The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.
 
 ```{r}
-#| label: val-area-effect-map
+#| label: diag-area-effect-map
 #| echo: false
 #| fig-width: 18
 #| fig-height: 7

@@ -1,4 +1,4 @@
-# Spatio-temporal Fay-Herriot SAE model with R-INLA
+# Spatio-temporal area-level SAE model with R-INLA
 #
 # Edit the config block, then run this script from the project root.
 # Required inputs:

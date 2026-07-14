@@ -1,4 +1,4 @@
-# Spatio-temporal BHF-style unit-level SAE model with R-INLA
+# Spatio-temporal unit-level SAE model with area summaries and R-INLA
 #
 # Edit the config block, then run this script from the project root.
 # Required inputs:
@@ -162,7 +162,7 @@ fit <- inla(
 )
 
 model_comparison <- tibble(
-  model = "BHF temporal-spatial",
+  model = "Unit-level SAE with area summaries",
   waic = fit$waic$waic,
   effective_parameters = fit$waic$p.eff,
   dic = fit$dic$dic
@@ -175,7 +175,7 @@ estimates <- aggregation_frame |>
     estimate = fit$summary.fitted.values$mean[aggregation_row_ids],
     lower = fit$summary.fitted.values$`0.025quant`[aggregation_row_ids],
     upper = fit$summary.fitted.values$`0.975quant`[aggregation_row_ids],
-    method = "BHF temporal-spatial"
+    method = "Unit-level SAE with area summaries"
   )
 
 dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)

@@ -1,5 +1,5 @@
 ---
-title: "Direct Estimation"
+title: "Direct estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
 ::: {.callout-note title="Theory in brief"}
@@ -108,7 +108,7 @@ head(survey_bike)
 
 ## Calculate direct estimates
 
-We use `svyby()` from the `survey` package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.
+`svyby()` computes the weighted share and uncertainty diagnostics for every area-time cell with usable observations. The completed area-by-time grid retains missing cells for later modelling.
 
 ```{r}
 #| label: direct-estimate
@@ -261,7 +261,7 @@ Sparse and uneven survey coverage limits how far direct estimates can be used on
 Two model-based options follow:
 
 - **Area-level SAE models** stabilise direct area estimates using sampling variances to control how much weight each direct estimate receives.
-- **Unit-level SAE models** estimate the individual outcome from survey records and aggregate predictions to target area-years.
+- **Unit-level SAE models** estimate the individual outcome from survey microdata and aggregate predictions to target area-years.
 
 
 ```{r}

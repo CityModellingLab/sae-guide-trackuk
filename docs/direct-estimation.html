@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Direct Estimation</title>
+<title>Small Area Estimation for Urban Analytics - Direct estimation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -164,7 +164,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
@@ -256,7 +256,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">Unit-level SAE with Poststrat</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -306,7 +306,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Direct Estimation</h1>
+<h1 class="title">Direct estimation</h1>
 <p class="subtitle lead">Survey design-based estimates and uncertainty</p>
 </div>
 
@@ -540,7 +540,7 @@ Target estimand
 </section>
 <section id="calculate-direct-estimates" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="calculate-direct-estimates"><span class="header-section-number">2</span> Calculate direct estimates</h2>
-<p>We use <code>svyby()</code> from the <code>survey</code> package to compute the weighted share and its uncertainty diagnostics for every area-time cell with usable observations. It then completes the area-by-time grid so missing cells are retained for modelling.</p>
+<p><code>svyby()</code> computes the weighted share and uncertainty diagnostics for every area-time cell with usable observations. The completed area-by-time grid retains missing cells for later modelling.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define survey design</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>bike_design <span class="ot">&lt;-</span> <span class="fu">svydesign</span>(</span>
@@ -693,7 +693,7 @@ Target estimand
 <p>Two model-based options follow:</p>
 <ul>
 <li><strong>Area-level SAE models</strong> stabilise direct area estimates using sampling variances to control how much weight each direct estimate receives.</li>
-<li><strong>Unit-level SAE models</strong> estimate the individual outcome from survey records and aggregate predictions to target area-years.</li>
+<li><strong>Unit-level SAE models</strong> estimate the individual outcome from survey microdata and aggregate predictions to target area-years.</li>
 </ul>
 <div class="cell">
 <details>

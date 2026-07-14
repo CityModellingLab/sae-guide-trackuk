@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Comparative diagnostics</title>
+<title>Small Area Estimation for Urban Analytics - Model diagnostics and comparison</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -19,40 +19,6 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
-}
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -97,22 +63,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   }
 }</script>
 
-  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
-  <script>document.addEventListener("DOMContentLoaded", function () {
- var mathElements = document.getElementsByClassName("math");
- var macros = [];
- for (var i = 0; i < mathElements.length; i++) {
-  var texText = mathElements[i].firstChild;
-  if (mathElements[i].tagName == "SPAN") {
-   katex.render(texText.data, mathElements[i], {
-    displayMode: mathElements[i].classList.contains('display'),
-    throwOnError: false,
-    macros: macros,
-    fleqn: false
-   });
-}}});
-  </script>
-  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -164,7 +114,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
@@ -256,7 +206,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">Unit-level SAE with Poststrat</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -294,12 +244,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#method-trade-offs" id="toc-method-trade-offs" class="nav-link active" data-scroll-target="#method-trade-offs"><span class="header-section-number">1</span> Method Trade-Offs</a></li>
+  <li><a href="#method-choice-and-trade-offs" id="toc-method-choice-and-trade-offs" class="nav-link active" data-scroll-target="#method-choice-and-trade-offs"><span class="header-section-number">1</span> Method Choice and Trade-Offs</a></li>
   <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</a></li>
-  <li><a href="#method-agreement" id="toc-method-agreement" class="nav-link" data-scroll-target="#method-agreement"><span class="header-section-number">3</span> Method Agreement</a></li>
-  <li><a href="#external-validation-residuals" id="toc-external-validation-residuals" class="nav-link" data-scroll-target="#external-validation-residuals"><span class="header-section-number">4</span> External Validation Residuals</a></li>
-  <li><a href="#uncertainty-width" id="toc-uncertainty-width" class="nav-link" data-scroll-target="#uncertainty-width"><span class="header-section-number">5</span> Uncertainty Width</a></li>
-  <li><a href="#local-residual-effects" id="toc-local-residual-effects" class="nav-link" data-scroll-target="#local-residual-effects"><span class="header-section-number">6</span> Local Residual Effects</a></li>
+  <li><a href="#uncertainty-ci-width" id="toc-uncertainty-ci-width" class="nav-link" data-scroll-target="#uncertainty-ci-width"><span class="header-section-number">3</span> Uncertainty CI Width</a></li>
+  <li><a href="#residual-area-effects" id="toc-residual-area-effects" class="nav-link" data-scroll-target="#residual-area-effects"><span class="header-section-number">4</span> Residual Area Effects</a></li>
   </ul>
 </nav>
     </div>
@@ -308,7 +256,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Comparative diagnostics</h1>
+<h1 class="title">Model diagnostics and comparison</h1>
 <p class="subtitle lead">Benefits and trade-offs</p>
 </div>
 
@@ -324,332 +272,98 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE, and poststratified unit-level SAE. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, external validation residuals, uncertainty, and local residual structure used by the models.</p>
-<section id="method-trade-offs" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="method-trade-offs"><span class="header-section-number">1</span> Method Trade-Offs</h2>
+<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE with area summaries, and unit-level SAE with poststratification. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, uncertainty, and local residual structure used by the models.</p>
+<section id="method-choice-and-trade-offs" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="method-choice-and-trade-offs"><span class="header-section-number">1</span> Method Choice and Trade-Offs</h2>
 <table class="table">
 <colgroup>
-<col style="width: 33%">
-<col style="width: 33%">
-<col style="width: 33%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Method</th>
 <th>Main input</th>
-<th>Main trade-off</th>
+<th>Predictors</th>
+<th>Limitation</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td>Direct</td>
-<td>Survey-weighted area-time estimates</td>
-<td>Preserves the survey design most directly, but sparse MSOA-year cells can be unstable or missing.</td>
+<td>Survey responses within each MSOA-year cell</td>
+<td>None</td>
+<td>Sparse or missing cells can give unstable estimates.</td>
 </tr>
 <tr class="even">
-<td>FH</td>
-<td>Weighted direct estimates and sampling variances</td>
-<td>Uses the survey design through the direct estimates, but inherits their sparsity and degenerate variance issues.</td>
+<td>Area-level SAE</td>
+<td>Direct estimates and sampling variances</td>
+<td>MSOA-level age, population density, and car access</td>
+<td>Stabilises direct estimates, but still depends on weak direct inputs.</td>
 </tr>
 <tr class="odd">
-<td>BHF</td>
-<td>Respondent records with unit-level predictors</td>
-<td>Uses individual outcomes directly, but the fitted likelihood does not use survey weights.</td>
+<td>Unit-level SAE</td>
+<td>Survey microdata with area-level summaries</td>
+<td>Age, sex, and car access, represented by MSOA summaries</td>
+<td>Uses individual outcomes, but does not consider survey weights and only approximates population composition.</td>
 </tr>
 <tr class="even">
-<td>MRP Shallow</td>
-<td>Respondent records plus age-sex population cells and contextual predictors</td>
-<td>Adds population reweighting, but only over the available poststratification cells.</td>
+<td>Unit-level SAE with poststratification</td>
+<td>Survey microdata plus age-sex population cells</td>
+<td>Age and sex</td>
+<td>Reweights predictions to the population for all waves using mid-year population estimates, but only across age and sex.</td>
 </tr>
 <tr class="odd">
-<td>MRP Rich</td>
-<td>Respondent records plus age-sex-car population cells</td>
-<td>Gives the closest alignment between model predictors and population composition, but holds the 2021 poststratification structure across later waves.</td>
+<td>Unit-level SAE with rich poststratification</td>
+<td>Survey microdata plus age-sex-car population cells</td>
+<td>Age, sex, and car access</td>
+<td>Better matches population structure, but reuses the Census 2021 structure across waves.</td>
 </tr>
 </tbody>
 </table>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    median_estimate_pp,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    estimate_iqr_pp,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    median_abs_residual,</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">median_interval_width_pp =</span> median_ci_width_pp</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 11%">
-<col style="width: 14%">
-<col style="width: 17%">
-<col style="width: 14%">
-<col style="width: 18%">
-<col style="width: 23%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">method</th>
-<th style="text-align: right;">area_time_cells</th>
-<th style="text-align: right;">median_estimate_pp</th>
-<th style="text-align: right;">estimate_iqr_pp</th>
-<th style="text-align: right;">median_abs_residual</th>
-<th style="text-align: right;">median_interval_width_pp</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Direct</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">0.29</td>
-<td style="text-align: right;">0.00</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FH</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">5.22</td>
-<td style="text-align: right;">0.91</td>
-<td style="text-align: right;">0.19</td>
-<td style="text-align: right;">3.97</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BHF</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">2.27</td>
-<td style="text-align: right;">0.49</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">2.83</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">MRP Shallow</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">2.59</td>
-<td style="text-align: right;">0.55</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">3.18</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">MRP Rich</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">2.56</td>
-<td style="text-align: right;">0.56</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">3.14</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
 </section>
 <section id="estimate-scale-and-smoothing" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</h2>
-<p>The distribution and rank plots show how much each method changes the spread of MSOA-year estimates. Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.</p>
+<p>The distribution and rank plots show how much each method changes the spread of MSOA-year estimates, and the maps show where each method changes the local pattern of estimated frequent cycling.</p>
+<p>Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="diagnostics_files/figure-html/diag-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/diag-estimate-map-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 </section>
-<section id="method-agreement" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="method-agreement"><span class="header-section-number">3</span> Method Agreement</h2>
-<p>MRP Rich is used here as a modelling reference because it uses the fullest poststratification structure available in the workflow. It is not an external benchmark; disagreement with it indicates how much the other methods differ from the richest unit-level specification.</p>
+<section id="uncertainty-ci-width" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="uncertainty-ci-width"><span class="header-section-number">3</span> Uncertainty CI Width</h2>
+<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/diag-ci-density-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 </section>
-<section id="external-validation-residuals" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="external-validation-residuals"><span class="header-section-number">4</span> External Validation Residuals</h2>
-<p>The validation benchmark is the Census bicycle-to-work share. It is related to frequent cycling for transport but does not measure the same target outcome, so the residuals should be read as a directional comparison rather than a direct accuracy test.</p>
-<p><span class="math display">
-\text{obs} = \frac{\text{bicycle-to-work count}}{\text{total commuters}}
-</span> <span class="math display">
-\text{residual} = \frac{\text{obs} - \text{estimate}}{\sqrt{estimate}}
-</span></p>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    mean_abs_residual,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    median_abs_residual,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    p90_abs_residual</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 14%">
-<col style="width: 19%">
-<col style="width: 21%">
-<col style="width: 24%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">method</th>
-<th style="text-align: right;">area_time_cells</th>
-<th style="text-align: right;">mean_abs_residual</th>
-<th style="text-align: right;">median_abs_residual</th>
-<th style="text-align: right;">p90_abs_residual</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Direct</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.33</td>
-<td style="text-align: right;">0.29</td>
-<td style="text-align: right;">0.51</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FH</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.18</td>
-<td style="text-align: right;">0.19</td>
-<td style="text-align: right;">0.22</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BHF</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.09</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0.13</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">MRP Shallow</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">0.15</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">MRP Rich</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">0.10</td>
-<td style="text-align: right;">0.11</td>
-<td style="text-align: right;">0.15</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+<section id="residual-area-effects" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="residual-area-effects"><span class="header-section-number">4</span> Residual Area Effects</h2>
+<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-resid-map-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-resid-density-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-</section>
-<section id="uncertainty-width" class="level2" data-number="5">
-<h2 data-number="5" class="anchored" data-anchor-id="uncertainty-width"><span class="header-section-number">5</span> Uncertainty Width</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect design-based sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.</p>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>method_summary <span class="sc">|&gt;</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    method,</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    area_time_cells,</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    mean_ci_width_pp,</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    median_ci_width_pp,</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    p90_ci_width_pp</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 15%">
-<col style="width: 20%">
-<col style="width: 21%">
-<col style="width: 23%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">method</th>
-<th style="text-align: right;">area_time_cells</th>
-<th style="text-align: right;">mean_ci_width_pp</th>
-<th style="text-align: right;">median_ci_width_pp</th>
-<th style="text-align: right;">p90_ci_width_pp</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Direct</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">6.78</td>
-<td style="text-align: right;">0.00</td>
-<td style="text-align: right;">27.14</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FH</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">4.08</td>
-<td style="text-align: right;">3.97</td>
-<td style="text-align: right;">4.59</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">BHF</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">3.09</td>
-<td style="text-align: right;">2.83</td>
-<td style="text-align: right;">4.23</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">MRP Shallow</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">3.52</td>
-<td style="text-align: right;">3.18</td>
-<td style="text-align: right;">4.75</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">MRP Rich</td>
-<td style="text-align: right;">408</td>
-<td style="text-align: right;">3.44</td>
-<td style="text-align: right;">3.14</td>
-<td style="text-align: right;">4.65</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-ci-density-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-</section>
-<section id="local-residual-effects" class="level2" data-number="6">
-<h2 data-number="6" class="anchored" data-anchor-id="local-residual-effects"><span class="header-section-number">6</span> Local Residual Effects</h2>
-<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal structure.</p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/val-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 
@@ -907,7 +621,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./mrp-rich.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">SAE with Poststrat (MRP)</span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Unit-level SAE with Poststrat</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">

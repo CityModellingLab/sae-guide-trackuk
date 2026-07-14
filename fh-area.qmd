@@ -1,10 +1,10 @@
 ---
-title: Area-Level SAE Modeling (Fay--Herriot)
-subtitle: "A Bayesian spatio-temporal extension"
+title: "Area-level SAE model"
+subtitle: "A Bayesian spatio-temporal extension of the Fay--Herriot area-level model"
 ---
 
 ::: {.callout-note title="Theory in brief"}
-The Fay--Herriot model treats each direct estimate as a noisy observation of the true area-time quantity:
+The area-level model treats each direct estimate as a noisy observation of the true area-time quantity:
 
 $$
 \hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
@@ -21,7 +21,7 @@ Here $u_j$ borrows strength across areas while the target remains the area-time 
 The fitted model gives an area-time estimate by combining the direct estimate with the model prediction:
 
 $$
-\hat{\mu}_{jt}^{\mathrm{FH}}
+\hat{\mu}_{jt}^{\mathrm{area}}
 =
 \widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, x_{jt}).
 $$
@@ -104,7 +104,7 @@ map_annotation_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Area-level SAE uses direct estimates as the modelling input. In the Fay--Herriot model, each direct estimate for an *MSOA-year* cell is treated as a noisy observation of the underlying frequent-cycling rate, with its sampling variance determining how much weight the model gives to that estimate. The model borrows strength across MSOAs and survey years through spatial and temporal random effects, while area-level predictors, obtained from aggregated benchmarked sources such as [ONS UK Census 2021](https://www.ons.gov.uk/census), help explain systematic differences in the frequent cycling estimand across areas.
+Area-level SAE uses direct estimates as the modelling input. In the Fay--Herriot area-level model, each direct estimate for an *MSOA-year* cell is treated as a noisy observation of the underlying frequent-cycling rate, with its sampling variance determining how much weight the model gives to that estimate. The model borrows strength across MSOAs and survey years through spatial and temporal random effects, while area-level predictors, obtained from aggregated benchmarked sources such as [ONS UK Census 2021](https://www.ons.gov.uk/census), help explain systematic differences in the frequent cycling estimand across areas.
 
 ## Prepare modelling data
 
@@ -140,7 +140,7 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqbike.csv
 head(area_predictors)
 ```
 
-The missing or zero sampling variances of direct estimates need to be handled, because it controls how much weight each direct estimate receives in the FH model.
+The missing or zero sampling variances of direct estimates need to be handled, because this controls how much weight each direct estimate receives in the area-level model.
 
 - For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly determined by the model predictions.
 - Because the outcome is binary (`1` for cycling frequently, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
@@ -260,7 +260,7 @@ fh_fits <- lapply(model_formulas, fit_fh_model)
 ```
 
 :::{.callout-note}
-When fitting area-level FH models with `INLA`, these arguments are needed:
+When fitting area-level SAE models with `INLA`, these arguments are needed:
 
 - `control.predictor = list(compute = TRUE)` returns fitted values for every row. In an area-level model, these are the final estimates for each area-time row.
 - `scale` passes the inverse sampling variance to `INLA`, so less precise direct estimates get smoothed more.
@@ -268,7 +268,7 @@ When fitting area-level FH models with `INLA`, these arguments are needed:
 - `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
 :::
 
-To compare the fitted models' overall performance, we use `WAIC` or (Widely Applicable Information Criterion) as a first check. It is a global predictive-fit measure returned by `INLA`; lower values indicate better expected prediction after penalising model complexity.
+Model fit is compared with `WAIC` (Widely Applicable Information Criterion), a global predictive-fit measure returned by `INLA`. Lower values indicate better expected prediction after penalising model complexity.
 
 ```{r}
 #| label: fh-waic
@@ -298,7 +298,7 @@ Based on this comparison, M2, which includes average MSOA age, performs best. Th
 
 ## Estimation with posterior draws
 
-The estimation step uses posterior draws from the selected `INLA` fit to produce FH estimates for each MSOA-year cell. We first sample from the posterior and extract the fitted values, then summarise the resulting MSOA-year draws into the posterior mean, variance, and 95% credible interval.
+Posterior draws from the selected `INLA` fit give area-level SAE estimates for each MSOA-year cell. The fitted-value draws are summarised into the posterior mean, variance, and 95% credible interval.
 
 :::{.callout-note}
 `INLA` stores the fitted values inside each posterior draw's latent vector. The fitted-value rows are named `Predictor...`.
@@ -308,7 +308,7 @@ The estimation step uses posterior draws from the selected `INLA` fit to produce
 #| label: fh-draws
 #| code-fold: false
 
-# Draw 300 posterior samples from the selected FH fit.
+# Draw 300 posterior samples from the selected fit.
 set.seed(100)
 posterior_draws <- inla.posterior.sample(
   n = 300,
@@ -327,21 +327,20 @@ prediction_draws <- sapply(posterior_draws, \(draw) {
 })
 ```
 
+The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
+
 ```{r}
 #| label: fh-results
 #| code-fold: false
 
-# Summarise posterior draws into estimates and credible intervals.
-model_output_frame <- model_data |>
-  select(area_id, time_id, msoa_name, direct_estimate, variance, n)
-
-final_fh_results <- model_output_frame |>
+final_fh_results <- model_data |>
+  select(area_id, time_id) |>
   bind_cols(
     tibble(
       fh_estimate = rowMeans(prediction_draws),
       fh_variance = apply(prediction_draws, 1, var),
-      fh_lower = apply(prediction_draws, 1, quantile, probs = 0.025),
-      fh_upper = apply(prediction_draws, 1, quantile, probs = 0.975)
+      fh_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      fh_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
     )
   ) |>
   mutate(
@@ -415,12 +414,12 @@ for (i in seq_len(length(fh_wave_years) - 1)) {
 wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = length(fh_wave_years)) +
   plot_annotation(
     title = "Share of adults who cycle for transport frequently",
-    subtitle = paste0("Selected FH model (", fh_best_model, ") and 95% CI width"),
+    subtitle = paste0("Selected model (", fh_best_model, ") and 95% CI width"),
     theme = map_annotation_theme
   )
 ```
 
-The Fay--Herriot estimates produce a less jagged pattern across neighbouring areas and show clearer broad regional structure than the direct estimates. However, the weak survey coverage seen in many direct estimates means that, for some areas, the model has to rely heavily on synthetic estimation from area-level predictors rather than direct survey evidence. This is expected in area-level modelling, but it also highlights a limitation: because the model starts from direct estimates, it cannot fully use variation among individual survey respondents. [**Unit-level models**](bhf-unit.qmd) address this by modelling the individual outcome directly using unit-level predictors from the survey respondent data.
+The area-level SAE estimates are less jagged across neighbouring areas and show clearer broad regional structure than the direct estimates. In sparsely sampled MSOA-year cells, the FH estimate depends heavily on area-level predictors and random effects because the direct estimate contributes limited local information. The model therefore cannot use within-area respondent variation beyond what is already captured in the direct estimate. [**Unit-level models**](bhf-unit.qmd) address this by modelling individual outcomes with respondent-level predictors.
 
 ## Comparative analysis
 ```{r}
@@ -458,9 +457,9 @@ all_fh_results <- all_fh_results |>
   )
 ```
 
-### How the Fay--Herriot model smooths direct estimates
+### How the area-level model smooths direct estimates
 
-We start by comparing the direct estimates with M1, the temporal-spatial Fay-Herriot model with no area predictors, to understand how the FH model handles noisy direct estimates before adding predictors.
+We start by comparing the direct estimates with M1, the temporal-spatial area-level model with no area predictors, to understand how the model handles noisy direct estimates before adding predictors.
 
 ```{r}
 #| label: fh-baseline-data
@@ -590,12 +589,12 @@ direct_to_m1_ranked_plot <- ggplot(
   direct_to_m1_ranked_plot) +
   plot_layout(heights = c(2, 1)) +
   plot_annotation(
-    title = "Direct estimates compared with FH model (M1)",
+    title = "Direct estimates compared with area-level model (M1)",
     subtitle = "M1 stabilises noisy direct estimates with temporal-spatial smoothing",
     theme = map_annotation_theme
   )
 ```
-Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. The Bayesian FH fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
+Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. The Bayesian area-level fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
 
 ```{r}
 #| label: fh-missing-direct
@@ -616,9 +615,9 @@ all_fh_results |>
 
 ### Adding Temporal and Spatial Effects
 
-The selected FH model estimates hyperparameters for the temporal and spatial random effects. These parameters show how much residual variation remains after accounting for the fixed-effect predictors and sampling variances, and how that remaining variation is structured across time and space.
+The selected area-level model estimates hyperparameters for the temporal and spatial random effects. These parameters show how much residual variation remains after accounting for the fixed-effect predictors and sampling variances, and how that remaining variation is structured across time and space.
 
-- `tau` is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher temporal `tau` than spatial indicates a smoother time pattern with smaller differences between neighbouring survey years than between MSOAs. Still, its inclusion as a random effect is important if we are interested in analysing the temporal trend over the survey years of interest, rather than treating observations from three waves as one.
+- `tau` is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher temporal `tau` than spatial indicates a smoother time pattern with smaller differences between neighbouring survey years than between MSOAs. The temporal random effect keeps wave-to-wave differences explicit instead of pooling the three waves into one period.
 
 - `phi` is the BYM2 mixing parameter for the area random effect. It describes how much of that residual area effect is spatially structured. A lower `phi` here (less than `0.5`) means the remaining area differences are mostly local and less strongly explained by adjacency. This can also be due to sparse direct estimates in many areas, which give the model less reliable area-level evidence for learning a coherent spatial pattern.
 
@@ -634,7 +633,7 @@ fh_fits[[fh_best_model]]$summary.hyperpar |>
 
 ### Adding Predictors
 
-Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In a Fay--Herriot model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.
+Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In this area-level model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.
 
 Here we compare M1 with M3, which adds average age, population density, and car access.
 
@@ -706,7 +705,7 @@ model_data |>
   )
 ```
 
-The pattern here suggests that MSOAs with older populations, lower population density, and a higher share of households with car access tend to have lower rates of frequent cycling in the predictor-enriched M3 specification. The table below reports the coefficients, i.e., expected change associated with a 1sd increase in the corresponding predictor. In practice, predictor inclusion should be assessed holistically, using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome being modelled.
+The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of households with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.
 
 ```{r}
 #| label: fh-fixed

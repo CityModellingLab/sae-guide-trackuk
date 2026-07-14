@@ -148,7 +148,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
- <span class="dropdown-text">SAE with Poststrat (MRP)</span></a>
+ <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
@@ -240,7 +240,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">SAE with Poststrat (MRP)</span></a>
+ <span class="menu-text">Unit-level SAE with Poststrat</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -350,7 +350,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. The resulting MSOA estimates should not be interpreted as substantive findings about individual places.</p>
 <p>This design has two purposes:</p>
 <ul>
-<li><strong>Higher spatial resolution.</strong> The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and MRP-style poststratification.</li>
+<li><strong>Higher spatial resolution.</strong> The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and unit-level SAE with poststratification.</li>
 <li><strong>Privacy and disclosure protection.</strong> The assigned MSOA is not the respondent’s true MSOA, so we avoid presenting fine-grained respondent locations.</li>
 </ul>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -363,7 +363,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>From here on, the survey period labels are simplified to their end year. For example, the <code>2020-2021</code> survey wave is labelled as and referred to as the <code>2021</code> wave.</p>
+<p>Survey period labels use their end year. For example, the <code>2020-2021</code> survey wave is labelled as the <code>2021</code> wave.</p>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -390,7 +390,7 @@ Note
 <blockquote class="blockquote">
 <p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
-<p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. In this worked example, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
+<p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. Here, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
 <p>The estimand used here is:</p>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
@@ -414,7 +414,7 @@ Target estimand
 </section>
 <section id="preparing-the-survey-indicator" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing The Survey Indicator</h3>
-<p>Since we are interested in whether adult respondents cycle frequently as a means of transport, we can code the indicator from <code>AtFrqBke</code>, the active-travel frequency question for cycling.</p>
+<p>The frequent-cycling indicator is coded from <code>AtFrqBke</code>, the active-travel frequency question for cycling.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
