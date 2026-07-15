@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Model diagnostics and comparison</title>
+<title>Small Area Estimation for Urban Analytics - A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./toolkit.html" rel="next">
-<link href="./unit-sae-mrp.html" rel="prev">
+<link href="./dataprep.html" rel="next">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
@@ -110,7 +109,7 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-summ.html" rel="" target="">
- <span class="dropdown-text">Unit-level SAE</span></a>
+ <span class="dropdown-text">Unit-level SAE with Summaries</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-mrp.html" rel="" target="">
@@ -144,7 +143,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./diagnostics.html">Diagnostics</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./index.html">Home</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -166,7 +165,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link">
+  <a href="./index.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Home</span></a>
   </div>
 </li>
@@ -200,7 +199,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./unit-sae-summ.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level SAE</span></a>
+ <span class="menu-text">Unit-level SAE with Summaries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -211,7 +210,7 @@ ul.task-list li input[type="checkbox"] {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./diagnostics.html" class="sidebar-item-text sidebar-link active">
+  <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Diagnostics</span></a>
   </div>
 </li>
@@ -240,23 +239,15 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link active" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</a></li>
-  <li><a href="#uncertainty-ci-width" id="toc-uncertainty-ci-width" class="nav-link" data-scroll-target="#uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</a></li>
-  <li><a href="#residual-area-effects" id="toc-residual-area-effects" class="nav-link" data-scroll-target="#residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</a></li>
-  </ul>
-</nav>
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Model diagnostics and comparison</h1>
-<p class="subtitle lead">Estimates, uncertainty, and residual structure</p>
+<h1 class="title">A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</h1>
+<p class="subtitle lead">From sparse survey data to reliable small-area estimates</p>
 </div>
 
 
@@ -271,97 +262,81 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.</p>
-<table class="table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-<col style="width: 25%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Method</th>
-<th>Estimation approach</th>
-<th>Data requirements</th>
-<th>Main limitation</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Direct estimation</td>
-<td>Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate.</td>
-<td>None</td>
-<td>Sparse or missing cells can give unstable estimates.</td>
-</tr>
-<tr class="even">
-<td>Area-level SAE</td>
-<td>Uses direct estimates and sampling variances, then smooths them with an area-level model.</td>
-<td>Low</td>
-<td>Depends on the quality of the direct estimates.</td>
-</tr>
-<tr class="odd">
-<td>Unit-level SAE with area summaries</td>
-<td>Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries.</td>
-<td>Medium</td>
-<td>Area summaries only approximate the population composition, not robust for binary outcome.</td>
-</tr>
-<tr class="even">
-<td>Unit-level SAE with poststratification</td>
-<td>Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts.</td>
-<td>High</td>
-<td>The 2021 population structure is reused for later years.</td>
-</tr>
-</tbody>
-</table>
-<section id="estimate-scale-and-smoothing" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</h2>
-<p>The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.</p>
+<p><img src="assets/banner.png" class="img-fluid" style="width:100.0%"></p>
+<div class="home-section">
+<div class="section-label">
+<p>Small area estimation for Urban Analytics</p>
+</div>
+<p>Urban researchers often need survey estimates at the scale where urban questions are asked: neighbourhoods, census blocks, transport zones, or other local units. These estimates may be used to compare places, monitor change over time, identify local inequalities, or link survey outcomes to area-level conditions. Most surveys are not designed for reliable estimation at every local geography and time period, so area-year cells can contain only a few respondents or none at all.</p>
+<p>This guide sets out a workflow for choosing <strong>spatio-temporal Bayesian small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>INLA</code>.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Bayesian inference and INLA</p>
+</div>
+<p>Bayesian inference combines survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. Modelled estimates are returned as posterior distributions, which makes uncertainty explicit.</p>
+<p>The examples use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Navigating the guide</p>
+</div>
+<p>The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.</p>
+<p><img src="assets/sae_method_select.png" class="img-fluid"></p>
+<ol type="1">
+<li><strong><a href="./dataprep.html">Estimation setup</a></strong></li>
+<li><strong><a href="./direct-estimation.html">Direct estimation</a></strong></li>
+<li><strong><a href="./area-sae-fh.html">Modelling: Area-level SAE</a></strong></li>
+<li><strong><a href="./unit-sae-summ.html">Modelling: Unit-level SAE with area summaries</a></strong></li>
+<li><strong><a href="./unit-sae-mrp.html">Modelling: Unit-level SAE with poststratification</a></strong></li>
+<li><strong><a href="./diagnostics.html">Comparative diagnostics</a></strong></li>
+<li><strong><a href="./toolkit.html">Toolkit</a></strong></li>
+</ol>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>Data</p>
+</div>
+<p>The data are synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>. The maps and estimates should not be interpreted as empirical findings about specific places in Wales. Auxiliary predictors, boundaries, and poststratification tables are derived from the <em>Office for National Statistics (ONS)</em>, including ONS UK Census 2021. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">estimation setup</a>.</p>
+</div>
+<div class="home-section">
+<div class="section-label">
+<p>About the project</p>
+</div>
+<p>The tutorial is part of the <strong>TRACK-UK</strong> project by the <a href="https://citymodellinglab.uk"><strong>City Modelling Lab</strong></a>.</p>
+<p>TRACK-UK develops spatial and statistical methods for analysing mobility patterns at fine geographic scales and assessing their implications for transport decarbonisation in the UK. The project works with academic, policy, and industry partners to produce evidence for transport and energy policy.</p>
+<p>For questions about the guide, contact:</p>
 <ul>
-<li><strong>Direct estimates</strong> retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The <strong>area-level FH model</strong> is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.</li>
-<li>Differences between the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.</li>
+<li><strong>Shaun Hoang</strong> - University College London</li>
+<li><strong>Anna Freni-Sterrantino</strong> - The Alan Turing Institute</li>
+<li><strong>Esra Suel</strong> - University College London; University of Zurich</li>
 </ul>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
+<div class="home-section">
+<div class="section-label">
+<p>Bibliography</p>
 </div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-estimate-map-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-</section>
-<section id="uncertainty-ci-width" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-ci-density-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-</section>
-<section id="residual-area-effects" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</h2>
-<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.</p>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
+<p><strong>Survey Estimation and Small Area Estimation</strong></p>
+<ul>
+<li>Horvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” <em>Journal of the American Statistical Association</em>, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.</li>
+<li>Fay, R. E., and Herriot, R. A. (1979). “Estimates of Income for Small Places: An Application of James-Stein Procedures to Census Data.” <em>Journal of the American Statistical Association</em>, 74(366), 269-277. doi:10.1080/01621459.1979.10482505.</li>
+<li>Battese, G. E., Harter, R. M., and Fuller, W. A. (1988). “An Error-Components Model for Prediction of County Crop Areas Using Survey and Satellite Data.” <em>Journal of the American Statistical Association</em>, 83(401), 28-36. doi:10.1080/01621459.1988.10478561.</li>
+<li>Molina, I., and Rao, J. N. K. (2010). “Small Area Estimation of Poverty Indicators.” <em>The Canadian Journal of Statistics</em>, 38(3), 369-385. doi:10.1002/cjs.10051.</li>
+</ul>
+<p><strong>Multilevel Regression with Poststratification</strong></p>
+<ul>
+<li>Gelman, A., and Little, T. C. (1997). “Poststratification into Many Categories Using Hierarchical Logistic Regression.” <em>Survey Methodology</em>, 23(2), 127-135.</li>
+<li>Park, D. K., Gelman, A., and Bafumi, J. (2004). “Bayesian Multilevel Estimation with Poststratification: State-Level Estimates from National Polls.” <em>Political Analysis</em>, 12(4), 375-385. doi:10.1093/pan/mph002.</li>
+</ul>
+<p><strong>Bayesian Spatial and Spatio-Temporal Modelling</strong></p>
+<ul>
+<li>Besag, J., York, J., and Mollie, A. (1991). “Bayesian Image Restoration, with Two Applications in Spatial Statistics.” <em>Annals of the Institute of Statistical Mathematics</em>, 43(1), 1-20. doi:10.1007/BF00116466.</li>
+<li>Rue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” <em>Journal of the Royal Statistical Society: Series B</em>, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.</li>
+<li>Riebler, A., Sorbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” <em>Statistical Methods in Medical Research</em>, 25(4), 1145-1165. doi:10.1177/0962280216660421.</li>
+</ul>
 </div>
 
 
-</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -613,13 +588,10 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="./unit-sae-mrp.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Unit-level SAE with Poststrat</span>
-      </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./toolkit.html" class="pagination-link">
-        <span class="nav-page-text">Toolkit</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./dataprep.html" class="pagination-link">
+        <span class="nav-page-text">Setting up</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
