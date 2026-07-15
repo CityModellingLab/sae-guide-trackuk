@@ -1,6 +1,6 @@
 ---
 title: "Model diagnostics and comparison"
-subtitle: "Benefits and trade-offs"
+subtitle: "Estimates, uncertainty, and residual structure"
 ---
 
 
@@ -22,14 +22,13 @@ base_path <- if (dir.exists("data")) {
   normalizePath(file.path("..", "data"))
 }
 
-method_levels <- c("Direct", "FH", "BHF", "MRP Shallow", "MRP Rich")
 method_labels <- c(
   "Direct" = "Direct",
   "FH" = "Area-level SAE",
   "BHF" = "Unit-level SAE with area summaries",
-  "MRP Shallow" = "Unit-level SAE with poststratification",
-  "MRP Rich" = "Unit-level SAE with rich poststratification"
+  "MRP Rich" = "Unit-level SAE with poststratification"
 )
+method_levels <- names(method_labels)
 method_labeller <- labeller(method = as_labeller(method_labels))
 missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
@@ -182,12 +181,6 @@ estimate_sets <- bind_rows(
     ci_width_col = "bhf_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqbike_estimates_mrp_shallow.csv"),
-    "MRP Shallow",
-    "shallow_mrp_estimate",
-    ci_width_col = "shallow_mrp_ci_width"
-  ),
-  read_estimate_set(
     file.path(base_path, "freqbike_estimates_mrp_rich.csv"),
     "MRP Rich",
     "mrp_estimate",
@@ -209,23 +202,21 @@ ci_width_colour_limits <- safe_limit(diagnostic_estimates$ci_width, p = 0.95)
 ci_width_axis_limits <- safe_limit(diagnostic_estimates$ci_width)
 ```
 
-This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE with area summaries, and unit-level SAE with poststratification. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, uncertainty, and local residual structure used by the models.
+This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification. 
 
-## Method Choice and Trade-Offs
-
-| Method | Main input | Predictors | Limitation |
+| Method | Estimation approach | Data requirements | Main limitation |
 |---|---|---|---|
-| Direct | Survey responses within each MSOA-year cell | None | Sparse or missing cells can give unstable estimates. |
-| Area-level SAE | Direct estimates and sampling variances | MSOA-level age, population density, and car access | Stabilises direct estimates, but still depends on weak direct inputs. |
-| Unit-level SAE | Survey microdata with area-level summaries | Age, sex, and car access, represented by MSOA summaries | Uses individual outcomes, but does not consider survey weights and only approximates population composition. |
-| Unit-level SAE with poststratification | Survey microdata plus age-sex population cells | Age and sex | Reweights predictions to the population for all waves using mid-year population estimates, but only across age and sex. |
-| Unit-level SAE with rich poststratification | Survey microdata plus age-sex-car population cells | Age, sex, and car access | Better matches population structure, but reuses the Census 2021 structure across waves. |
+| Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
+| Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
+| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Medium | Area summaries only approximate the population composition, not robust for binary outcome. |
+| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | The 2021 population structure is reused for later years. |
 
 ## Estimate Scale and Smoothing
 
-The distribution and rank plots show how much each method changes the spread of MSOA-year estimates, and the maps show where each method changes the local pattern of estimated frequent cycling.
+The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
 
-Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.
+- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level FH model** is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.
+- Differences between the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
 
 ```{r}
 #| label: diag-estimate-dist-rank
@@ -308,8 +299,6 @@ wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
   theme(legend.position = "bottom")
 ```
 
-
-
 ```{r}
 #| label: diag-estimate-map
 #| echo: false
@@ -391,7 +380,7 @@ method_agreement |>
 
 ## Uncertainty CI Width
 
-Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.
+Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
 
 ```{r}
 #| label: diag-ci-map
@@ -453,7 +442,7 @@ diagnostic_estimates |>
 
 ## Residual Area Effects
 
-The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered. These area effects are time-stable model terms, so they are shown once per method alongside the selected-year diagnostics.
+The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.
 
 ```{r}
 #| label: diag-area-effect-map
@@ -462,11 +451,10 @@ The unstructured area-effect maps show where the fitted models allocate remainin
 #| fig-height: 7
 #| out-width: "100%"
 
-area_effect_method_levels <- c("FH", "BHF", "MRP Shallow", "MRP Rich")
+area_effect_method_levels <- setdiff(method_levels, "Direct")
 area_effect_files <- c(
   "freqbike_area_effects_fh.csv",
   "freqbike_area_effects_bhf.csv",
-  "freqbike_area_effects_mrp_shallow.csv",
   "freqbike_area_effects_mrp_rich.csv"
 )
 

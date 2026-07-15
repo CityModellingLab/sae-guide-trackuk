@@ -244,10 +244,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#method-choice-and-trade-offs" id="toc-method-choice-and-trade-offs" class="nav-link active" data-scroll-target="#method-choice-and-trade-offs"><span class="header-section-number">1</span> Method Choice and Trade-Offs</a></li>
-  <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</a></li>
-  <li><a href="#uncertainty-ci-width" id="toc-uncertainty-ci-width" class="nav-link" data-scroll-target="#uncertainty-ci-width"><span class="header-section-number">3</span> Uncertainty CI Width</a></li>
-  <li><a href="#residual-area-effects" id="toc-residual-area-effects" class="nav-link" data-scroll-target="#residual-area-effects"><span class="header-section-number">4</span> Residual Area Effects</a></li>
+  <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link active" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</a></li>
+  <li><a href="#uncertainty-ci-width" id="toc-uncertainty-ci-width" class="nav-link" data-scroll-target="#uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</a></li>
+  <li><a href="#residual-area-effects" id="toc-residual-area-effects" class="nav-link" data-scroll-target="#residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</a></li>
   </ul>
 </nav>
     </div>
@@ -257,7 +256,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Model diagnostics and comparison</h1>
-<p class="subtitle lead">Benefits and trade-offs</p>
+<p class="subtitle lead">Estimates, uncertainty, and residual structure</p>
 </div>
 
 
@@ -272,9 +271,7 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE with area summaries, and unit-level SAE with poststratification. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, uncertainty, and local residual structure used by the models.</p>
-<section id="method-choice-and-trade-offs" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="method-choice-and-trade-offs"><span class="header-section-number">1</span> Method Choice and Trade-Offs</h2>
+<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.</p>
 <table class="table">
 <colgroup>
 <col style="width: 25%">
@@ -285,49 +282,45 @@ ul.task-list li input[type="checkbox"] {
 <thead>
 <tr class="header">
 <th>Method</th>
-<th>Main input</th>
-<th>Predictors</th>
-<th>Limitation</th>
+<th>Estimation approach</th>
+<th>Data requirements</th>
+<th>Main limitation</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td>Direct</td>
-<td>Survey responses within each MSOA-year cell</td>
+<td>Direct estimation</td>
+<td>Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate.</td>
 <td>None</td>
 <td>Sparse or missing cells can give unstable estimates.</td>
 </tr>
 <tr class="even">
 <td>Area-level SAE</td>
-<td>Direct estimates and sampling variances</td>
-<td>MSOA-level age, population density, and car access</td>
-<td>Stabilises direct estimates, but still depends on weak direct inputs.</td>
+<td>Uses direct estimates and sampling variances, then smooths them with an area-level model.</td>
+<td>Low</td>
+<td>Depends on the quality of the direct estimates.</td>
 </tr>
 <tr class="odd">
-<td>Unit-level SAE</td>
-<td>Survey microdata with area-level summaries</td>
-<td>Age, sex, and car access, represented by MSOA summaries</td>
-<td>Uses individual outcomes, but does not consider survey weights and only approximates population composition.</td>
+<td>Unit-level SAE with area summaries</td>
+<td>Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries.</td>
+<td>Medium</td>
+<td>Area summaries only approximate the population composition, not robust for binary outcome.</td>
 </tr>
 <tr class="even">
 <td>Unit-level SAE with poststratification</td>
-<td>Survey microdata plus age-sex population cells</td>
-<td>Age and sex</td>
-<td>Reweights predictions to the population for all waves using mid-year population estimates, but only across age and sex.</td>
-</tr>
-<tr class="odd">
-<td>Unit-level SAE with rich poststratification</td>
-<td>Survey microdata plus age-sex-car population cells</td>
-<td>Age, sex, and car access</td>
-<td>Better matches population structure, but reuses the Census 2021 structure across waves.</td>
+<td>Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts.</td>
+<td>High</td>
+<td>The 2021 population structure is reused for later years.</td>
 </tr>
 </tbody>
 </table>
-</section>
-<section id="estimate-scale-and-smoothing" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">2</span> Estimate Scale and Smoothing</h2>
-<p>The distribution and rank plots show how much each method changes the spread of MSOA-year estimates, and the maps show where each method changes the local pattern of estimated frequent cycling.</p>
-<p>Direct estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells.</p>
+<section id="estimate-scale-and-smoothing" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</h2>
+<p>The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.</p>
+<ul>
+<li><strong>Direct estimates</strong> retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The <strong>area-level FH model</strong> is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.</li>
+<li>Differences between the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.</li>
+</ul>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -344,9 +337,9 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="uncertainty-ci-width" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="uncertainty-ci-width"><span class="header-section-number">3</span> Uncertainty CI Width</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells.</p>
+<section id="uncertainty-ci-width" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</h2>
+<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -358,9 +351,9 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="residual-area-effects" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="residual-area-effects"><span class="header-section-number">4</span> Residual Area Effects</h2>
-<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered. These area effects are time-stable model terms, so they are shown once per method alongside the selected-year diagnostics.</p>
+<section id="residual-area-effects" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</h2>
+<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>

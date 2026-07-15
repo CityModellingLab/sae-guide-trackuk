@@ -228,34 +228,34 @@
     "href": "diagnostics.html",
     "title": "Model diagnostics and comparison",
     "section": "",
-    "text": "This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE with area summaries, and unit-level SAE with poststratification. The diagnostics compare the scale and smoothness of the estimates, agreement between methods, uncertainty, and local residual structure used by the models."
+    "text": "This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification."
   },
   {
     "objectID": "diagnostics.html#method-choice-and-trade-offs",
     "href": "diagnostics.html#method-choice-and-trade-offs",
     "title": "Model diagnostics and comparison",
     "section": "1 Method Choice and Trade-Offs",
-    "text": "1 Method Choice and Trade-Offs\n\n\n\n\n\n\n\n\n\nMethod\nMain input\nPredictors\nLimitation\n\n\n\n\nDirect\nSurvey responses within each MSOA-year cell\nNone\nSparse or missing cells can give unstable estimates.\n\n\nArea-level SAE\nDirect estimates and sampling variances\nMSOA-level age, population density, and car access\nStabilises direct estimates, but still depends on weak direct inputs.\n\n\nUnit-level SAE\nSurvey microdata with area-level summaries\nAge, sex, and car access, represented by MSOA summaries\nUses individual outcomes, but does not consider survey weights and only approximates population composition.\n\n\nUnit-level SAE with poststratification\nSurvey microdata plus age-sex population cells\nAge and sex\nReweights predictions to the population for all waves using mid-year population estimates, but only across age and sex.\n\n\nUnit-level SAE with rich poststratification\nSurvey microdata plus age-sex-car population cells\nAge, sex, and car access\nBetter matches population structure, but reuses the Census 2021 structure across waves."
+    "text": "1 Method Choice and Trade-Offs\n\n\n\n\n\n\n\n\n\nMethod\nMain input\nPredictors\nLimitation\n\n\n\n\nDirect\nSurvey responses within each MSOA-year cell\nNone\nSparse or missing cells can give unstable estimates.\n\n\nArea-level SAE\nDirect estimates and sampling variances\nMSOA-level age, population density, and car access\nStabilises direct estimates, but still depends on weak direct inputs.\n\n\nUnit-level SAE\nSurvey microdata with area-level summaries\nAge, sex, and car access, represented by MSOA summaries\nUses individual outcomes, but does not consider survey weights and only approximates population composition.\n\n\nUnit-level SAE with rich poststratification\nSurvey microdata plus age-sex-car population cells\nAge, sex, and car access\nBetter matches population structure, but reuses the Census 2021 structure across waves."
   },
   {
     "objectID": "diagnostics.html#estimate-scale-and-smoothing",
     "href": "diagnostics.html#estimate-scale-and-smoothing",
     "title": "Model diagnostics and comparison",
-    "section": "2 Estimate Scale and Smoothing",
-    "text": "2 Estimate Scale and Smoothing\nThe distribution and rank plots show how much each method changes the spread of MSOA-year estimates, and the maps show where each method changes the local pattern of estimated frequent cycling.\nDirect estimates retain the most cell-level jaggedness, while the model-based approaches borrow strength across areas, years, predictors, or poststratification cells."
+    "section": "1 Estimate Scale and Smoothing",
+    "text": "1 Estimate Scale and Smoothing\nThe distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.\n\nDirect estimates retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The area-level FH model is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.\nDifferences between the two unit-level models are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias."
   },
   {
     "objectID": "diagnostics.html#uncertainty-ci-width",
     "href": "diagnostics.html#uncertainty-ci-width",
     "title": "Model diagnostics and comparison",
-    "section": "3 Uncertainty CI Width",
-    "text": "3 Uncertainty CI Width\nInterval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, predictors, or population cells."
+    "section": "2 Uncertainty CI Width",
+    "text": "2 Uncertainty CI Width\nInterval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors."
   },
   {
     "objectID": "diagnostics.html#residual-area-effects",
     "href": "diagnostics.html#residual-area-effects",
     "title": "Model diagnostics and comparison",
-    "section": "4 Residual Area Effects",
-    "text": "4 Residual Area Effects\nThe unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered. These area effects are time-stable model terms, so they are shown once per method alongside the selected-year diagnostics."
+    "section": "3 Residual Area Effects",
+    "text": "3 Residual Area Effects\nThe unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered."
   }
 ]
