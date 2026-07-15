@@ -12,9 +12,7 @@ Y_{ijt}
 \alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
 $$
 
-Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
-
-With area-summary aggregation, population summaries of the predictors $\bar{\mathbf{x}}_{jt}$ are substituted into the fitted unit-level model:
+Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$. Population summaries of the predictors $\bar{\mathbf{x}}_{jt}$ are substituted into the fitted unit-level model:
 
 $$
 \hat{\mu}_{jt}
@@ -89,14 +87,14 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator `freq_biker` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications.
+Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications.
 
 This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model, extended here through a generalised mixed model so it can be used with both continuous and binary outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell. 
 
 ::: {.callout-note title="Continuous and binary outcomes"}
 For **continuous outcomes**, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.
 
-For **binary outcomes** such as `freq_biker`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average. 
+For **binary outcomes** such as `freq_cyclist`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.
 :::
 
 ## Prepare model and aggregation data
@@ -110,7 +108,7 @@ There are two inputs when performing unit-level SAE:
 #| label: bhf-model-data
 
 survey_microdata <- read_csv(
-  file.path(base_path, "clean", "surveyind_freqbike.csv"),
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
   show_col_types = FALSE
 )
 
@@ -119,7 +117,7 @@ model_data <- survey_microdata |>
     unit_id,
     area_id,
     time_id,
-    freq_biker,
+    freq_cyclist,
     age,
     female = as.integer(sex == 2),
     caraccess
@@ -132,7 +130,7 @@ head(model_data)
 ```{r}
 #| label: bhf-agg-data
 
-area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqbike.csv"), show_col_types = FALSE) |>
+area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
   transmute(
     area_id,
     age = age_adult_mean,
@@ -173,7 +171,7 @@ time_ids <- sort(unique(inla_domain_index$time_inla_id))
 
 model_data <- model_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(freq_biker, age, female, caraccess, area_inla_id, time_inla_id) |>
+  drop_na(freq_cyclist, age, female, caraccess, area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 aggregation_data <- aggregation_data |>
@@ -196,7 +194,7 @@ We fit binomial unit-level models to the survey microdata, then use them to pred
 #| label: bhf-specs
 #| code-fold: false
 
-m1_formula <- freq_biker ~
+m1_formula <- freq_cyclist ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -476,7 +474,7 @@ A poststratification table addresses this limitation by providing population cou
 #| label: bhf-export
 #| code-fold: true
 
-write_csv(final_bhf_results, file.path(base_path, "freqbike_estimates_bhf.csv"))
+write_csv(final_bhf_results, file.path(base_path, "freqcyc_estimates_bhf.csv"))
 ```
 
 ```{r}
@@ -492,7 +490,7 @@ besag_model_data <- model_data |>
     area_unstruct_id = area_inla_id
   )
 
-bhf_besag_formula <- freq_biker ~
+bhf_besag_formula <- freq_cyclist ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -550,5 +548,5 @@ bhf_area_effects <- bind_rows(
   mutate(method = "BHF") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(bhf_area_effects, file.path(base_path, "freqbike_area_effects_bhf.csv"))
+write_csv(bhf_area_effects, file.path(base_path, "freqcyc_area_effects_bhf.csv"))
 ```

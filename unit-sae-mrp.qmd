@@ -12,9 +12,7 @@ Y_{ijt}
 \alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
 $$
 
-Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
-
-With poststratification, the fitted model is first evaluated for each population cell $c$:
+Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$. The fitted model is first evaluated for each population cell $c$:
 
 $$
 \hat{\mu}_{jtc}
@@ -105,7 +103,7 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE with poststratification combines an outcome model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells. For this estimand, we model the binary frequent-cycling indicator `freq_biker` using `age_band`, `sex`, `caraccess`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `caraccess` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+Unit-level SAE with poststratification combines an outcome model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells. For this estimand, we model the binary frequent-cycling indicator `freq_cyclist` using `age_band`, `sex`, `caraccess`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `caraccess` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
 
 Here, the poststratification table is sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census), giving the 2021 population count for each `age_band` x `sex` x `caraccess` cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, $N_{jtc} = N_{jc,2021}$ for all three waves.
 
@@ -123,7 +121,7 @@ It is essential for the unit-level predictors to be identical to the ones presen
 age_band_levels <- c("16_24", "25_34", "35_49", "50_64", "65_plus")
 
 poststrat_data <- read_csv(
-  file.path(base_path, "clean", "poststrat_freqbike_age_sex_car_21.csv"),
+  file.path(base_path, "clean", "poststrat_freqcyc_age_sex_car_21.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -144,7 +142,7 @@ head(poststrat_data)
 ```{r}
 #| label: mrp-load-survey
 survey_microdata <- read_csv(
-  file.path(base_path, "clean", "surveyind_freqbike.csv"),
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
   show_col_types = FALSE
 )
 
@@ -165,12 +163,12 @@ model_data <- survey_microdata_recoded |>
     unit_id,
     area_id,
     time_id,
-    freq_biker,
+    freq_cyclist,
     age_band,
     sex,
     caraccess
   ) |>
-  drop_na(freq_biker, age_band, sex, caraccess)
+  drop_na(freq_cyclist, age_band, sex, caraccess)
 
 head(model_data)
 ```
@@ -188,7 +186,7 @@ time_ids <- sort(unique(inla_domain_index$time_inla_id))
 
 model_data <- model_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(freq_biker, age_band, sex, caraccess, area_inla_id, time_inla_id) |>
+  drop_na(freq_cyclist, age_band, sex, caraccess, area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 poststrat_data <- poststrat_data |>
@@ -211,7 +209,7 @@ We fit binomial unit-level models to the survey microdata, then use them to pred
 #| label: mrp-specs
 #| code-fold: false
 
-m1_formula <- freq_biker ~
+m1_formula <- freq_cyclist ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -545,7 +543,7 @@ Contextual predictors can explain between-area or between-year variation, but th
 ```{r}
 #| label: mrp-load-shallow
 shallow_poststrat_data <- read_csv(
-  file.path(base_path, "clean", "poststrat_freqbike_age_sex_212325.csv"),
+  file.path(base_path, "clean", "poststrat_freqcyc_age_sex_212325.csv"),
   show_col_types = FALSE
 ) |>
   filter(pop_count > 0) |>
@@ -572,7 +570,7 @@ shallow_model_data <- survey_microdata_recoded |>
     unit_id,
     area_id,
     time_id,
-    freq_biker,
+    freq_cyclist,
     age_band,
     sex
   )
@@ -582,7 +580,7 @@ head(shallow_model_data)
 ```{r}
 #| label: mrp-add-context
 area_context_predictors <- read_csv(
-  file.path(base_path, "clean", "areapred_freqbike.csv"),
+  file.path(base_path, "clean", "areapred_freqcyc.csv"),
   show_col_types = FALSE
 ) |>
   transmute(
@@ -594,7 +592,7 @@ area_context_predictors <- read_csv(
 shallow_model_data <- shallow_model_data |>
   left_join(area_context_predictors, by = "area_id") |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(freq_biker, age_band, sex, pop_density, caraccess_adult_share,
+  drop_na(freq_cyclist, age_band, sex, pop_density, caraccess_adult_share,
           area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
@@ -612,7 +610,7 @@ In the **modelling** step, the model specification uses `age_band` and `sex` as 
 #| label: mrp-fit-shallow
 #| code-fold: false
 
-shallow_formula <- freq_biker ~
+shallow_formula <- freq_cyclist ~
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_inla_id,
@@ -882,8 +880,8 @@ wrap_plots(rich_minus_shallow_maps, ncol = 3) +
 #| label: mrp-export
 #| code-fold: true
 
-write_csv(final_mrp_results, file.path(base_path, "freqbike_estimates_mrp_rich.csv"))
-write_csv(shallow_mrp_results, file.path(base_path, "freqbike_estimates_mrp_shallow.csv"))
+write_csv(final_mrp_results, file.path(base_path, "freqcyc_estimates_mrp_rich.csv"))
+write_csv(shallow_mrp_results, file.path(base_path, "freqcyc_estimates_mrp_shallow.csv"))
 ```
 
 ```{r}
@@ -902,7 +900,7 @@ besag_model_data <- model_data |>
     area_unstruct_id = area_inla_id
   )
 
-mrp_besag_formula <- freq_biker ~
+mrp_besag_formula <- freq_cyclist ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -963,7 +961,7 @@ shallow_besag_model_data <- shallow_model_data |>
     area_unstruct_id = area_inla_id
   )
 
-shallow_besag_formula <- freq_biker ~
+shallow_besag_formula <- freq_cyclist ~
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_struct_id,
@@ -1010,6 +1008,6 @@ shallow_area_effects <- bind_rows(
   mutate(method = "MRP Shallow") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(mrp_area_effects, file.path(base_path, "freqbike_area_effects_mrp_rich.csv"))
-write_csv(shallow_area_effects, file.path(base_path, "freqbike_area_effects_mrp_shallow.csv"))
+write_csv(mrp_area_effects, file.path(base_path, "freqcyc_area_effects_mrp_rich.csv"))
+write_csv(shallow_area_effects, file.path(base_path, "freqcyc_area_effects_mrp_shallow.csv"))
 ```

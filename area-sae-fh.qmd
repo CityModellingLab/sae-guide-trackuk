@@ -15,9 +15,7 @@ $$
 \end{aligned}
 $$
 
-Here, $\psi_{jt}$ is the direct-estimation sampling variance, $\mathbf{x}_{jt}$ contains area-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect.
-
-The fitted model produces the area-time estimate by combining the direct estimate, its sampling variance, and the model prediction:
+Here, $\psi_{jt}$ is the direct-estimation sampling variance, $\mathbf{x}_{jt}$ contains area-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The fitted model produces the area-time estimate by combining the direct estimate, its sampling variance, and the model prediction:
 
 $$
 \hat{\mu}_{jt}
@@ -112,7 +110,7 @@ We start from generated direct estimates, and the area predictors.
 
 ```{r}
 #| label: fh-load-direct
-direct_bike <- read_csv(file.path(base_path, "freqbike_estimates_direct.csv"), show_col_types = FALSE) |>
+direct_bike <- read_csv(file.path(base_path, "freqcyc_estimates_direct.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
       "area_id",
@@ -128,7 +126,7 @@ head(direct_bike)
 ```
 ```{r}
 #| label: fh-load-predictors
-area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqbike.csv"), show_col_types = FALSE) |>
+area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
   select(
     all_of(c(
       "area_id",
@@ -721,7 +719,7 @@ fh_fits[["M3 +PopdensCaraccess"]]$summary.fixed |>
 ```{r}
 #| label: fh-export
 #| code-fold: true
-write_csv(final_fh_results, file.path(base_path, "freqbike_estimates_fh.csv"))
+write_csv(final_fh_results, file.path(base_path, "freqcyc_estimates_fh.csv"))
 ```
 
 ```{r}
@@ -799,5 +797,5 @@ fh_area_effects <- bind_rows(
   mutate(method = "FH") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(fh_area_effects, file.path(base_path, "freqbike_area_effects_fh.csv"))
+write_csv(fh_area_effects, file.path(base_path, "freqcyc_area_effects_fh.csv"))
 ```

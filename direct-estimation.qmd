@@ -95,13 +95,13 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 |---|---|
 | `area_id` | Estimation area |
 | `time_id` | Survey wave / year |
-| `freq_biker` | Binary response:<br>`1` if the adult cycles for transport frequently,<br>`0` otherwise |
+| `freq_cyclist` | Binary response:<br>`1` if the adult cycles for transport frequently,<br>`0` otherwise |
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
 #| label: direct-load
-survey_bike <- read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
-  drop_na(freq_biker, weight, area_id, strata)
+survey_bike <- read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+  drop_na(freq_cyclist, weight, area_id, strata)
   
 head(survey_bike)
 ```
@@ -124,7 +124,7 @@ bike_design <- svydesign(
 
 # Calculate direct estimate and uncertainty
 direct_bike_estimates <- svyby(
-  formula = as.formula("~freq_biker"),
+  formula = as.formula("~freq_cyclist"),
   by = as.formula("~area_id + time_id"),
   design = bike_design,
   FUN = svymean,
@@ -136,7 +136,7 @@ direct_bike_estimates <- svyby(
   transmute(
     area_id,
     time_id,
-    direct_estimate = freq_biker,
+    direct_estimate = freq_cyclist,
     variance = se^2
   )
 
@@ -288,5 +288,5 @@ In this setting, the summary points to important limitations for area-level mode
 ```{r}
 #| label: direct-export
 #| code-fold: true
-write_csv(direct_bike, file.path(base_path, "freqbike_estimates_direct.csv"))
+write_csv(direct_bike, file.path(base_path, "freqcyc_estimates_direct.csv"))
 ```

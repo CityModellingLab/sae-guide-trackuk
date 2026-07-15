@@ -150,43 +150,41 @@ The estimand is the quantity we want to estimate. It should be defined before pr
 
 In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an **area-time cell**: one observation we want to estimate. Here, one area-time cell is one MSOA in one survey wave year, or an *MSOA-year cell*.
 
-The estimand used here is:
+The target estimand is:
 
 {{< include assets/target-estimand.qmd >}}
 
-### Preparing The Survey Indicator
+### Preparing the Survey Indicator and Weight
 
-The frequent-cycling indicator is coded from `AtFrqBke`, the active-travel frequency question for cycling.
+The estimand is the proportion of the target population who cycle frequently. We therefore code the survey response as a binary indicator, `freq_cyclist`, because the average of a binary indicator gives the estimated prevalence. `freq_cyclist` is coded from `AtFrqBke`, the active-travel frequency question for cycling:
 
-| Field | Definition |
-|---|---|
-| Indicator name | `freq_biker` |
-| Raw survey variable | `AtFrqBke` |
-| Positive case | `AtFrqBke` is `1` or `2` (at least several times a week) |
-| Negative case | Less frequent cycling or never cycling |
-| Missing | Missing, invalid, or not asked |
+- `1`: `AtFrqBke` is `1` or `2`, meaning at least several times a week
+- `0`: less frequent cycling or never cycling
+- `NA`: missing, ineligible, or not asked
 
-Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding `weight` variable selection rule is as follows:
+For each survey respondent, we also need a design weight, which adjusts the sample so that weighted estimates better represent the target population. Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding `weight` variable selection rule is as follows:
 
 - Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists, 
 - Use `SampleAdultWeight` in survey waves where this question was asked to the main sample. 
 
-The cycling survey indicator input has *one row per respondent-wave*:
+The survey design may include `stratum`, which records the sampling group each respondent belongs to. Including it helps the variance calculation reflect how the sample was drawn, if not randomised.
+
+The survey indicator input has *one row per respondent-wave*:
 
 | Column | Meaning |
 |---|---|
-| `unit_id` | Unique respondent identifier |
-| `time_id` | Survey year |
-| `area_id` | Synthetic MSOA assignment |
-| `strata` | Local Authority stratum |
-| `freq_biker` | Binary response for adults aged 16+ |
+| `unit_id` | Unique identifier (respondent-wave) |
+| `time_id` | Survey wave year |
+| `area_id` | MSOA (Synthetic assignment) |
+| `strata` | Stratum (Local Authority) |
+| `freq_cyclist` | Binary response |
 | `weight` | Matched weight |
 
 ```{r}
 #| label: data-survey-indicator
 
-read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
-  select(unit_id, time_id, area_id, strata, freq_biker, weight) |>
+read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+  select(unit_id, time_id, area_id, strata, freq_cyclist, weight) |>
   head()
 ```
 
@@ -197,8 +195,6 @@ As an overview, the current cleaned data give the following usable observations 
 | 2021 | 3,438 | 408 |
 | 2023 (subsampled) | 1,989 | 405 |
 | 2025 | 5,886 | 408 |
-
-Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
 
@@ -260,7 +256,7 @@ nb2INLA(
 #### Modelling input
 ##### Unit-Level Predictors
 
-Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_biker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
+Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_cyclist`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
 
 | Column | Meaning |
 |---|---|
@@ -271,8 +267,8 @@ Unit-level SAE models need predictors that can be used to model the outcome at t
 ```{r}
 #| label: data-unit-predictors
 
-read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
-  select(unit_id, time_id, area_id, freq_biker, sex, age, caraccess) |>
+read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+  select(unit_id, time_id, area_id, freq_cyclist, sex, age, caraccess) |>
   head()
 ```
 
@@ -291,7 +287,7 @@ The area-predictor input *has one row per MSOA*:
 ```{r}
 #| label: data-area-predictors
 
-read_csv(file.path(base_path, "clean", "areapred_freqbike.csv"), show_col_types = FALSE) |>
+read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
   head()
 ```
 
@@ -319,7 +315,7 @@ The poststratification output *has one row per area-time-age-sex-caraccess combi
 #| label: data-poststrat-head
 
 read_csv(
-  file.path(base_path, "clean", "poststrat_freqbike_age_sex_car_21.csv"),
+  file.path(base_path, "clean", "poststrat_freqcyc_age_sex_car_21.csv"),
   show_col_types = FALSE
 ) |>
   head()

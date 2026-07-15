@@ -282,7 +282,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#data-preparation-pipeline" id="toc-data-preparation-pipeline" class="nav-link" data-scroll-target="#data-preparation-pipeline"><span class="header-section-number">2</span> Data Preparation Pipeline</a>
   <ul class="collapse">
   <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">2.1</span> Defining The Estimand</a></li>
-  <li><a href="#preparing-the-survey-indicator" id="toc-preparing-the-survey-indicator" class="nav-link" data-scroll-target="#preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing The Survey Indicator</a></li>
+  <li><a href="#preparing-the-survey-indicator-and-weight" id="toc-preparing-the-survey-indicator-and-weight" class="nav-link" data-scroll-target="#preparing-the-survey-indicator-and-weight"><span class="header-section-number">2.2</span> Preparing the Survey Indicator and Weight</a></li>
   <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</a></li>
   </ul></li>
   </ul>
@@ -390,7 +390,7 @@ Note
 <p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
 <p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. Here, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
-<p>The estimand used here is:</p>
+<p>The target estimand is:</p>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -403,7 +403,7 @@ Target estimand
 <div class="callout-body-container callout-body">
 <div class="estimand-grid">
 <ul>
-<li><strong>Outcome and Population:</strong> Share of adults who cycle for transport frequently</li>
+<li><strong>Outcome and Population:</strong> Share of adults who cycle frequently</li>
 <li><strong>Geography:</strong> MSOAs in Wales</li>
 <li><strong>Time:</strong> 2021, 2023, and 2025</li>
 </ul>
@@ -411,49 +411,21 @@ Target estimand
 </div>
 </div>
 </section>
-<section id="preparing-the-survey-indicator" class="level3" data-number="2.2">
-<h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator"><span class="header-section-number">2.2</span> Preparing The Survey Indicator</h3>
-<p>The frequent-cycling indicator is coded from <code>AtFrqBke</code>, the active-travel frequency question for cycling.</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Field</th>
-<th>Definition</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Indicator name</td>
-<td><code>freq_biker</code></td>
-</tr>
-<tr class="even">
-<td>Raw survey variable</td>
-<td><code>AtFrqBke</code></td>
-</tr>
-<tr class="odd">
-<td>Positive case</td>
-<td><code>AtFrqBke</code> is <code>1</code> or <code>2</code> (at least several times a week)</td>
-</tr>
-<tr class="even">
-<td>Negative case</td>
-<td>Less frequent cycling or never cycling</td>
-</tr>
-<tr class="odd">
-<td>Missing</td>
-<td>Missing, invalid, or not asked</td>
-</tr>
-</tbody>
-</table>
-<p>Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding <code>weight</code> variable selection rule is as follows:</p>
+<section id="preparing-the-survey-indicator-and-weight" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator-and-weight"><span class="header-section-number">2.2</span> Preparing the Survey Indicator and Weight</h3>
+<p>The estimand is the proportion of the target population who cycle frequently. We therefore code the survey response as a binary indicator, <code>freq_cyclist</code>, because the average of a binary indicator gives the estimated prevalence. <code>freq_cyclist</code> is coded from <code>AtFrqBke</code>, the active-travel frequency question for cycling:</p>
+<ul>
+<li><code>1</code>: <code>AtFrqBke</code> is <code>1</code> or <code>2</code>, meaning at least several times a week</li>
+<li><code>0</code>: less frequent cycling or never cycling</li>
+<li><code>NA</code>: missing, ineligible, or not asked</li>
+</ul>
+<p>For each survey respondent, we also need a design weight, which adjusts the sample so that weighted estimates better represent the target population. Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding <code>weight</code> variable selection rule is as follows:</p>
 <ul>
 <li>Use <code>SampleTravelWeight</code> in survey waves where this question was asked to a subsample and the corresponding weight for this module exists,</li>
 <li>Use <code>SampleAdultWeight</code> in survey waves where this question was asked to the main sample.</li>
 </ul>
-<p>The cycling survey indicator input has <em>one row per respondent-wave</em>:</p>
+<p>The survey design may include <code>stratum</code>, which records the sampling group each respondent belongs to. Including it helps the variance calculation reflect how the sample was drawn, if not randomised.</p>
+<p>The survey indicator input has <em>one row per respondent-wave</em>:</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -464,23 +436,23 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td><code>unit_id</code></td>
-<td>Unique respondent identifier</td>
+<td>Unique identifier (respondent-wave)</td>
 </tr>
 <tr class="even">
 <td><code>time_id</code></td>
-<td>Survey year</td>
+<td>Survey wave year</td>
 </tr>
 <tr class="odd">
 <td><code>area_id</code></td>
-<td>Synthetic MSOA assignment</td>
+<td>MSOA (Synthetic assignment)</td>
 </tr>
 <tr class="even">
 <td><code>strata</code></td>
-<td>Local Authority stratum</td>
+<td>Stratum (Local Authority)</td>
 </tr>
 <tr class="odd">
-<td><code>freq_biker</code></td>
-<td>Binary response for adults aged 16+</td>
+<td><code>freq_cyclist</code></td>
+<td>Binary response</td>
 </tr>
 <tr class="even">
 <td><code>weight</code></td>
@@ -491,8 +463,8 @@ Target estimand
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqbike.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(unit_id, time_id, area_id, strata, freq_biker, weight) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqcyc.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(unit_id, time_id, area_id, strata, freq_cyclist, weight) <span class="sc">|&gt;</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
@@ -504,7 +476,7 @@ Target estimand
 <th style="text-align: right;">time_id</th>
 <th style="text-align: left;">area_id</th>
 <th style="text-align: left;">strata</th>
-<th style="text-align: right;">freq_biker</th>
+<th style="text-align: right;">freq_cyclist</th>
 <th style="text-align: right;">weight</th>
 </tr>
 </thead>
@@ -589,7 +561,6 @@ Target estimand
 </tr>
 </tbody>
 </table>
-<p>Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.</p>
 </section>
 <section id="preparing-auxiliary-data" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</h3>
@@ -710,7 +681,7 @@ Target estimand
 <h4 data-number="2.3.2" class="anchored" data-anchor-id="modelling-input"><span class="header-section-number">2.3.2</span> Modelling input</h4>
 <section id="unit-level-predictors" class="level5" data-number="2.3.2.1">
 <h5 data-number="2.3.2.1" class="anchored" data-anchor-id="unit-level-predictors"><span class="header-section-number">2.3.2.1</span> Unit-Level Predictors</h5>
-<p>Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual <code>freq_biker</code>, we extract or transform these unit-level predictors from the survey microdata <em>for each individual respondent row</em>:</p>
+<p>Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual <code>freq_cyclist</code>, we extract or transform these unit-level predictors from the survey microdata <em>for each individual respondent row</em>:</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -740,8 +711,8 @@ Target estimand
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqbike.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(unit_id, time_id, area_id, freq_biker, sex, age, caraccess) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqcyc.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(unit_id, time_id, area_id, freq_cyclist, sex, age, caraccess) <span class="sc">|&gt;</span></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
@@ -752,7 +723,7 @@ Target estimand
 <th style="text-align: left;">unit_id</th>
 <th style="text-align: right;">time_id</th>
 <th style="text-align: left;">area_id</th>
-<th style="text-align: right;">freq_biker</th>
+<th style="text-align: right;">freq_cyclist</th>
 <th style="text-align: right;">sex</th>
 <th style="text-align: right;">age</th>
 <th style="text-align: right;">caraccess</th>
@@ -852,7 +823,7 @@ Target estimand
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"areapred_freqbike.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"areapred_freqcyc.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
@@ -1004,7 +975,7 @@ Target estimand
 <details>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"poststrat_freqbike_age_sex_car_21.csv"</span>),</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"poststrat_freqcyc_age_sex_car_21.csv"</span>),</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
 <span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
 <span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>

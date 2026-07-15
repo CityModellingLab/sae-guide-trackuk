@@ -163,25 +163,25 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
 
 estimate_sets <- bind_rows(
   read_estimate_set(
-    file.path(base_path, "freqbike_estimates_direct.csv"),
+    file.path(base_path, "freqcyc_estimates_direct.csv"),
     "Direct",
     "direct_estimate",
     variance_col = "variance"
   ),
   read_estimate_set(
-    file.path(base_path, "freqbike_estimates_fh.csv"),
+    file.path(base_path, "freqcyc_estimates_fh.csv"),
     "FH",
     "fh_estimate",
     ci_width_col = "fh_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqbike_estimates_bhf.csv"),
+    file.path(base_path, "freqcyc_estimates_bhf.csv"),
     "BHF",
     "bhf_estimate",
     ci_width_col = "bhf_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqbike_estimates_mrp_rich.csv"),
+    file.path(base_path, "freqcyc_estimates_mrp_rich.csv"),
     "MRP Rich",
     "mrp_estimate",
     ci_width_col = "mrp_ci_width"
@@ -453,9 +453,9 @@ The unstructured area-effect maps show where the fitted models allocate remainin
 
 area_effect_method_levels <- setdiff(method_levels, "Direct")
 area_effect_files <- c(
-  "freqbike_area_effects_fh.csv",
-  "freqbike_area_effects_bhf.csv",
-  "freqbike_area_effects_mrp_rich.csv"
+  "freqcyc_area_effects_fh.csv",
+  "freqcyc_area_effects_bhf.csv",
+  "freqcyc_area_effects_mrp_rich.csv"
 )
 
 area_effects <- area_effect_files |>
