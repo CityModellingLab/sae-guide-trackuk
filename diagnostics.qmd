@@ -35,6 +35,9 @@ missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
 overestimate_colour <- "#b2182b"
 year_colours <- c("#2166ac", "#b2182b", "#4d9221")
+selected_time_id <- 2025
+estimate_palette <- "magma"
+uncertainty_palette <- "Oranges"
 
 ci_width_label <- label_number(accuracy = 1, scale = 100, suffix = " pp")
 share_label <- label_percent(accuracy = 1)
@@ -96,17 +99,46 @@ colourbar_guide <- guide_colourbar(
   barheight = grid::unit(0.35, "cm")
 )
 
+map_panel_theme <- theme_void() +
+  map_text_theme +
+  theme(
+    strip.text = element_text(size = 11, face = "bold"),
+    legend.position = "bottom"
+  )
+
+estimate_fill_scale <- function(limits) {
+  scale_fill_viridis_c(
+    option = estimate_palette,
+    limits = limits,
+    breaks = pretty_breaks(n = 3),
+    oob = squish,
+    labels = share_label,
+    na.value = missing_fill,
+    name = "Estimate",
+    guide = colourbar_guide
+  )
+}
+
+ci_width_fill_scale <- function(limits) {
+  scale_fill_distiller(
+    palette = uncertainty_palette,
+    direction = 1,
+    limits = limits,
+    breaks = pretty_breaks(n = 3),
+    oob = squish,
+    labels = ci_width_label,
+    na.value = missing_fill,
+    name = "CI width",
+    guide = colourbar_guide
+  )
+}
+
 method_map <- function(data, fill_col) {
   data |>
     ggplot() +
     geom_sf(aes(fill = .data[[fill_col]]), colour = "transparent") +
     facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
-    theme_void() +
-    map_text_theme +
-    theme(
-      strip.text = element_text(size = 12, face = "bold"),
-      legend.position = "bottom"
-    )
+    map_panel_theme
 }
 
 read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NULL, variance_col = NULL) {
@@ -302,23 +334,8 @@ estimate_map_data |>
   ggplot() +
   geom_sf(aes(fill = estimate), colour = "transparent") +
   facet_grid(rows = vars(method), cols = vars(time_id), labeller = method_labeller) +
-  scale_fill_distiller(
-    palette = "YlGnBu",
-    direction = 1,
-    limits = estimate_colour_limits,
-    breaks = pretty_breaks(n = 3),
-    oob = squish,
-    labels = share_label,
-    na.value = missing_fill,
-    name = "Estimate",
-    guide = colourbar_guide
-  ) +
-  theme_void() +
-  map_text_theme +
-  theme(
-    strip.text = element_text(size = 11, face = "bold"),
-    legend.position = "bottom"
-  )
+  estimate_fill_scale(estimate_colour_limits) +
+  map_panel_theme
 ```
 
 
@@ -385,36 +402,21 @@ Interval width shows the precision gained or lost by each method. Direct-estimat
 
 ci_map_data <- msoa_boundaries |>
   left_join(diagnostic_estimates, by = "area_id") |>
+  filter(time_id == selected_time_id) |>
   mutate(
-    time_id = factor(time_id, levels = sort(unique(time_id))),
     method = factor(method, levels = method_levels)
   )
 
 ci_map_data |>
   ggplot() +
   geom_sf(aes(fill = ci_width), colour = "transparent") +
-  facet_grid(rows = vars(method), cols = vars(time_id), labeller = method_labeller) +
-  scale_fill_distiller(
-    palette = "YlGnBu",
-    direction = 1,
-    limits = ci_width_colour_limits,
-    breaks = pretty_breaks(n = 3),
-    oob = squish,
-    labels = ci_width_label,
-    na.value = missing_fill,
-    name = "CI width",
-    guide = colourbar_guide
-  ) +
+  facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
+  ci_width_fill_scale(ci_width_colour_limits) +
   labs(
     title = "CI widths",
-    subtitle = "Rows show methods; columns show survey years"
+    subtitle = paste("Selected survey year:", selected_time_id)
   ) +
-  theme_void() +
-  map_text_theme +
-  theme(
-    strip.text = element_text(size = 11, face = "bold"),
-    legend.position = "bottom"
-  )
+  map_panel_theme
 ```
 
 ```{r}
@@ -451,7 +453,7 @@ diagnostic_estimates |>
 
 ## Residual Area Effects
 
-The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.
+The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered. These area effects are time-stable model terms, so they are shown once per method alongside the selected-year diagnostics.
 
 ```{r}
 #| label: diag-area-effect-map
@@ -473,7 +475,7 @@ area_effects <- area_effect_files |>
   bind_rows() |>
   filter(component == "Unstructured") |>
   mutate(
-    method = factor(method, levels = )
+    method = factor(method, levels = area_effect_method_levels)
   )
 
 area_effect_limits <- safe_limit(
@@ -503,7 +505,7 @@ msoa_boundaries |>
   ) +
   plot_annotation(
     title = "Unstructured area effects",
-    subtitle = "Posterior mean local area effect by method",
+    subtitle = paste("Time-stable area effect; selected survey year:", selected_time_id),
     theme = annotation_theme
   )
 ```
