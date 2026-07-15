@@ -179,8 +179,16 @@ The cycling survey indicator input has *one row per respondent-wave*:
 | `time_id` | Survey year |
 | `area_id` | Synthetic MSOA assignment |
 | `strata` | Local Authority stratum |
-| `indicator` | Binary response for adults aged 16+ (i.e., `freq_biker`) |
+| `freq_biker` | Binary response for adults aged 16+ |
 | `weight` | Matched weight |
+
+```{r}
+#| label: data-survey-indicator
+
+read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
+  select(unit_id, time_id, area_id, strata, freq_biker, weight) |>
+  head()
+```
 
 As an overview, the current cleaned data give the following usable observations for the cycling estimand:
 
@@ -193,54 +201,13 @@ As an overview, the current cleaned data give the following usable observations 
 Note that although the data have gaps when aggregated to the area-time level, or MSOA-year cells in this example, that is expected. SAE models will be used to borrow strength for sparse or unsampled cells.
 
 ### Preparing Auxiliary Data
-#### Unit-Level Predictors
 
-Unit-level SAE models need respondent predictors that can be used to model the target outcome. For this example, to model individual `freq_biker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
+#### Domain Frame and Spatial Graph
 
-| Column | Meaning |
-|---|---|
-| `age` | Respondent age |
-| `sex` | Respondent sex (`1` for Male, `2` for Female) |
-| `car_access` | Binary household car access predictor (`1` for car/van available, `0` for none available) |
-
-#### Area Predictors and Area Summaries
-
-SAE models sometimes call for area-level predictors that plausibly explain spatial differences in frequent cycling. The area predictors are drawn from [Census 2021 bulk tables](https://www.nomisweb.co.uk/sources/census_2021_bulk) at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, car access, and urban form.
-
-The area-predictor input *has one row per MSOA*:
-
-| Column | Meaning |
-|---|---|
-| `area_id` | MSOA estimation area |
-| Raw predictors | `mean_age_adult`; `prob_female`; `population_density`; `car_access_hhshare`  |
-| Scaled predictors | Z-scored versions for model input |
-
-#### Poststratification Table
-
-A population poststratification table is needed to apply the fitted estimation model to the target population. We use a three-variable poststratification table with `age_band`, `sex`, and `car_access`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census). Because this detailed table is only observed for 2021, the 2021 age-sex-car composition is reused for the 2023 and 2025 estimands.
-
-The poststratification output *has one row per area-time-age-sex-car-access combination*:
-
-| Column | Meaning |
-|---|---|
-| `area_id` | MSOA estimation area |
-| `time_id` | Survey year |
-| `age_band` | Census age band |
-| `sex` | Sex category (`1` for Male, `2` for Female) |
-| `car_access` | Household car-access category |
-| `pop_count` | Adult population count |
-
-::: {.callout-note}
-A shallower poststratification setup is also possible when population counts are available for more years but only by age and sex. One example is the [ONS MSOA quinary age-by-sex population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/middlesuperoutputareamidyearpopulationestimatesnationalstatistics).
-:::
-
-### Preparing the Domain Frame, INLA Indices, and Spatial Graph
-
-The domain frame defines the complete MSOA-year grid, which combines the Wales MSOA boundaries with the survey years present in the cleaned microdata, so each MSOA-year cell exists even when the survey has no respondents in that cell. It also stores the numeric area and time indices required by `INLA`.
+The domain frame defines the complete area-time grid where estimates are needed, including those that have no sample. It also stores the numeric area and time indices required by `INLA`.
 
 ```{r}
 #| label: data-inla-indices
-#| code-fold: false
 
 area_frame <- msoa_boundaries |>
   st_drop_geometry() |>
@@ -262,17 +229,16 @@ domain_frame <- tidyr::crossing(area_index, time_index) |>
   select(area_id, time_id, area_inla_id, time_inla_id, msoa_name)
 
 write_csv(domain_frame, file.path(base_path, "clean", "domain_msoayear.csv"))
+
 head(domain_frame)
 ```
 
-The spatial graph must use the same MSOA ordering as `area_inla_id`, because `INLA` reads the graph by numeric node position. We therefore sort the boundaries by `area_inla_id` before writing the graph. The graph uses Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
+To include spatial structure in the model, we need an adjacency matrix that encodes neighbouring MSOAs by their numeric codes. The graph uses Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
 
 ![](assets/spatial_weights_example.png)
 
 ```{r}
 #| label: data-inla-graph
-#| code-fold: false
-
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
   arrange(area_inla_id)
@@ -289,4 +255,72 @@ nb2INLA(
   file = spatial_graph_file,
   nb = msoa_neighbours
 )
+```
+
+#### Modelling input
+##### Unit-Level Predictors
+
+Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_biker`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
+
+| Column | Meaning |
+|---|---|
+| `age` | Respondent age |
+| `sex` | Respondent sex (`1` for Male, `2` for Female) |
+| `caraccess` | Binary car access predictor (`1` for car/van available, `0` for none available) |
+
+```{r}
+#| label: data-unit-predictors
+
+read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
+  select(unit_id, time_id, area_id, freq_biker, sex, age, caraccess) |>
+  head()
+```
+
+##### Area-level Predictors
+
+Area-level SAE models need area-level predictors that plausibly explain between-area differences in the target outcome. The area predictors are drawn from [ONS UK Census 2021](https://www.ons.gov.uk/census) at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, and car access.
+
+The area-predictor input *has one row per MSOA*:
+
+| Column | Meaning |
+|---|---|
+| `area_id` | MSOA estimation area |
+| Raw predictors | `pop_density`; `age_adult_mean`; `female_adult_share`; `caraccess_adult_share` |
+| Scaled predictors | Z-scored versions for model input |
+
+```{r}
+#| label: data-area-predictors
+
+read_csv(file.path(base_path, "clean", "areapred_freqbike.csv"), show_col_types = FALSE) |>
+  head()
+```
+
+#### Aggregation input (for unit-level SAE)
+##### Predictor area summaries (See [unit-level SAE with predictor summaries](unit-sae-summ.qmd))
+
+The raw area-level predictors `age_adult_mean`, `female_adult_share`, and `caraccess_adult_share` are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.
+
+##### Poststratification Table (See [unit-level SAE with poststratification](unit-sae-mrp.qmd))
+
+Population cell counts (poststratification table) are another possible input needed to aggregate the fitted estimation model predictions to the target population for each area-time cell. We use a three-variable poststratification table with `age_band`, `sex`, and `caraccess`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census).
+
+The poststratification output *has one row per area-time-age-sex-caraccess combination*:
+
+| Column | Meaning |
+|---|---|
+| `area_id` | MSOA estimation area |
+| `time_id` | Survey year |
+| `age_band` | Census age band |
+| `sex` | Sex category (`1` for Male, `2` for Female) |
+| `caraccess` | Household car-access category |
+| `pop_count` | Adult population count |
+
+```{r}
+#| label: data-poststrat-head
+
+read_csv(
+  file.path(base_path, "clean", "poststrat_freqbike_age_sex_car_21.csv"),
+  show_col_types = FALSE
+) |>
+  head()
 ```

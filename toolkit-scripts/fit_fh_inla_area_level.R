@@ -28,12 +28,12 @@ config <- list(
   variance_col = "variance",
 
   core_covariates = c(
-    "scaled_population_density",
-    "scaled_share_no_car_households"
+    "scaled_pop_density",
+    "scaled_caraccess_adult_share"
   ),
   extra_covariates = c(
-    "scaled_share_work_from_home",
-    "scaled_share_students"
+    "scaled_age_adult_mean",
+    "scaled_female_adult_share"
   )
 )
 

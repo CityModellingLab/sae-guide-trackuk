@@ -1,30 +1,30 @@
 ---
 title: "Area-level SAE model"
-subtitle: "A Bayesian spatio-temporal extension of the Fay--Herriot area-level model"
+subtitle: "A Bayesian spatio-temporal extension of the Fay--Herriot model"
 ---
 
 ::: {.callout-note title="Theory in brief"}
-The area-level model treats each direct estimate as a noisy observation of the true area-time quantity:
+The area-level model treats each direct estimate $hat{\mu}^{w}_{jt}$ as a noisy observation of a true estimate $\mu_{jt}$:
 
 $$
-\hat{\mu}^{w}_{jt} = \mu_{jt} + e_{jt}, \qquad
-e_{jt} \sim \mathcal{N}(0, \psi_{jt}),
+\begin{aligned}
+\hat{\mu}^{w}_{jt} \mid \mu_{jt}
+&\sim \mathcal{N}(\mu_{jt}, \psi_{jt}), \\
+\mu_{jt}
+&= \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j + v_t.
+\end{aligned}
 $$
 
-where $\psi_{jt}$ is the sampling variance estimated from the survey design. The latent area-time mean is then modelled using predictors and an area random effect:
+Here, $\psi_{jt}$ is the direct-estimation sampling variance, $\mathbf{x}_{jt}$ contains area-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect.
+
+The fitted model produces the area-time estimate by combining the direct estimate, its sampling variance, and the model prediction:
 
 $$
-\mu_{jt} = \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j + v_t.
-$$
-
-Here $u_j$ borrows strength across areas while the target remains the area-time quantity $\mu_{jt}$. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. 
-The fitted model gives an area-time estimate by combining the direct estimate with the model prediction:
-
-$$
-\hat{\mu}_{jt}^{\mathrm{area}}
+\hat{\mu}_{jt}
 =
-\widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, x_{jt}).
+\widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, \psi_{jt}, \mathbf{x}_{jt}).
 $$
+
 :::
 
 ```{r}
@@ -132,9 +132,9 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqbike.csv
   select(
     all_of(c(
       "area_id",
-      "scaled_mean_age_adult",
-      "scaled_car_access_hhshare",
-      "scaled_population_density"
+      "scaled_age_adult_mean",
+      "scaled_caraccess_adult_share",
+      "scaled_pop_density"
     ))
   )
 head(area_predictors)
@@ -189,7 +189,7 @@ Each model uses the direct estimate as the response. The sampling variance from 
 |---|---|---|
 | M1 | +TempSpatial | Temporal and spatial effect |
 | M2 | +AvgAge | M1 plus mean adult age |
-| M3 | +PopdensCaraccess | M2 plus population density and share of HH with car access |
+| M3 | +PopdensCaraccess | M2 plus population density and share of adults with car access |
 
 The choice of spatial and temporal models should reflect assumptions about how residual variation is structured across space and time.
 
@@ -221,14 +221,13 @@ m1_formula <- direct_estimate ~
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 m2_formula <- update(m1_formula, . ~ . +
-  scaled_mean_age_adult
+  scaled_age_adult_mean
 )
 
 m3_formula <- update(m2_formula, . ~ . +
-  scaled_population_density +
-  scaled_car_access_hhshare
+  scaled_pop_density +
+  scaled_caraccess_adult_share
 )
-
 
 model_formulas <- list(
   "M1 +TempSpatial" = m1_formula,
@@ -419,7 +418,7 @@ wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = length(fh_wave_years
   )
 ```
 
-The area-level SAE estimates are less jagged across neighbouring areas and show clearer broad regional structure than the direct estimates. In sparsely sampled MSOA-year cells, the FH estimate depends heavily on area-level predictors and random effects because the direct estimate contributes limited local information. The model therefore cannot use within-area respondent variation beyond what is already captured in the direct estimate. [**Unit-level models**](bhf-unit.qmd) address this by modelling individual outcomes with respondent-level predictors.
+The area-level SAE estimates are less jagged across neighbouring areas and show clearer broad regional structure than the direct estimates. In sparsely sampled MSOA-year cells, the FH estimate depends heavily on area-level predictors and random effects because the direct estimate contributes limited local information. The model therefore cannot use within-area respondent variation beyond what is already captured in the direct estimate. [**Unit-level models**](unit-sae-summ.qmd) address this by modelling individual outcomes with respondent-level predictors.
 
 ## Comparative analysis
 ```{r}
@@ -698,14 +697,14 @@ model_data |>
   ) |>
   drop_na(change_group) |>
   summarise(
-    `Mean adult age` = mean(scaled_mean_age_adult, na.rm = TRUE),
-    `Population density` = mean(scaled_population_density, na.rm = TRUE),
-    `Car-access household share` = mean(scaled_car_access_hhshare, na.rm = TRUE),
+    `Mean adult age` = mean(scaled_age_adult_mean, na.rm = TRUE),
+    `Population density` = mean(scaled_pop_density, na.rm = TRUE),
+    `Car-access share` = mean(scaled_caraccess_adult_share, na.rm = TRUE),
     .by = change_group
   )
 ```
 
-The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of households with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.
+The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of adults with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.
 
 ```{r}
 #| label: fh-fixed
@@ -750,13 +749,13 @@ fh_besag_formula <- direct_estimate ~
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 if (fh_best_model %in% c("M2 +AvgAge", "M3 +PopdensCaraccess")) {
-  fh_besag_formula <- update(fh_besag_formula, . ~ . + scaled_mean_age_adult)
+  fh_besag_formula <- update(fh_besag_formula, . ~ . + scaled_age_adult_mean)
 }
 
 if (fh_best_model == "M3 +PopdensCaraccess") {
   fh_besag_formula <- update(fh_besag_formula, . ~ . +
-    scaled_population_density +
-    scaled_car_access_hhshare
+    scaled_pop_density +
+    scaled_caraccess_adult_share
   )
 }
 

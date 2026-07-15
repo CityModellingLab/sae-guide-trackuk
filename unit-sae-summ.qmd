@@ -1,22 +1,25 @@
 ---
 title: "Unit-level SAE model with area summaries"
-subtitle: "A Bayesian spatio-temporal extension of the Battese--Harter--Fuller unit-level model"
+subtitle: "A Bayesian spatio-temporal extension of a unit-level GLMM with area-summary prediction"
 ---
 
 ::: {.callout-note title="Theory in brief"}
-The unit-level route models respondent outcomes directly. For the area-time target $\mu_{jt}$, a simple mixed-model form is:
+Unit-level SAE models the individual outcome before aggregating predictions to area-time estimates. For a continuous outcome, the unit-level model can be written as:
 
 $$
-Y_{ijt} = \alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt},
-$$
-
-where $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The area effect can be replaced by a structured spatial effect, and a temporal effect $v_t$ can be added to represent wave-to-wave dependence. 
-To estimate the target for an area-time cell, the fitted model is evaluated using the corresponding population-level auxiliary summaries $\bar{x}_{jt}$:
-
-$$
-\hat{\mu}_{jt}^{\mathrm{unit}}
+Y_{ijt}
 =
-\widehat{\mathbb{E}}(Y \mid j,t,\bar{x}_{jt}).
+\alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
+$$
+
+Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
+
+With area-summary aggregation, population summaries of the predictors $\bar{\mathbf{x}}_{jt}$ are substituted into the fitted unit-level model:
+
+$$
+\hat{\mu}_{jt}
+=
+\widehat{\mathbb{E}}(Y \mid j, t, \bar{\mathbf{x}}_{jt}).
 $$
 :::
 
@@ -86,9 +89,15 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE with area summaries models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `car_access` added across model specifications.
+Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator `freq_biker` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications.
 
-This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model but uses a generalised mixed model to handle both binary and continuous outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of `age`, `sex`, and `car_access` adequately represent the target population composition in each *MSOA-year* cell.
+This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model, extended here through a generalised mixed model so it can be used with both continuous and binary outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell. 
+
+::: {.callout-note title="Continuous and binary outcomes"}
+For **continuous outcomes**, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.
+
+For **binary outcomes** such as `freq_biker`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average. 
+:::
 
 ## Prepare model and aggregation data
 
@@ -96,7 +105,6 @@ There are two inputs when performing unit-level SAE:
 
 - `model_data` contains the survey microdata used to fit the model.
 - `aggregation_data` contains one row for each area-time cell we want to estimate.
-
 
 ```{r}
 #| label: bhf-model-data
@@ -111,10 +119,10 @@ model_data <- survey_microdata |>
     unit_id,
     area_id,
     time_id,
-    indicator,
+    freq_biker,
     age,
     female = as.integer(sex == 2),
-    car_access
+    caraccess
   )
 
 head(model_data)
@@ -127,9 +135,9 @@ head(model_data)
 area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqbike.csv"), show_col_types = FALSE) |>
   transmute(
     area_id,
-    age = mean_age_adult,
-    female = raw_prob_female,
-    car_access = raw_car_access_hhshare
+    age = age_adult_mean,
+    female = female_adult_share,
+    caraccess = caraccess_adult_share
   )
 
 aggregation_data <- domain_frame |>
@@ -140,7 +148,7 @@ aggregation_data <- domain_frame |>
     time_id,
     age,
     female,
-    car_access
+    caraccess
   ) |>
   arrange(time_id, area_id)
 
@@ -165,12 +173,12 @@ time_ids <- sort(unique(inla_domain_index$time_inla_id))
 
 model_data <- model_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(indicator, age, female, car_access, area_inla_id, time_inla_id) |>
+  drop_na(freq_biker, age, female, caraccess, area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 aggregation_data <- aggregation_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(age, female, car_access, area_inla_id, time_inla_id) |>
+  drop_na(age, female, caraccess, area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 ```
 
@@ -188,7 +196,7 @@ We fit binomial unit-level models to the survey microdata, then use them to pred
 #| label: bhf-specs
 #| code-fold: false
 
-m1_formula <- indicator ~
+m1_formula <- freq_biker ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -205,7 +213,7 @@ m2_formula <- update(m1_formula, . ~ . +
 )
 
 m3_formula <- update(m2_formula, . ~ . +
-  car_access
+  caraccess
 )
 
 model_formulas <- list(
@@ -345,7 +353,7 @@ Each posterior draw is evaluated over the MSOA-year aggregation frame.
 #| code-fold: false
 
 prediction_matrix <- model.matrix(
-  ~ age + female + car_access,
+  ~ age + female + caraccess,
   data = aggregation_data
 )[, fixed_terms, drop = FALSE]
 
@@ -450,9 +458,19 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(bhf_wave_years)) +
   )
 ```
 
-Even with unit-level fitting to overcome weak direct estimation, the aggregation step using area summaries relies on strong assumptions about each area's population composition. Representing age, sex, and car access with area-level summaries, such as mean age, proportion female, and share of households with car access, can hide important compositional differences. Two areas may have similar summaries but very different age-sex-car structures, meaning the model could produce similar estimates even where cycling behaviour differs across specific combinations of these predictors.
+Although unit-level modelling can stabilise estimates where direct estimates are weak, aggregation using area-level predictor summaries still relies on strong assumptions about population composition. Representing age, sex, and car access using mean adult age, the adult female share, and the adult share with car access can conceal important differences in their joint distribution. Two areas may have similar marginal summaries but very different age–sex–car compositions, leading to similar model-based estimates even when cycling behaviour differs across particular population groups.
 
-This limitation can be addressed by using a poststratification table that contains population counts for the joint distribution of the relevant predictors. This is the logic of **Multilevel Regression with Poststratification (MRP)**: predict the outcome for each poststratification cell, then aggregate those predictions using the corresponding population counts so the final estimates better reflect the target population composition.
+This limitation is especially important for a binary outcome modelled using a logistic model (i.e., `family = "binomial"`). The target is the population-average predicted probability, but substituting area-level predictor summaries estimates the probability at the average predictor values:
+
+$$
+\frac{1}{N}\sum_{i=1}^{N}
+\operatorname{logit}^{-1}(\alpha + \mathbf{x}_{i}^{T}\boldsymbol{\beta})
+\neq
+\operatorname{logit}^{-1}(\alpha + \bar{\mathbf{x}}^{T}\boldsymbol{\beta}).
+$$
+
+A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.
+
 
 ```{r}
 #| label: bhf-export
@@ -474,7 +492,7 @@ besag_model_data <- model_data |>
     area_unstruct_id = area_inla_id
   )
 
-bhf_besag_formula <- indicator ~
+bhf_besag_formula <- freq_biker ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -494,7 +512,7 @@ if (bhf_best_model %in% c("M2 +Demographic", "M3 +CarAccess")) {
 }
 
 if (bhf_best_model == "M3 +CarAccess") {
-  bhf_besag_formula <- update(bhf_besag_formula, . ~ . + car_access)
+  bhf_besag_formula <- update(bhf_besag_formula, . ~ . + caraccess)
 }
 
 bhf_besag_fit <- inla(

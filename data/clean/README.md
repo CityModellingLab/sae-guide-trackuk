@@ -10,12 +10,12 @@ Tutorial-ready files derived from the raw survey, lookup, boundary, Census, and 
 ## Survey Files
 
 - `survey_microdata_msoayear.csv`: one row per respondent-wave. Includes harmonised survey fields, synthetic MSOA assignment, `strata`, cycling indicator, weights, and respondent predictors.
-- `surveyind_freqbike.csv`: one row per respondent-wave for the cycling estimand. Includes `unit_id`, `time_id`, `area_id`, `strata`, `indicator`, `weight`, and unit predictors `sex`, `age`, and `car_access`.
+- `surveyind_freqbike.csv`: one row per respondent-wave for the cycling estimand. Includes `unit_id`, `time_id`, `area_id`, `strata`, `freq_biker`, `weight`, and unit predictors `sex`, `age`, and `caraccess`.
 - `domain_msoayear.csv`: complete MSOA-year estimation grid, including cells with no survey respondents.
 
 ## Cycling Auxiliary and Validation Files
 
-- `areapred_freqbike.csv`: one row per MSOA, keyed by `area_id`, with raw and z-scored area predictors for frequent cycling models, including Census 2021 mean age among usual residents aged 16+ and proportion female from Nomis bulk tables.
+- `areapred_freqbike.csv`: one row per MSOA, keyed by `area_id`, with raw and z-scored area predictors for frequent cycling models, including Census 2021 mean age among usual residents aged 16+ and adult female share.
 - `poststrat_freqbike_age_sex_212325.csv`: one row per MSOA-year-age-sex cell with `pop_count` for shallow poststratification. Age bands are grouped to match the rich poststratification table.
 - `poststrat_freqbike_age_sex_car_21.csv`: one row per MSOA-year-age-sex-car-access cell with `pop_count` for richer poststratification.
 - `validation_bicycle_to_work_share.csv`: one row per Wales MSOA with a simple 2021 bicycle-to-work benchmark. The numerator is the TS061 bicycle-to-work count and the denominator is the TS061 total usual residents aged 16+ in employment.

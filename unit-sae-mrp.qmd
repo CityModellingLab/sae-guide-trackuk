@@ -4,32 +4,34 @@ subtitle: "A Bayesian spatio-temporal extension of Multilevel Regression with Po
 ---
 
 ::: {.callout-note title="Theory in brief"}
-
-Let $c$ index poststratification cells within area $j$ and time $t$. The cells are defined by whichever population variables are available for poststratification. In a unit-level SAE with poststratification approach, a binary cycling outcome can be modelled at the respondent level as
-
-$$
-\begin{aligned}
-Y_{ijt} &\sim \mathrm{Bernoulli}(\pi_{ijt}) \\
-\mathrm{logit}(\pi_{ijt}) &=
-\alpha + z_{ijt}^{T}\beta + u_j + v_t .
-\end{aligned}
-$$
-
-where $z_{ijt}$ is a vector of respondent-level predictors used to define or adjust the poststratification cells, $\beta$ contains their coefficients, $u_j$ is an area effect, and $v_t$ is a time effect. The fitted model gives predicted cell means for the binary frequent-cycling indicator in each poststratification cell:
+Unit-level SAE models the individual outcome before aggregating predictions to area-time estimates. For a continuous outcome, the unit-level model can be written as:
 
 $$
-\hat{\pi}_{jtc}
+Y_{ijt}
 =
-\widehat{\mathbb{E}}(Y \mid j,t,c).
+\alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
 $$
 
-The poststratification step combines those cell predictions with population counts $N_{jtc}$ available or estimated for the same cells. Area-time estimates are then population-weighted averages of the cell predictions.
+Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
+
+With poststratification, the fitted model is first evaluated for each population cell $c$:
+
 $$
-\hat{\mu}_{jt}^{\mathrm{post}}
+\hat{\mu}_{jtc}
 =
-\frac{\sum_c N_{jtc}\hat{\pi}_{jtc}}
-{\sum_c N_{jtc}}.
+\widehat{\mathbb{E}}(Y \mid j, t, \mathbf{x}_{jtc}).
 $$
+
+The final area-time estimate is the population-weighted average of those cell predictions:
+
+$$
+\hat{\mu}_{jt}
+=
+\frac{\sum_c N_{jtc}\hat{\mu}_{jtc}}
+{\sum_c N_{jtc}},
+$$
+
+where $N_{jtc}$ is the population count for cell $c$ in area $j$ and time $t$.
 :::
 
 ```{r}
@@ -103,9 +105,9 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE with poststratification combines an outcome model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells. For this estimand, we model the binary frequent-cycling indicator using `age_band`, `sex`, `car_access`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `car_access` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+Unit-level SAE with poststratification combines an outcome model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells. For this estimand, we model the binary frequent-cycling indicator `freq_biker` using `age_band`, `sex`, `caraccess`, and spatial and temporal random effects. We then produce predicted cell means for each `age_band` x `sex` x `caraccess` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
 
-Here, the poststratification table is sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census), giving the 2021 population count for each `age_band` x `sex` x `car_access` cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, $N_{jtc} = N_{jc,2021}$ for all three waves.
+Here, the poststratification table is sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census), giving the 2021 population count for each `age_band` x `sex` x `caraccess` cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, $N_{jtc} = N_{jc,2021}$ for all three waves.
 
 ## Prepare modelling and poststratification data
 
@@ -130,11 +132,11 @@ poststrat_data <- read_csv(
     time_id,
     age_band = factor(age_band, levels = age_band_levels),
     sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
-    car_access,
+    caraccess,
     pop_count
   ) |>
   filter(pop_count > 0) |>
-  arrange(time_id, area_id, age_band, sex, car_access)
+  arrange(time_id, area_id, age_band, sex, caraccess)
 
 head(poststrat_data)
 ```
@@ -163,12 +165,12 @@ model_data <- survey_microdata_recoded |>
     unit_id,
     area_id,
     time_id,
-    indicator,
+    freq_biker,
     age_band,
     sex,
-    car_access
+    caraccess
   ) |>
-  drop_na(indicator, age_band, sex, car_access)
+  drop_na(freq_biker, age_band, sex, caraccess)
 
 head(model_data)
 ```
@@ -186,13 +188,13 @@ time_ids <- sort(unique(inla_domain_index$time_inla_id))
 
 model_data <- model_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(indicator, age_band, sex, car_access, area_inla_id, time_inla_id) |>
+  drop_na(freq_biker, age_band, sex, caraccess, area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 poststrat_data <- poststrat_data |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(age_band, sex, car_access, area_inla_id, time_inla_id) |>
-  arrange(time_inla_id, area_inla_id, age_band, sex, car_access)
+  drop_na(age_band, sex, caraccess, area_inla_id, time_inla_id) |>
+  arrange(time_inla_id, area_inla_id, age_band, sex, caraccess)
 ```
 
 ## Fit and evaluate models
@@ -209,7 +211,7 @@ We fit binomial unit-level models to the survey microdata, then use them to pred
 #| label: mrp-specs
 #| code-fold: false
 
-m1_formula <- indicator ~
+m1_formula <- freq_biker ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -226,7 +228,7 @@ m2_formula <- update(m1_formula, . ~ . +
 )
 
 m3_formula <- update(m2_formula, . ~ . +
-  car_access
+  caraccess
 )
 
 model_formulas <- list(
@@ -317,8 +319,8 @@ bind_rows(
   model_data |> mutate(source = "Survey", weight = 1),
   poststrat_data |> mutate(source = "Census", weight = pop_count)
 ) |>
-  mutate(across(c(age_band, sex, car_access), as.character)) |>
-  pivot_longer(c(age_band, sex, car_access), names_to = "variable", values_to = "category") |>
+  mutate(across(c(age_band, sex, caraccess), as.character)) |>
+  pivot_longer(c(age_band, sex, caraccess), names_to = "variable", values_to = "category") |>
   count(source, variable, category, wt = weight, name = "count") |>
   mutate(
     proportion = count / sum(count),
@@ -362,7 +364,7 @@ bind_rows(
   )
 ```
 
-Posterior draws from the selected `INLA` fit produce MSOA-year estimates. Each draw provides fixed effects, spatial area effects, and temporal effects. The fitted model is evaluated over every `age_band` x `sex` x `car_access` population cell, transformed to the response scale, weighted by `pop_count`, and summarised as MSOA-year draws.
+Posterior draws from the selected `INLA` fit produce MSOA-year estimates. Each draw provides fixed effects, spatial area effects, and temporal effects. The fitted model is evaluated over every `age_band` x `sex` x `caraccess` population cell, transformed to the response scale, weighted by `pop_count`, and summarised as MSOA-year draws.
 
 :::{.callout-note}
 Each posterior draw stores the fixed effects, spatial area effect, and temporal effect together in `INLA`'s latent vector. Fixed effects are labelled as `term:1`, while random effects are labelled as `effect:index`.
@@ -412,7 +414,7 @@ Each posterior draw is evaluated over every poststratification cell. The cell pr
 
 # Rebuild fitted model for each cell
 prediction_matrix <- model.matrix(
-  ~ age_band + sex + car_access,
+  ~ age_band + sex + caraccess,
   data = poststrat_data
 )[, fixed_terms, drop = FALSE]
 
@@ -532,11 +534,11 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
   )
 ```
 
-Note that these estimates with the fact that we are reusing the same age-sex-car population composition of one year (2021) to estimate for the other two waves (2023, 2025) and letting the modelled time effect capture changes in the outcome. This is only possible if the relative `age_band` x `sex` x `car_access` poststratification weights stay consistent throughout the target periods, an assumption that must be made explicit.
+These estimates reuse the 2021 age-sex-caraccess population composition for the 2023 and 2025 waves, while the modelled time effect captures changes in the outcome. This requires the relative `age_band` x `sex` x `caraccess` poststratification weights to stay stable across target periods.
 
 ## Appendix: Enhance shallow poststratification with contextual predictors
 
-Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `car_access`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table.
+Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `caraccess`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table.
 
 Contextual predictors can explain between-area or between-year variation, but they do not describe respondent composition within an MSOA. They cannot represent how cycling behaviour differs between adults with and without car access inside the same age-sex cell.
 
@@ -570,7 +572,7 @@ shallow_model_data <- survey_microdata_recoded |>
     unit_id,
     area_id,
     time_id,
-    indicator,
+    freq_biker,
     age_band,
     sex
   )
@@ -585,21 +587,21 @@ area_context_predictors <- read_csv(
 ) |>
   transmute(
     area_id,
-    population_density = scaled_population_density,
-    car_access_hhshare = scaled_car_access_hhshare
+    pop_density = scaled_pop_density,
+    caraccess_adult_share = scaled_caraccess_adult_share
   )
 
 shallow_model_data <- shallow_model_data |>
   left_join(area_context_predictors, by = "area_id") |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(indicator, age_band, sex, population_density, car_access_hhshare,
+  drop_na(freq_biker, age_band, sex, pop_density, caraccess_adult_share,
           area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 shallow_poststrat_data <- shallow_poststrat_data |>
   left_join(area_context_predictors, by = "area_id") |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(age_band, sex, population_density, car_access_hhshare,
+  drop_na(age_band, sex, pop_density, caraccess_adult_share,
           area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id, age_band, sex)
 ```
@@ -610,7 +612,7 @@ In the **modelling** step, the model specification uses `age_band` and `sex` as 
 #| label: mrp-fit-shallow
 #| code-fold: false
 
-shallow_base_formula <- indicator ~
+shallow_formula <- freq_biker ~
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_inla_id,
@@ -618,17 +620,14 @@ shallow_base_formula <- indicator ~
     graph = spatial_graph_file,
     scale.model = TRUE,
     constr = TRUE
-  )
-
-shallow_context_formula <- update(shallow_base_formula, . ~ . +
+  ) +
   age_band +
   sex +
-  population_density +
-  car_access_hhshare
-)
+  pop_density +
+  caraccess_adult_share
 
 shallow_context_fit <- inla(
-  formula = shallow_context_formula,
+  formula = shallow_formula,
   family = "binomial",
   Ntrials = 1,
   data = shallow_model_data,
@@ -698,7 +697,7 @@ shallow_time_draws <- sapply(shallow_draws, \(draw) {
 
 # Predict
 shallow_prediction_matrix <- model.matrix(
-  ~ age_band + sex + population_density + car_access_hhshare,
+  ~ age_band + sex + pop_density + caraccess_adult_share,
   data = shallow_poststrat_data
 )[, shallow_fixed_terms, drop = FALSE]
 
@@ -903,7 +902,7 @@ besag_model_data <- model_data |>
     area_unstruct_id = area_inla_id
   )
 
-mrp_besag_formula <- indicator ~
+mrp_besag_formula <- freq_biker ~
   1 +
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
@@ -923,7 +922,7 @@ if (mrp_best_model %in% c("M2 +Demographic", "M3 +CarAccess")) {
 }
 
 if (mrp_best_model == "M3 +CarAccess") {
-  mrp_besag_formula <- update(mrp_besag_formula, . ~ . + car_access)
+  mrp_besag_formula <- update(mrp_besag_formula, . ~ . + caraccess)
 }
 
 mrp_besag_fit <- inla(
@@ -964,7 +963,7 @@ shallow_besag_model_data <- shallow_model_data |>
     area_unstruct_id = area_inla_id
   )
 
-shallow_besag_formula <- indicator ~
+shallow_besag_formula <- freq_biker ~
   f(time_inla_id, model = "rw1", constr = TRUE) +
   f(
     area_struct_id,
@@ -976,8 +975,8 @@ shallow_besag_formula <- indicator ~
   f(area_unstruct_id, model = "iid") +
   age_band +
   sex +
-  population_density +
-  car_access_hhshare
+  pop_density +
+  caraccess_adult_share
 
 shallow_besag_fit <- inla(
   formula = shallow_besag_formula,

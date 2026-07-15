@@ -64,7 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./fh-area.html" rel="next">
+<link href="./area-sae-fh.html" rel="next">
 <link href="./dataprep.html" rel="prev">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
@@ -155,15 +155,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="dropdown-text">Direct estimation</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./fh-area.html" rel="" target="">
+    <a class="dropdown-item" href="./area-sae-fh.html" rel="" target="">
  <span class="dropdown-text">Area-level SAE</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./bhf-unit.html" rel="" target="">
+    <a class="dropdown-item" href="./unit-sae-summ.html" rel="" target="">
  <span class="dropdown-text">Unit-level SAE</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="./mrp-rich.html" rel="" target="">
+    <a class="dropdown-item" href="./unit-sae-mrp.html" rel="" target="">
  <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
   </li>  
         <li>
@@ -243,19 +243,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./fh-area.html" class="sidebar-item-text sidebar-link">
+  <a href="./area-sae-fh.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./bhf-unit.html" class="sidebar-item-text sidebar-link">
+  <a href="./unit-sae-summ.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Unit-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./mrp-rich.html" class="sidebar-item-text sidebar-link">
+  <a href="./unit-sae-mrp.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Unit-level SAE with Poststrat</span></a>
   </div>
 </li>
@@ -332,11 +332,11 @@ Theory in brief
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>For an area-time cell <span class="math inline">(j,t)</span>, the target is the population mean or proportion:</p>
+<p>For an area-time cell <span class="math inline">(j,t)</span>, the target is a population mean or proportion:</p>
 <p><span class="math display">
 \mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
 </span></p>
-<p>If respondent <span class="math inline">i</span> has inclusion probability <span class="math inline">\pi_{ijt}</span> and design weight <span class="math inline">w_{ijt}=1/\pi_{ijt}</span>, the Horvitz–Thompson ratio direct estimate for area-time cell <span class="math inline">(j,t)</span> is:</p>
+<p>If sampled unit <span class="math inline">i</span> has inclusion probability <span class="math inline">\pi_{ijt}</span> and design weight <span class="math inline">w_{ijt}=1/\pi_{ijt}</span>, the Horvitz–Thompson ratio estimator gives the design-weighted direct estimate:</p>
 <p><span class="math display">
 \hat{\mu}^{w}_{jt} =
 \frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
@@ -417,7 +417,7 @@ Target estimand
 <td>Survey wave / year</td>
 </tr>
 <tr class="odd">
-<td><code>indicator</code></td>
+<td><code>freq_biker</code></td>
 <td>Binary response:<br><code>1</code> if the adult cycles for transport frequently,<br><code>0</code> otherwise</td>
 </tr>
 <tr class="even">
@@ -434,7 +434,7 @@ Target estimand
 <details>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>survey_bike <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqbike.csv"</span>), <span class="at">show_col_types =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(indicator, weight, area_id, strata)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(freq_biker, weight, area_id, strata)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  </span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(survey_bike)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
@@ -446,11 +446,11 @@ Target estimand
 <col style="width: 10%">
 <col style="width: 12%">
 <col style="width: 12%">
-<col style="width: 12%">
-<col style="width: 12%">
-<col style="width: 5%">
-<col style="width: 5%">
 <col style="width: 14%">
+<col style="width: 12%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 12%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -458,11 +458,11 @@ Target estimand
 <th style="text-align: right;">time_id</th>
 <th style="text-align: left;">area_id</th>
 <th style="text-align: left;">strata</th>
-<th style="text-align: right;">indicator</th>
+<th style="text-align: right;">freq_biker</th>
 <th style="text-align: right;">weight</th>
 <th style="text-align: right;">sex</th>
 <th style="text-align: right;">age</th>
-<th style="text-align: right;">car_access</th>
+<th style="text-align: right;">caraccess</th>
 </tr>
 </thead>
 <tbody>
@@ -552,7 +552,7 @@ Target estimand
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate direct estimate and uncertainty</span></span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>direct_bike_estimates <span class="ot">&lt;-</span> <span class="fu">svyby</span>(</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">as.formula</span>(<span class="st">"~indicator"</span>),</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">as.formula</span>(<span class="st">"~freq_biker"</span>),</span>
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="fu">as.formula</span>(<span class="st">"~area_id + time_id"</span>),</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">design =</span> bike_design,</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">FUN =</span> svymean,</span>
@@ -564,7 +564,7 @@ Target estimand
 <span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
 <span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    area_id,</span>
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    time_id,</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">direct_estimate =</span> indicator,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">direct_estimate =</span> freq_biker,</span>
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">variance =</span> se<span class="sc">^</span><span class="dv">2</span></span>
 <span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
@@ -764,7 +764,7 @@ Target estimand
 </div>
 </div>
 <p>The choice between area-level and unit-level modelling should depend on two things: the quality of the direct estimates as model inputs, and whether the survey microdata contain unit-level predictors that help explain individual variation in the indicator.</p>
-<p>In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an <a href="./fh-area.html">area-level model</a> first to show how much stabilisation is possible from direct-estimate inputs before moving to <a href="./bhf-unit.html">unit-level modelling</a>.</p>
+<p>In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an <a href="./area-sae-fh.html">area-level model</a> first to show how much stabilisation is possible from direct-estimate inputs before moving to <a href="./unit-sae-summ.html">unit-level modelling</a>.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -1030,7 +1030,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./fh-area.html" class="pagination-link">
+      <a href="./area-sae-fh.html" class="pagination-link">
         <span class="nav-page-text">Area-level SAE</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>

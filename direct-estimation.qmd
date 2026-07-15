@@ -3,13 +3,13 @@ title: "Direct estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
 ::: {.callout-note title="Theory in brief"}
-For an area-time cell $(j,t)$, the target is the population mean or proportion:
+For an area-time cell $(j,t)$, the target is a population mean or proportion:
 
 $$
 \mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
 $$
 
-If respondent $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz–Thompson ratio direct estimate for area-time cell $(j,t)$ is:
+If sampled unit $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz--Thompson ratio estimator gives the design-weighted direct estimate:
 
 $$
 \hat{\mu}^{w}_{jt} =
@@ -95,13 +95,13 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 |---|---|
 | `area_id` | Estimation area |
 | `time_id` | Survey wave / year |
-| `indicator` | Binary response:<br>`1` if the adult cycles for transport frequently,<br>`0` otherwise |
+| `freq_biker` | Binary response:<br>`1` if the adult cycles for transport frequently,<br>`0` otherwise |
 | `weight` | Matched weight |
 | `strata` | Local Authority code |
 ```{r}
 #| label: direct-load
 survey_bike <- read_csv(file.path(base_path, "clean", "surveyind_freqbike.csv"), show_col_types = FALSE) |>
-  drop_na(indicator, weight, area_id, strata)
+  drop_na(freq_biker, weight, area_id, strata)
   
 head(survey_bike)
 ```
@@ -124,7 +124,7 @@ bike_design <- svydesign(
 
 # Calculate direct estimate and uncertainty
 direct_bike_estimates <- svyby(
-  formula = as.formula("~indicator"),
+  formula = as.formula("~freq_biker"),
   by = as.formula("~area_id + time_id"),
   design = bike_design,
   FUN = svymean,
@@ -136,7 +136,7 @@ direct_bike_estimates <- svyby(
   transmute(
     area_id,
     time_id,
-    direct_estimate = indicator,
+    direct_estimate = freq_biker,
     variance = se^2
   )
 
@@ -283,7 +283,7 @@ direct_summary_by_wave
 
 The choice between area-level and unit-level modelling should depend on two things: the quality of the direct estimates as model inputs, and whether the survey microdata contain unit-level predictors that help explain individual variation in the indicator.
 
-In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an [area-level model](fh-area.qmd) first to show how much stabilisation is possible from direct-estimate inputs before moving to [unit-level modelling](bhf-unit.qmd).
+In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an [area-level model](area-sae-fh.qmd) first to show how much stabilisation is possible from direct-estimate inputs before moving to [unit-level modelling](unit-sae-summ.qmd).
 
 ```{r}
 #| label: direct-export
