@@ -281,7 +281,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#the-survey-microdata" id="toc-the-survey-microdata" class="nav-link active" data-scroll-target="#the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</a></li>
   <li><a href="#data-preparation-pipeline" id="toc-data-preparation-pipeline" class="nav-link" data-scroll-target="#data-preparation-pipeline"><span class="header-section-number">2</span> Data Preparation Pipeline</a>
   <ul class="collapse">
-  <li><a href="#defining-the-estimand" id="toc-defining-the-estimand" class="nav-link" data-scroll-target="#defining-the-estimand"><span class="header-section-number">2.1</span> Defining The Estimand</a></li>
+  <li><a href="#defining-the-estimand-and-estimation-domain" id="toc-defining-the-estimand-and-estimation-domain" class="nav-link" data-scroll-target="#defining-the-estimand-and-estimation-domain"><span class="header-section-number">2.1</span> Defining The Estimand and Estimation Domain</a></li>
   <li><a href="#preparing-the-survey-indicator-and-weight" id="toc-preparing-the-survey-indicator-and-weight" class="nav-link" data-scroll-target="#preparing-the-survey-indicator-and-weight"><span class="header-section-number">2.2</span> Preparing the Survey Indicator and Weight</a></li>
   <li><a href="#preparing-auxiliary-data" id="toc-preparing-auxiliary-data" class="nav-link" data-scroll-target="#preparing-auxiliary-data"><span class="header-section-number">2.3</span> Preparing Auxiliary Data</a></li>
   </ul></li>
@@ -383,14 +383,14 @@ Note
 <figcaption class="figure-caption">Preparation pipeline for analysis-ready inputs</figcaption>
 </figure>
 </div>
-<section id="defining-the-estimand" class="level3" data-number="2.1">
-<h3 data-number="2.1" class="anchored" data-anchor-id="defining-the-estimand"><span class="header-section-number">2.1</span> Defining The Estimand</h3>
-<p>The estimand is the quantity we want to estimate. It should be defined before preparing the survey indicator or choosing a model, because it determines the outcome coding, denominator, target geography, time period, auxiliary predictors, and poststratification requirements.</p>
+<section id="defining-the-estimand-and-estimation-domain" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="defining-the-estimand-and-estimation-domain"><span class="header-section-number">2.1</span> Defining The Estimand and Estimation Domain</h3>
+<p>The <em>target estimand</em> is the quantity we want to estimate. It defines the outcome, population, geography, time period, and the auxiliary data needed for modelling, such as predictors or population counts.</p>
 <blockquote class="blockquote">
 <p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
 </blockquote>
-<p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an <strong>area-time cell</strong>: one observation we want to estimate. Here, one area-time cell is one MSOA in one survey wave year, or an <em>MSOA-year cell</em>.</p>
-<p>The target estimand is:</p>
+<p>In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an area-time cell: one observation we want to estimate. The <em>estimation domain</em> is therefore, all possible combination of areas and time periods.</p>
+<p>For example, with the <em>target estimand</em></p>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -410,6 +410,7 @@ Target estimand
 </div>
 </div>
 </div>
+<p>The <em>estimation domain</em> is therefore, all possible combination of MSOAs-years.</p>
 </section>
 <section id="preparing-the-survey-indicator-and-weight" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="preparing-the-survey-indicator-and-weight"><span class="header-section-number">2.2</span> Preparing the Survey Indicator and Weight</h3>
