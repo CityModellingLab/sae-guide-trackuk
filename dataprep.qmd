@@ -281,8 +281,10 @@ The area-predictor input *has one row per MSOA*:
 | Column | Meaning |
 |---|---|
 | `area_id` | MSOA estimation area |
-| Raw predictors | `pop_density`; `age_adult_mean`; `female_adult_share`; `caraccess_adult_share` |
-| Scaled predictors | Z-scored versions for model input |
+| `pop_density` | Population density |
+| `age_adult_mean` | Mean adult age |
+| `female_adult_share` | Adult female share |
+| `caraccess_adult_share` | Adult share with car access |
 
 ```{r}
 #| label: data-area-predictors
@@ -294,7 +296,7 @@ read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types =
 #### Aggregation input (for unit-level SAE)
 ##### Predictor area summaries (See [unit-level SAE with predictor summaries](unit-sae-summ.qmd))
 
-The raw area-level predictors `age_adult_mean`, `female_adult_share`, and `caraccess_adult_share` are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.
+The area-level predictors `age_adult_mean`, `female_adult_share`, and `caraccess_adult_share` are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.
 
 ##### Poststratification Table (See [unit-level SAE with poststratification](unit-sae-mrp.qmd))
 

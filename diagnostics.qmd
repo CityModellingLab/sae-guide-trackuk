@@ -160,6 +160,11 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
       ci_width = ci_width
     )
 }
+```
+
+```{r}
+#| label: diag-load-data
+#| include: false
 
 estimate_sets <- bind_rows(
   read_estimate_set(
@@ -197,33 +202,23 @@ msoa_boundaries <- st_read(
 ) |>
   rename(area_id = all_of("MSOA21CD")) |>
   filter(str_starts(area_id, "W"))
-
-ci_width_colour_limits <- safe_limit(diagnostic_estimates$ci_width, p = 0.95)
-ci_width_axis_limits <- safe_limit(diagnostic_estimates$ci_width)
 ```
 
-This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification. 
-
-| Method | Estimation approach | Data requirements | Main limitation |
-|---|---|---|---|
-| Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
-| Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
-| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Medium | Area summaries only approximate the population composition, not robust for binary outcome. |
-| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | The 2021 population structure is reused for later years. |
-
-## Estimate Scale and Smoothing
-
-The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
-
-- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level FH model** is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.
-- Differences between the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
-
 ```{r}
-#| label: diag-estimate-dist-rank
-#| echo: false
-#| fig-width: 14
-#| fig-height: 20
-#| out-width: "100%"
+#| label: diag-derived-data
+#| include: false
+
+ci_width_colour_limits <- safe_limit(
+  diagnostic_estimates$ci_width,
+  p = 0.9
+)
+ci_width_axis_limits <- safe_limit(diagnostic_estimates$ci_width)
+
+estimate_colour_limits <- safe_limit(
+  diagnostic_estimates$estimate,
+  fallback = 0.1,
+  p = 0.97
+)
 
 estimate_plot_data <- diagnostic_estimates |>
   filter(!is.na(estimate)) |>
@@ -245,6 +240,90 @@ estimate_rank <- estimate_plot_data |>
 ranked_estimate_data <- estimate_plot_data |>
   inner_join(estimate_rank, by = c("method", "area_id")) |>
   mutate(method = factor(method, levels = method_levels))
+
+estimate_map_data <- msoa_boundaries |>
+  left_join(diagnostic_estimates, by = "area_id") |>
+  mutate(
+    time_id = factor(time_id, levels = sort(unique(time_id))),
+    method = factor(method, levels = method_levels)
+  )
+
+reference_method <- "MRP Rich"
+
+method_agreement <- diagnostic_estimates |>
+  filter(method != reference_method) |>
+  inner_join(
+    diagnostic_estimates |>
+      filter(method == reference_method) |>
+      select(area_id, time_id, reference_estimate = estimate),
+    by = c("area_id", "time_id")
+  ) |>
+  mutate(
+    method = factor(method, levels = setdiff(method_levels, reference_method)),
+    time_id = factor(time_id, levels = sort(unique(time_id)))
+  ) |>
+  filter(!is.na(estimate), !is.na(reference_estimate))
+
+agreement_limits <- safe_limit(
+  c(method_agreement$estimate, method_agreement$reference_estimate),
+  fallback = 0.1,
+  p = 0.99
+)
+
+ci_map_data <- msoa_boundaries |>
+  left_join(diagnostic_estimates, by = "area_id") |>
+  filter(time_id == selected_time_id) |>
+  mutate(
+    method = factor(method, levels = method_levels)
+  )
+
+iid_method_levels <- setdiff(method_levels, "Direct")
+iid_files <- c(
+  "freqcyc_iid_fh.csv",
+  "freqcyc_iid_bhf.csv",
+  "freqcyc_iid_mrp_rich.csv"
+)
+
+iid_effects <- iid_files |>
+  lapply(\(file_name) read_csv(file.path(base_path, file_name), show_col_types = FALSE)) |>
+  bind_rows() |>
+  filter(component == "Unstructured") |>
+  mutate(
+    method = factor(method, levels = iid_method_levels)
+  )
+
+iid_limits <- safe_limit(
+  iid_effects$effect,
+  fallback = 0.01,
+  symmetric = TRUE,
+  p = 0.95
+)
+
+iid_label_accuracy <- if (max(abs(iid_limits)) < 0.01) 0.0001 else 0.01
+```
+
+This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.
+
+| Method | Estimation approach | Data requirements | Main limitation |
+|---|---|---|---|
+| Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
+| Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
+| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Medium | Area summaries only approximate the population composition, not robust for binary outcome. |
+| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | The 2021 population structure is reused for later years. |
+
+## Estimate Scale and Smoothing
+
+The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
+
+- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level FH model** is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.
+- Differences between the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
+
+```{r}
+#| label: diag-estimate-dist-rank
+#| echo: false
+#| fig-width: 14
+#| fig-height: 16
+#| out-width: "100%"
 
 method_plots <- unlist(lapply(method_levels, function(method_name) {
   show_year_legend <- method_name == method_levels[1]
@@ -293,7 +372,7 @@ method_plots <- unlist(lapply(method_levels, function(method_name) {
 
 wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
   plot_annotation(
-    title = "Estimate distributions and stackranked",
+    title = "Estimate distributions and stack-ranked",
     theme = annotation_theme
   ) &
   theme(legend.position = "bottom")
@@ -305,19 +384,6 @@ wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
 #| fig-width: 18
 #| fig-height: 20
 #| out-width: "100%"
-
-estimate_map_data <- msoa_boundaries |>
-  left_join(diagnostic_estimates, by = "area_id") |>
-  mutate(
-    time_id = factor(time_id, levels = sort(unique(time_id))),
-    method = factor(method, levels = method_levels)
-  )
-
-estimate_colour_limits <- safe_limit(
-  diagnostic_estimates$estimate,
-  fallback = 0.1,
-  p = 0.98
-)
 
 estimate_map_data |>
   ggplot() +
@@ -335,28 +401,6 @@ estimate_map_data |>
 #| fig-width: 18
 #| fig-height: 5
 #| out-width: "100%"
-
-reference_method <- "MRP Rich"
-
-method_agreement <- diagnostic_estimates |>
-  filter(method != reference_method) |>
-  inner_join(
-    diagnostic_estimates |>
-      filter(method == reference_method) |>
-      select(area_id, time_id, reference_estimate = estimate),
-    by = c("area_id", "time_id")
-  ) |>
-  mutate(
-    method = factor(method, levels = setdiff(method_levels, reference_method)),
-    time_id = factor(time_id, levels = sort(unique(time_id)))
-  ) |>
-  filter(!is.na(estimate), !is.na(reference_estimate))
-
-agreement_limits <- safe_limit(
-  c(method_agreement$estimate, method_agreement$reference_estimate),
-  fallback = 0.1,
-  p = 0.99
-)
 
 method_agreement |>
   ggplot(aes(x = estimate, y = reference_estimate, colour = time_id)) +
@@ -388,13 +432,6 @@ Interval width shows the precision gained or lost by each method. Direct-estimat
 #| fig-width: 18
 #| fig-height: 8
 #| out-width: "100%"
-
-ci_map_data <- msoa_boundaries |>
-  left_join(diagnostic_estimates, by = "area_id") |>
-  filter(time_id == selected_time_id) |>
-  mutate(
-    method = factor(method, levels = method_levels)
-  )
 
 ci_map_data |>
   ggplot() +
@@ -451,49 +488,25 @@ The unstructured area-effect maps show where the fitted models allocate remainin
 #| fig-height: 7
 #| out-width: "100%"
 
-area_effect_method_levels <- setdiff(method_levels, "Direct")
-area_effect_files <- c(
-  "freqcyc_area_effects_fh.csv",
-  "freqcyc_area_effects_bhf.csv",
-  "freqcyc_area_effects_mrp_rich.csv"
-)
-
-area_effects <- area_effect_files |>
-  lapply(\(file_name) read_csv(file.path(base_path, file_name), show_col_types = FALSE)) |>
-  bind_rows() |>
-  filter(component == "Unstructured") |>
-  mutate(
-    method = factor(method, levels = area_effect_method_levels)
-  )
-
-area_effect_limits <- safe_limit(
-  area_effects$effect,
-  fallback = 0.01,
-  symmetric = TRUE,
-  p = 0.98
-)
-
-area_effect_label_accuracy <- if (max(abs(area_effect_limits)) < 0.01) 0.0001 else 0.01
-
 msoa_boundaries |>
   select(area_id) |>
-  left_join(area_effects, by = "area_id") |>
+  left_join(iid_effects, by = "area_id") |>
   method_map("effect") +
   scale_fill_gradient2(
     low = underestimate_colour,
     mid = "white",
     high = overestimate_colour,
     midpoint = 0,
-    limits = area_effect_limits,
+    limits = iid_limits,
     oob = squish,
-    labels = label_number(accuracy = area_effect_label_accuracy),
+    labels = label_number(accuracy = iid_label_accuracy),
     na.value = missing_fill,
     name = "Effect",
     guide = colourbar_guide
   ) +
   plot_annotation(
     title = "Unstructured area effects",
-    subtitle = paste("Time-stable area effect; selected survey year:", selected_time_id),
+    subtitle = paste("Selected survey year:", selected_time_id),
     theme = annotation_theme
   )
 ```

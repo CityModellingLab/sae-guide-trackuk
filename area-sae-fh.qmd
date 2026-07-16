@@ -4,23 +4,22 @@ subtitle: "A Bayesian spatio-temporal extension of the Fay--Herriot model"
 ---
 
 ::: {.callout-note title="Theory in brief"}
-The area-level model treats each direct estimate $hat{\mu}^{w}_{jt}$ as a noisy observation of a true estimate $\mu_{jt}$:
+The area-level model treats each direct estimate $\hat{\mu}^{w}_{jt}$ as a noisy observation of a true value $\mu_{jt}$:
 
 $$
 \begin{aligned}
-\hat{\mu}^{w}_{jt} \mid \mu_{jt}
-&\sim \mathcal{N}(\mu_{jt}, \psi_{jt}), \\
-\mu_{jt}
-&= \alpha + \mathbf{x}_{jt}^{T}\boldsymbol{\beta} + u_j + v_t.
+\hat{\mu}^{w}_{jt} &= \mu_{jt} + e_{jt}, \qquad
+e_{jt} \sim \mathcal{N}(0, \psi_{jt}), \\
+&\quad \mu_{jt} = \alpha + x_{jt}^{T}\beta + u_j + v_t.
 \end{aligned}
 $$
 
-Here, $\psi_{jt}$ is the direct-estimation sampling variance, $\mathbf{x}_{jt}$ contains area-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The fitted model produces the area-time estimate by combining the direct estimate, its sampling variance, and the model prediction:
+Here, $\psi_{jt}$ is the direct-estimation sampling variance, $x_{jt}$ contains area-level predictors, $u_j$ is an area effect, and $v_t$ is a time effect. The fitted model produces the area-time estimate by combining the direct estimate, its sampling variance, and the model prediction:
 
 $$
 \hat{\mu}_{jt}
 =
-\widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, \psi_{jt}, \mathbf{x}_{jt}).
+\widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, \psi_{jt}, x_{jt}).
 $$
 
 :::
@@ -42,6 +41,15 @@ library(scales)
 base_path <- here::here("data")
 share_label <- label_percent(accuracy = 0.1)
 pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
+z_score <- function(x) {
+  x <- as.numeric(x)
+  x_mean <- mean(x, na.rm = TRUE)
+  x_sd <- sqrt(mean((x - x_mean)^2, na.rm = TRUE))
+  if (!is.finite(x_sd) || x_sd == 0) {
+    return(rep(NA_real_, length(x)))
+  }
+  (x - x_mean) / x_sd
+}
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -106,7 +114,7 @@ Area-level SAE uses direct estimates as the modelling input. In the Fay--Herriot
 
 ## Prepare modelling data
 
-We start from generated direct estimates, and the area predictors.
+We start from generated direct estimates and raw area predictors, which will be standardised for model fitting.
 
 ```{r}
 #| label: fh-load-direct
@@ -130,17 +138,22 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"
   select(
     all_of(c(
       "area_id",
-      "scaled_age_adult_mean",
-      "scaled_caraccess_adult_share",
-      "scaled_pop_density"
+      "age_adult_mean",
+      "caraccess_adult_share",
+      "pop_density"
     ))
+  ) |>
+  mutate(
+    z_age_adult_mean = z_score(age_adult_mean),
+    z_caraccess_adult_share = z_score(caraccess_adult_share),
+    z_pop_density = z_score(pop_density)
   )
 head(area_predictors)
 ```
 
 The missing or zero sampling variances of direct estimates need to be handled, because this controls how much weight each direct estimate receives in the area-level model.
 
-- For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be mostly determined by the model predictions.
+- For area-time cells without a direct estimate or variance, we assign the maximum observed positive sampling variance, signalling high uncertainty. Their estimates will be determined by the model predictions.
 - Because the outcome is binary (`1` for cycling frequently, `0` otherwise), very small samples can produce a variance of `0` when all sampled respondents give the same response. We also assign these cells the maximum observed positive sampling variance.
 
 ```{r}
@@ -219,12 +232,12 @@ m1_formula <- direct_estimate ~
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 m2_formula <- update(m1_formula, . ~ . +
-  scaled_age_adult_mean
+  z_age_adult_mean
 )
 
 m3_formula <- update(m2_formula, . ~ . +
-  scaled_pop_density +
-  scaled_caraccess_adult_share
+  z_pop_density +
+  z_caraccess_adult_share
 )
 
 model_formulas <- list(
@@ -286,9 +299,8 @@ model_waic
 fh_best_model <- model_waic |>
   slice(1) |>
   pull(model)
-message("Best fitted model spec: ", fh_best_model)
 fh_selected_fit <- fh_fits[[fh_best_model]]
-
+cat("Best fitted model spec:", fh_best_model)
 ```
 
 Based on this comparison, M2, which includes average MSOA age, performs best. This suggests that differences in the age profile of MSOAs explain much of the variation in the direct estimates, and that adding car access or population density provides little additional improvement in model fit.
@@ -632,7 +644,7 @@ fh_fits[[fh_best_model]]$summary.hyperpar |>
 
 Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In this area-level model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.
 
-Here we compare M1 with M3, which adds average age, population density, and car access.
+Here we compare M1 with M3, which adds average age, population density, and car access as predictors.
 
 ```{r}
 #| label: fh-predictor-change
@@ -694,12 +706,12 @@ model_data |>
     )
   ) |>
   drop_na(change_group) |>
-  summarise(
-    `Mean adult age` = mean(scaled_age_adult_mean, na.rm = TRUE),
-    `Population density` = mean(scaled_pop_density, na.rm = TRUE),
-    `Car-access share` = mean(scaled_caraccess_adult_share, na.rm = TRUE),
-    .by = change_group
-  )
+summarise(
+  `Mean adult age (z)` = mean(z_age_adult_mean, na.rm = TRUE),
+  `Population density (z)` = mean(z_pop_density, na.rm = TRUE),
+  `Car-access share (z)` = mean(z_caraccess_adult_share, na.rm = TRUE),
+  .by = change_group
+)
 ```
 
 The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of adults with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.
@@ -747,13 +759,13 @@ fh_besag_formula <- direct_estimate ~
   f(time_inla_id, model = "rw1", constr = TRUE)
 
 if (fh_best_model %in% c("M2 +AvgAge", "M3 +PopdensCaraccess")) {
-  fh_besag_formula <- update(fh_besag_formula, . ~ . + scaled_age_adult_mean)
+  fh_besag_formula <- update(fh_besag_formula, . ~ . + z_age_adult_mean)
 }
 
 if (fh_best_model == "M3 +PopdensCaraccess") {
   fh_besag_formula <- update(fh_besag_formula, . ~ . +
-    scaled_pop_density +
-    scaled_caraccess_adult_share
+    z_pop_density +
+    z_caraccess_adult_share
   )
 }
 
@@ -770,10 +782,10 @@ fh_besag_fit <- inla(
   control.compute = list(waic = TRUE)
 )
 
-area_effect_lookup <- inla_domain_index |>
+iid_lookup <- inla_domain_index |>
   distinct(area_id, area_inla_id)
 
-fh_area_effects <- bind_rows(
+fh_iid <- bind_rows(
   fh_besag_fit$summary.random$area_struct_id |>
     as_tibble() |>
     transmute(
@@ -793,9 +805,9 @@ fh_area_effects <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(area_effect_lookup, by = "area_inla_id") |>
+  left_join(iid_lookup, by = "area_inla_id") |>
   mutate(method = "FH") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(fh_area_effects, file.path(base_path, "freqcyc_area_effects_fh.csv"))
+write_csv(fh_iid, file.path(base_path, "freqcyc_iid_fh.csv"))
 ```

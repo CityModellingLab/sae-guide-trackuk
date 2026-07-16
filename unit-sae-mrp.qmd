@@ -9,15 +9,17 @@ Unit-level SAE models the individual outcome before aggregating predictions to a
 $$
 Y_{ijt}
 =
-\alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
+\alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt}.
 $$
 
-Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$. The fitted model is first evaluated for each population cell $c$:
+Here, $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
+
+The fitted model is first evaluated for each population cell $c$:
 
 $$
 \hat{\mu}_{jtc}
 =
-\widehat{\mathbb{E}}(Y \mid j, t, \mathbf{x}_{jtc}).
+\widehat{\mathbb{E}}(Y \mid j, t, x_{jtc}).
 $$
 
 The final area-time estimate is the population-weighted average of those cell predictions:
@@ -54,6 +56,15 @@ domain_frame <- read_csv(
 spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
 share_label <- label_percent(accuracy = 0.1)
 pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
+z_score <- function(x) {
+  x <- as.numeric(x)
+  x_mean <- mean(x, na.rm = TRUE)
+  x_sd <- sqrt(mean((x - x_mean)^2, na.rm = TRUE))
+  if (!is.finite(x_sd) || x_sd == 0) {
+    return(rep(NA_real_, length(x)))
+  }
+  (x - x_mean) / x_sd
+}
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -276,9 +287,10 @@ mrp_best_model <- model_waic |>
   slice(1) |>
   pull(model)
 
-message("Best fitted model spec: ", mrp_best_model)
 mrp_final_fit <- mrp_fits[[mrp_best_model]]
+cat("Best fitted model spec: ", mrp_best_model)
 ```
+The fitted model summary reports the estimated coefficients and their uncertainty intervals.
 ```{r}
 #| label: mrp-fixed
 mrp_final_fit$summary.fixed |>
@@ -585,21 +597,25 @@ area_context_predictors <- read_csv(
 ) |>
   transmute(
     area_id,
-    pop_density = scaled_pop_density,
-    caraccess_adult_share = scaled_caraccess_adult_share
+    pop_density,
+    caraccess_adult_share
+  ) |>
+  mutate(
+    z_pop_density = z_score(pop_density),
+    z_caraccess_adult_share = z_score(caraccess_adult_share)
   )
 
 shallow_model_data <- shallow_model_data |>
   left_join(area_context_predictors, by = "area_id") |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(freq_cyclist, age_band, sex, pop_density, caraccess_adult_share,
+  drop_na(freq_cyclist, age_band, sex, z_pop_density, z_caraccess_adult_share,
           area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id)
 
 shallow_poststrat_data <- shallow_poststrat_data |>
   left_join(area_context_predictors, by = "area_id") |>
   left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(age_band, sex, pop_density, caraccess_adult_share,
+  drop_na(age_band, sex, z_pop_density, z_caraccess_adult_share,
           area_inla_id, time_inla_id) |>
   arrange(time_inla_id, area_inla_id, age_band, sex)
 ```
@@ -621,8 +637,8 @@ shallow_formula <- freq_cyclist ~
   ) +
   age_band +
   sex +
-  pop_density +
-  caraccess_adult_share
+  z_pop_density +
+  z_caraccess_adult_share
 
 shallow_context_fit <- inla(
   formula = shallow_formula,
@@ -695,7 +711,7 @@ shallow_time_draws <- sapply(shallow_draws, \(draw) {
 
 # Predict
 shallow_prediction_matrix <- model.matrix(
-  ~ age_band + sex + pop_density + caraccess_adult_share,
+  ~ age_band + sex + z_pop_density + z_caraccess_adult_share,
   data = shallow_poststrat_data
 )[, shallow_fixed_terms, drop = FALSE]
 
@@ -891,7 +907,7 @@ write_csv(shallow_mrp_results, file.path(base_path, "freqcyc_estimates_mrp_shall
 #| message: false
 #| warning: false
 
-area_effect_lookup <- inla_domain_index |>
+iid_lookup <- inla_domain_index |>
   distinct(area_id, area_inla_id)
 
 besag_model_data <- model_data |>
@@ -931,7 +947,7 @@ mrp_besag_fit <- inla(
   control.compute = list(waic = TRUE)
 )
 
-mrp_area_effects <- bind_rows(
+mrp_iid <- bind_rows(
   mrp_besag_fit$summary.random$area_struct_id |>
     as_tibble() |>
     transmute(
@@ -951,7 +967,7 @@ mrp_area_effects <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(area_effect_lookup, by = "area_inla_id") |>
+  left_join(iid_lookup, by = "area_inla_id") |>
   mutate(method = "MRP Rich") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
@@ -973,8 +989,8 @@ shallow_besag_formula <- freq_cyclist ~
   f(area_unstruct_id, model = "iid") +
   age_band +
   sex +
-  pop_density +
-  caraccess_adult_share
+  z_pop_density +
+  z_caraccess_adult_share
 
 shallow_besag_fit <- inla(
   formula = shallow_besag_formula,
@@ -984,7 +1000,7 @@ shallow_besag_fit <- inla(
   control.compute = list(waic = TRUE)
 )
 
-shallow_area_effects <- bind_rows(
+shallow_iid <- bind_rows(
   shallow_besag_fit$summary.random$area_struct_id |>
     as_tibble() |>
     transmute(
@@ -1004,10 +1020,10 @@ shallow_area_effects <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(area_effect_lookup, by = "area_inla_id") |>
+  left_join(iid_lookup, by = "area_inla_id") |>
   mutate(method = "MRP Shallow") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(mrp_area_effects, file.path(base_path, "freqcyc_area_effects_mrp_rich.csv"))
-write_csv(shallow_area_effects, file.path(base_path, "freqcyc_area_effects_mrp_shallow.csv"))
+write_csv(mrp_iid, file.path(base_path, "freqcyc_iid_mrp_rich.csv"))
+write_csv(shallow_iid, file.path(base_path, "freqcyc_iid_mrp_shallow.csv"))
 ```

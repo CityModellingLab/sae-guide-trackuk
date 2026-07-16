@@ -336,13 +336,14 @@ Theory in brief
 <p><span class="math display">
 Y_{ijt}
 =
-\alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
+\alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt}.
 </span></p>
-<p>Here, <span class="math inline">\mathbf{x}_{ijt}</span> contains unit-level predictors, <span class="math inline">u_j</span> is an area effect, <span class="math inline">v_t</span> is a time effect, and <span class="math inline">\epsilon_{ijt}</span> is residual error. For a binary outcome, the model predicts the probability that <span class="math inline">Y_{ijt}=1</span>. Population summaries of the predictors <span class="math inline">\bar{\mathbf{x}}_{jt}</span> are substituted into the fitted unit-level model:</p>
+<p>Here, <span class="math inline">x_{ijt}</span> contains unit-level predictors, <span class="math inline">u_j</span> is an area effect, <span class="math inline">v_t</span> is a time effect, and <span class="math inline">\epsilon_{ijt}</span> is residual error. For a binary outcome, the model predicts the probability that <span class="math inline">Y_{ijt}=1</span>.</p>
+<p>Population summaries of the predictors <span class="math inline">\bar{x}_{jt}</span> are substituted into the fitted unit-level model:</p>
 <p><span class="math display">
 \hat{\mu}_{jt}
 =
-\widehat{\mathbb{E}}(Y \mid j, t, \bar{\mathbf{x}}_{jt}).
+\widehat{\mathbb{E}}(Y \mid j, t, \bar{x}_{jt}).
 </span></p>
 </div>
 </div>
@@ -397,20 +398,13 @@ Target estimand
 </div>
 </div>
 <p>Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator <code>freq_cyclist</code> is modelled from the survey microdata using temporal and spatial random effects, with unit-level <code>age</code>, <code>sex</code>, and <code>caraccess</code> added across model specifications.</p>
-<p>This method follows the classic Battese–Harter–Fuller (BHF) unit-level SAE model, extended here through a generalised mixed model so it can be used with both continuous and binary outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> to produce the final <em>MSOA-year</em> estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of <code>age</code>, <code>sex</code>, and <code>caraccess</code> adequately represent the target population composition in each <em>MSOA-year</em> cell.</p>
-<div class="callout callout-style-default callout-note callout-titled" title="Continuous and binary outcomes">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Continuous and binary outcomes
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>For <strong>continuous outcomes</strong>, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.</p>
-<p>For <strong>binary outcomes</strong> such as <code>freq_cyclist</code>, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.</p>
-</div>
+<p>This method follows the classic Battese–Harter–Fuller (BHF) unit-level SAE model, where the individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. The model is extended through a generalised mixed model so it can be used with both continuous and binary outcomes. The predictor summaries are extracted from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> to produce the final <em>MSOA-year</em> estimates.</p>
+<div class="{.callout-note&quot;}">
+<p>Aggregating using area summaries of predictors assumes the area summaries of <code>age</code>, <code>sex</code>, and <code>caraccess</code> adequately represent the target population composition in each <em>MSOA-year</em> cell.</p>
+<ul>
+<li>For <strong>continuous outcomes</strong>, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.</li>
+<li>For <strong>binary outcomes</strong> such as <code>freq_cyclist</code>, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.</li>
+</ul>
 </div>
 </section>
 <section id="prepare-model-and-aggregation-data" class="level2" data-number="1">
@@ -734,7 +728,7 @@ Note
 </ul>
 </div>
 </div>
-<p>To compare the fitted models’ overall performance, we again use <code>WAIC</code> as a first check. Here, the car-access extension has the strongest WAIC support among the model specifications.</p>
+<p>To compare the fitted models’ overall performance, we again use <code>WAIC</code> as a first check. Here, the car-access specification has the strongest WAIC support among the model specifications.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -766,12 +760,12 @@ Note
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: right;">2945.340</td>
-<td style="text-align: right;">34.59272</td>
+<td style="text-align: right;">34.59275</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
-<td style="text-align: right;">2958.391</td>
-<td style="text-align: right;">34.63427</td>
+<td style="text-align: right;">2958.392</td>
+<td style="text-align: right;">34.63500</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -787,22 +781,26 @@ Note
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>bhf_best_model <span class="ot">&lt;-</span> model_waic <span class="sc">|&gt;</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">|&gt;</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(model)</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">message</span>(<span class="st">"Best fitted model spec: "</span>, bhf_best_model)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>bhf_selected_fit <span class="ot">&lt;-</span> bhf_fits[[bhf_best_model]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>bhf_selected_fit <span class="ot">&lt;-</span> bhf_fits[[bhf_best_model]]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Best fitted model spec: "</span>, bhf_best_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Best fitted model spec:  M3 +CarAccess</code></pre>
 </div>
+</div>
+<p>The fitted model summary reports the estimated coefficients and their uncertainty intervals.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[bhf_best_model]]<span class="sc">$</span>summary.fixed <span class="sc">|&gt;</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    term,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    mean,</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>,</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[bhf_best_model]]<span class="sc">$</span>summary.fixed <span class="sc">|&gt;</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as.data.frame</span>() <span class="sc">|&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rownames_to_column</span>(<span class="st">"term"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    term,</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    mean,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>,</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -818,8 +816,8 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.5811868</td>
-<td style="text-align: right;">-1.9886117</td>
+<td style="text-align: right;">-1.5811869</td>
+<td style="text-align: right;">-1.9886118</td>
 <td style="text-align: right;">-1.1744135</td>
 </tr>
 <tr class="even">
@@ -849,11 +847,11 @@ Note
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[bhf_best_model]]<span class="sc">$</span>summary.hyperpar <span class="sc">|&gt;</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"parameter"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(parameter, <span class="st">"time_inla_id|area_inla_id|Phi"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(parameter, mean, sd, <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.5quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[bhf_best_model]]<span class="sc">$</span>summary.hyperpar <span class="sc">|&gt;</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"parameter"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(parameter, <span class="st">"time_inla_id|area_inla_id|Phi"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(parameter, mean, sd, <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.5quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
@@ -879,11 +877,11 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">30.975</td>
-<td style="text-align: right;">35.713</td>
+<td style="text-align: right;">30.974</td>
+<td style="text-align: right;">35.711</td>
 <td style="text-align: right;">3.156</td>
 <td style="text-align: right;">20.262</td>
-<td style="text-align: right;">124.176</td>
+<td style="text-align: right;">124.171</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Precision for area_inla_id</td>
@@ -891,7 +889,7 @@ Note
 <td style="text-align: right;">6.675</td>
 <td style="text-align: right;">3.597</td>
 <td style="text-align: right;">9.193</td>
-<td style="text-align: right;">28.563</td>
+<td style="text-align: right;">28.564</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Phi for area_inla_id</td>
@@ -925,70 +923,70 @@ Note
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw 300 posterior samples from the selected fit.</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">result =</span> bhf_selected_fit</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Fixed-effect draw matrix</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>fixed_terms <span class="ot">&lt;-</span> <span class="fu">rownames</span>(bhf_selected_fit<span class="sc">$</span>summary.fixed)</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>fixed_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(fixed_terms, <span class="st">":1"</span>), <span class="dv">1</span>]),</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    fixed_terms</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Area-effect draw matrix</span></span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>area_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"area_inla_id:"</span>, area_ids), <span class="dv">1</span>]),</span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    area_ids</span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Time-effect draw matrix</span></span>
-<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>time_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"time_inla_id:"</span>, time_ids), <span class="dv">1</span>]),</span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    time_ids</span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Draw 300 posterior samples from the selected fit.</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">result =</span> bhf_selected_fit</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Fixed-effect draw matrix</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>fixed_terms <span class="ot">&lt;-</span> <span class="fu">rownames</span>(bhf_selected_fit<span class="sc">$</span>summary.fixed)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>fixed_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(fixed_terms, <span class="st">":1"</span>), <span class="dv">1</span>]),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    fixed_terms</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Area-effect draw matrix</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>area_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"area_inla_id:"</span>, area_ids), <span class="dv">1</span>]),</span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>    area_ids</span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Time-effect draw matrix</span></span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a>time_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"time_inla_id:"</span>, time_ids), <span class="dv">1</span>]),</span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>    time_ids</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Each posterior draw is evaluated over the MSOA-year aggregation frame.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>prediction_matrix <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age <span class="sc">+</span> female <span class="sc">+</span> caraccess,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> aggregation_data</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>)[, fixed_terms, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>prediction_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">seq_along</span>(posterior_draws), \(draw_id) {</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  log_odds <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(prediction_matrix <span class="sc">%*%</span> fixed_draws[, draw_id]) <span class="sc">+</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    area_draws[<span class="fu">as.character</span>(aggregation_data<span class="sc">$</span>area_inla_id), draw_id] <span class="sc">+</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    time_draws[<span class="fu">as.character</span>(aggregation_data<span class="sc">$</span>time_inla_id), draw_id]</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plogis</span>(log_odds) <span class="co"># For binomial model</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>prediction_matrix <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age <span class="sc">+</span> female <span class="sc">+</span> caraccess,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> aggregation_data</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>)[, fixed_terms, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>prediction_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(<span class="fu">seq_along</span>(posterior_draws), \(draw_id) {</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  log_odds <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(prediction_matrix <span class="sc">%*%</span> fixed_draws[, draw_id]) <span class="sc">+</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    area_draws[<span class="fu">as.character</span>(aggregation_data<span class="sc">$</span>area_inla_id), draw_id] <span class="sc">+</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    time_draws[<span class="fu">as.character</span>(aggregation_data<span class="sc">$</span>time_inla_id), draw_id]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">plogis</span>(log_odds) <span class="co"># For binomial model</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The matrix <code>prediction_draws</code> has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>final_bhf_results <span class="ot">&lt;-</span> aggregation_data <span class="sc">|&gt;</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id) <span class="sc">|&gt;</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(</span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_estimate =</span> <span class="fu">rowMeans</span>(prediction_draws),</span>
-<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_variance =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, var),</span>
-<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_lower =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.025</span>, <span class="at">names =</span> <span class="cn">FALSE</span>),</span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_upper =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.975</span>, <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_ci_width =</span> bhf_upper <span class="sc">-</span> bhf_lower</span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_bhf_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>final_bhf_results <span class="ot">&lt;-</span> aggregation_data <span class="sc">|&gt;</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_id, time_id) <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_cols</span>(</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>(</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_estimate =</span> <span class="fu">rowMeans</span>(prediction_draws),</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_variance =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, var),</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_lower =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.025</span>, <span class="at">names =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">bhf_upper =</span> <span class="fu">apply</span>(prediction_draws, <span class="dv">1</span>, quantile, <span class="at">probs =</span> <span class="fl">0.975</span>, <span class="at">names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">bhf_ci_width =</span> bhf_upper <span class="sc">-</span> bhf_lower</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(final_bhf_results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
@@ -1016,56 +1014,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0199819</td>
-<td style="text-align: right;">0.0000398</td>
-<td style="text-align: right;">0.0098261</td>
-<td style="text-align: right;">0.0353690</td>
-<td style="text-align: right;">0.0255430</td>
+<td style="text-align: right;">0.0209474</td>
+<td style="text-align: right;">0.0000602</td>
+<td style="text-align: right;">0.0101855</td>
+<td style="text-align: right;">0.0396753</td>
+<td style="text-align: right;">0.0294897</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0166172</td>
-<td style="text-align: right;">0.0000303</td>
-<td style="text-align: right;">0.0082171</td>
-<td style="text-align: right;">0.0301953</td>
-<td style="text-align: right;">0.0219783</td>
+<td style="text-align: right;">0.0162929</td>
+<td style="text-align: right;">0.0000287</td>
+<td style="text-align: right;">0.0076934</td>
+<td style="text-align: right;">0.0275547</td>
+<td style="text-align: right;">0.0198613</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0354628</td>
-<td style="text-align: right;">0.0002808</td>
-<td style="text-align: right;">0.0125099</td>
-<td style="text-align: right;">0.0765116</td>
-<td style="text-align: right;">0.0640017</td>
+<td style="text-align: right;">0.0364269</td>
+<td style="text-align: right;">0.0003205</td>
+<td style="text-align: right;">0.0135257</td>
+<td style="text-align: right;">0.0825974</td>
+<td style="text-align: right;">0.0690717</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0241814</td>
-<td style="text-align: right;">0.0000727</td>
-<td style="text-align: right;">0.0125356</td>
-<td style="text-align: right;">0.0452764</td>
-<td style="text-align: right;">0.0327408</td>
+<td style="text-align: right;">0.0253253</td>
+<td style="text-align: right;">0.0000781</td>
+<td style="text-align: right;">0.0122942</td>
+<td style="text-align: right;">0.0487241</td>
+<td style="text-align: right;">0.0364300</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0152582</td>
-<td style="text-align: right;">0.0000295</td>
-<td style="text-align: right;">0.0071965</td>
-<td style="text-align: right;">0.0280541</td>
-<td style="text-align: right;">0.0208576</td>
+<td style="text-align: right;">0.0153503</td>
+<td style="text-align: right;">0.0000335</td>
+<td style="text-align: right;">0.0067633</td>
+<td style="text-align: right;">0.0280559</td>
+<td style="text-align: right;">0.0212926</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0216281</td>
-<td style="text-align: right;">0.0000548</td>
-<td style="text-align: right;">0.0097082</td>
-<td style="text-align: right;">0.0374010</td>
-<td style="text-align: right;">0.0276928</td>
+<td style="text-align: right;">0.0208822</td>
+<td style="text-align: right;">0.0000483</td>
+<td style="text-align: right;">0.0107140</td>
+<td style="text-align: right;">0.0355988</td>
+<td style="text-align: right;">0.0248849</td>
 </tr>
 </tbody>
 </table>
@@ -1081,15 +1079,15 @@ Note
 <p>This limitation is especially important for a binary outcome modelled using a logistic model (i.e., <code>family = "binomial"</code>). The target is the population-average predicted probability, but substituting area-level predictor summaries estimates the probability at the average predictor values:</p>
 <p><span class="math display">
 \frac{1}{N}\sum_{i=1}^{N}
-\operatorname{logit}^{-1}(\alpha + \mathbf{x}_{i}^{T}\boldsymbol{\beta})
+\operatorname{logit}^{-1}(\alpha + x_{i}^{T}\beta)
 \neq
-\operatorname{logit}^{-1}(\alpha + \bar{\mathbf{x}}^{T}\boldsymbol{\beta}).
+\operatorname{logit}^{-1}(\alpha + \bar{x}^{T}\beta).
 </span></p>
 <p>A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of <strong>multilevel regression with poststratification (MRP)</strong>: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_bhf_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_bhf.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_bhf_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_bhf.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 

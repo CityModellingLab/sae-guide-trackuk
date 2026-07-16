@@ -1,185 +1,109 @@
-# Spatio-temporal unit-level SAE model with area summaries and R-INLA
-#
-# Edit the config block, then run this script from the project root.
-# Required inputs:
-# - unit file: respondent records with outcome and predictors
-# - aggregation file: one row per area-time cell with target-level predictor values
-# - area boundaries: polygons used to build the spatial adjacency graph
-
 library(dplyr)
-library(readr)
-library(sf)
-library(spdep)
 library(INLA)
-library(tibble)
 
-config <- list(
-  unit_file = "data/clean/unit_model_data.csv",
-  aggregation_file = "data/clean/unit_aggregation_frame.csv",
-  boundary_file = "data/boundaries.geojson",
-  output_dir = "outputs",
+# File import
+# Provide survey_data with: area_id, time_id, outcome, and unitpred_* columns.
+# Provide domain_frame with: area_id, time_id.
+# Provide area_summaries with: area_id and matching *_mean / *_share columns.
+# Provide spatial_graph_file as the INLA .adj file ordered by area_inla_id.
 
-  area_col = "area_id",
-  time_col = "time_id",
-  outcome_col = "indicator",
-  predictor_cols = c("no_car"),
-
-  family = "gaussian"
+family <- "binomial"
+unitpred_cols <- c("unitpred_1", "unitpred_2")
+area_summary_map <- c(
+  unitpred_1 = "unitpred_1_mean",
+  unitpred_2 = "unitpred_2_share"
 )
 
-rename_column <- function(data, source, target) {
-  if (is.null(source) || source == target) {
-    return(data)
+check_cols <- function(data, cols, name) {
+  missing <- setdiff(cols, names(data))
+  if (length(missing) > 0) {
+    stop(name, " is missing: ", paste(missing, collapse = ", "), call. = FALSE)
   }
+}
 
-  if (!source %in% names(data)) {
-    stop("Column not found: ", source, call. = FALSE)
+rename_by_map <- function(data, map) {
+  for (target in names(map)) {
+    names(data)[names(data) == unname(map[target])] <- target
   }
-
-  names(data)[names(data) == source] <- target
   data
 }
 
-check_columns <- function(data, required, data_name) {
-  missing <- setdiff(required, names(data))
-  if (length(missing) > 0) {
-    stop(
-      data_name,
-      " is missing required columns: ",
-      paste(missing, collapse = ", "),
-      call. = FALSE
-    )
-  }
-}
+area_summaries <- area_summaries |>
+  rename_by_map(area_summary_map)
 
-make_formula <- function(predictor_cols) {
-  fixed_terms <- if (length(predictor_cols) == 0) {
-    "1"
-  } else {
-    paste(predictor_cols, collapse = " + ")
-  }
+check_cols(survey_data, c("area_id", "time_id", "outcome", unitpred_cols), "survey_data")
+check_cols(domain_frame, c("area_id", "time_id"), "domain_frame")
+check_cols(area_summaries, c("area_id", unitpred_cols), "area_summaries")
 
-  as.formula(
-    paste(
-      "indicator ~",
-      fixed_terms,
-      "+ f(time_inla_id, model = 'rw1', constr = TRUE)",
-      "+ f(area_spatial_id, model = 'bym2', graph = spatial_graph_file,",
-      "scale.model = TRUE, constr = TRUE)"
-    )
-  )
-}
-
-unit_data <- read_csv(config$unit_file, show_col_types = FALSE) |>
-  rename_column(config$area_col, "area_id") |>
-  rename_column(config$time_col, "time_id") |>
-  rename_column(config$outcome_col, "indicator")
-
-aggregation_frame <- read_csv(config$aggregation_file, show_col_types = FALSE) |>
-  rename_column(config$area_col, "area_id") |>
-  rename_column(config$time_col, "time_id")
-
-boundaries <- st_read(config$boundary_file, quiet = TRUE) |>
-  rename_column(config$area_col, "area_id")
-
-check_columns(
-  unit_data,
-  c("area_id", "time_id", "indicator", config$predictor_cols),
-  "unit_data"
-)
-check_columns(
-  aggregation_frame,
-  c("area_id", "time_id", config$predictor_cols),
-  "aggregation_frame"
-)
-check_columns(boundaries, "area_id", "boundaries")
-
-area_index <- aggregation_frame |>
+area_index <- domain_frame |>
   distinct(area_id) |>
   arrange(area_id) |>
   mutate(area_inla_id = row_number())
 
-time_index <- aggregation_frame |>
+time_index <- domain_frame |>
   distinct(time_id) |>
   arrange(time_id) |>
   mutate(time_inla_id = row_number())
 
-boundaries_sorted <- boundaries |>
-  inner_join(area_index, by = "area_id") |>
-  arrange(area_inla_id)
+model_rows <- survey_data |>
+  filter(!is.na(area_id), !is.na(time_id), !is.na(outcome)) |>
+  filter(if_all(all_of(unitpred_cols), ~ !is.na(.x))) |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
+  mutate(row_type = "model")
 
-area_neighbours <- poly2nb(
-  boundaries_sorted,
-  queen = TRUE,
-  row.names = boundaries_sorted$area_id
+prediction_rows <- domain_frame |>
+  left_join(area_summaries, by = "area_id") |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
+  mutate(row_type = "prediction", outcome = NA_real_)
+
+inla_data <- bind_rows(
+  select(model_rows, row_type, outcome, all_of(unitpred_cols), area_inla_id, time_inla_id),
+  select(prediction_rows, row_type, outcome, all_of(unitpred_cols), area_inla_id, time_inla_id)
 )
 
-spatial_graph_file <- tempfile(fileext = ".adj")
-nb2INLA(file = spatial_graph_file, nb = area_neighbours)
+prediction_ids <- which(inla_data$row_type == "prediction")
 
-model_rows <- unit_data |>
-  filter(
-    !is.na(area_id),
-    !is.na(time_id),
-    !is.na(indicator)
-  ) |>
-  filter(if_all(all_of(config$predictor_cols), \(x) !is.na(x))) |>
-  left_join(area_index, by = "area_id") |>
-  left_join(time_index, by = "time_id") |>
-  mutate(row_type = "model", area_spatial_id = area_inla_id) |>
-  select(
-    row_type,
-    indicator,
-    all_of(config$predictor_cols),
-    time_inla_id,
-    area_spatial_id
+formula <- as.formula(paste(
+  "outcome ~",
+  paste(
+    c(
+      unitpred_cols,
+      "f(time_inla_id, model = 'rw1', constr = TRUE)",
+      "f(area_inla_id, model = 'bym2', graph = spatial_graph_file, scale.model = TRUE, constr = TRUE)"
+    ),
+    collapse = " + "
   )
+))
 
-aggregation_rows <- aggregation_frame |>
-  left_join(area_index, by = "area_id") |>
-  left_join(time_index, by = "time_id") |>
-  mutate(row_type = "aggregation", indicator = NA_real_, area_spatial_id = area_inla_id) |>
-  select(
-    row_type,
-    indicator,
-    all_of(config$predictor_cols),
-    time_inla_id,
-    area_spatial_id
-  )
-
-inla_input <- bind_rows(model_rows, aggregation_rows)
-aggregation_row_ids <- which(inla_input$row_type == "aggregation")
-
-bhf_formula <- make_formula(config$predictor_cols)
-
-fit <- inla(
-  formula = bhf_formula,
-  family = config$family,
-  data = inla_input,
+fit_args <- list(
+  formula = formula,
+  family = family,
+  data = inla_data,
   control.predictor = list(compute = TRUE),
-  control.compute = list(dic = TRUE, waic = TRUE),
-  verbose = FALSE
+  control.compute = list(waic = TRUE)
 )
 
-model_comparison <- tibble(
-  model = "Unit-level SAE with area summaries",
-  waic = fit$waic$waic,
-  effective_parameters = fit$waic$p.eff,
-  dic = fit$dic$dic
-)
+if (family == "binomial") {
+  fit_args$Ntrials <- 1
+}
 
-estimates <- aggregation_frame |>
+fit <- do.call(inla, fit_args)
+
+unit_sae_estimates <- prediction_rows |>
   transmute(
     area_id,
     time_id,
-    estimate = fit$summary.fitted.values$mean[aggregation_row_ids],
-    lower = fit$summary.fitted.values$`0.025quant`[aggregation_row_ids],
-    upper = fit$summary.fitted.values$`0.975quant`[aggregation_row_ids],
-    method = "Unit-level SAE with area summaries"
+    estimate = fit$summary.fitted.values$mean[prediction_ids],
+    variance = fit$summary.fitted.values$sd[prediction_ids]^2,
+    lower = fit$summary.fitted.values$`0.025quant`[prediction_ids],
+    upper = fit$summary.fitted.values$`0.975quant`[prediction_ids],
+    ci_width = upper - lower,
+    n = NA_integer_,
+    remarks = "Unit-level SAE with area summaries"
   )
 
-dir.create(config$output_dir, recursive = TRUE, showWarnings = FALSE)
-
-write_csv(model_comparison, file.path(config$output_dir, "bhf_inla_model_comparison.csv"))
-
-write_csv(estimates, file.path(config$output_dir, "bhf_inla_estimates.csv"))
+# File export
+# Export unit_sae_estimates using the common output schema:
+# area_id, time_id, estimate, variance, lower, upper, ci_width, n, remarks.

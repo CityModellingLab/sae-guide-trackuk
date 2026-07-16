@@ -1,12 +1,11 @@
 ---
 title: "SAE Toolkit"
 subtitle: "Bring your own survey into the workflow"
-number-sections: false
 ---
 
-This SAE toolkit shows how to adapt the SAE workflow to another survey, geography, or outcome by mapping the inputs to a common schema and running the workflow pages in sequence.
+This SAE toolkit provides templates for preparing survey and auxiliary data, a decision framework for choosing an appropriate SAE method, and method-specific scripts with the expected inputs and outputs.
 
-## 1. Define the estimates you need
+## Define the estimands and estimation domain
 
 Start by defining the estimand:
 
@@ -15,15 +14,19 @@ Start by defining the estimand:
 - at which spatial scale;
 - over which time periods.
 
-In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination. This is an **area-time cell**.
+In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination estimation domain. Each is an **area-time cell**.
 
-## 2. Prepare the input tables
+## Choose the modelling route
 
-The workflow expects a small set of linked tables. Area-time inputs use `area_id` and `time_id`; respondent-level survey inputs also use `unit_id`.
+![](assets/sae_method_select.png)
+
+## Prepare the modelling input
+
+Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.
 
 ### Domain frame
 
-One row for every area-time cell that should receive an estimate. This table defines the target grid, including cells with no survey respondents, and stores the numeric indices used by `INLA`.
+Always prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by `INLA`.
 
 | Column | Meaning |
 |---|---|
@@ -35,56 +38,52 @@ One row for every area-time cell that should receive an estimate. This table def
 
 ### Spatial graph
 
-Spatial random effects need an adjacency graph with the same area ordering as `area_inla_id`.
+Prepare a spatial graph if the selected model includes spatial random effects.
 
 | File | Meaning |
 |---|---|
 | `*.adj` | `INLA` adjacency graph, ordered by `area_inla_id` |
 
-### Survey indicator and unit-level predictors (if applicable)
+### Survey input
 
-One row per respondent-period for the outcome being estimated, together with the survey design fields and unit-level predictors.
+Prepare one row per respondent-period for the outcome being estimated.
 
 | Column | Meaning |
 |---|---|
 | `unit_id` | Respondent identifier |
 | `area_id` | Area assigned to the respondent |
 | `time_id` | Survey period |
-| `indicator` | Outcome used in estimation (binary or continuous) |
-| `weight` | Survey design weight for direct estimation |
-| `strata` | Survey stratum for direct estimation, if available |
-| predictors | Unit predictors (age, sex, car access, etc.) if applicable |
+| `outcome` | Outcome used in estimation, either binary or continuous |
+| `weight` | Survey design weight |
+| `strata` | Survey stratum, if available |
+| `unitpred_*` | Unit-level predictors, required for unit-level SAE |
 
-### Area predictors
+### Area-level predictors or summaries
 
-One row per area, with predictors used to explain spatial differences in the outcome. These are used in area-level SAE and can also support unit-level SAE as area-level summaries or contextual predictors.
+Prepare one row per area. This table is used for area-level SAE, and unit-level SAE with area summaries, if applicable.
 
 | Column | Meaning |
 |---|---|
 | `area_id` | Area identifier |
-| `scaled_*` | Predictors transformed for modelling |
-| `raw_*` | Predictors in original units for interpretation |
+| `areapred_*` | Raw area-level predictors |
+| `*_mean` / `*_share` | Area summaries of `unitpred_*`, required for unit-level SAE with area summaries |
 
-### Poststratification table
+### Poststratification data
 
-Used when model predictions are aggregated over population groups to produce the final estimate in unit-level SAE with poststratification. The population cells must match the categorical predictors used for poststratification.
+Required for unit-level SAE with poststratification. The population cells must match the categorical `unitpred_*` variables used in the poststratified unit-level model.
 
 | Column | Meaning |
 |---|---|
 | `area_id` | Area identifier |
 | `time_id` | Time period |
-| population groups | Age, sex, household type, or other poststratification categories |
+| population groups | Categories used for poststratification; must match `unitpred_*` |
 | `pop_count` | Population count for each cell |
 
-## 3. Choose the modelling route
+## `R-INLA` starter scripts
 
-![](assets/sae_method_select.png)
+TBD
 
-## 4. Run the workflow pages
-
-...
-
-## 5. Expected outputs
+## Expected outputs
 
 After each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.
 
@@ -92,10 +91,9 @@ After each method, convert outputs to a common comparison schema so estimates ca
 |---|---|
 | `area_id` | Estimated area |
 | `time_id` | Estimated period |
-| `method` | Direct, area-level SAE, unit-level SAE with area summaries, unit-level SAE with poststratification, etc. |
 | `estimate` | Direct or model-based point estimate |
 | `variance` | Sampling or posterior variance |
 | `lower`, `upper` | Uncertainty interval bounds |
 | `ci_width` | Uncertainty interval width |
 | `n` | Sample size |
-| `model` | Model specification or other notes |
+| `remarks` | Estimation method, model specification or other notes |

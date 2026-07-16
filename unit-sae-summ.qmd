@@ -9,15 +9,17 @@ Unit-level SAE models the individual outcome before aggregating predictions to a
 $$
 Y_{ijt}
 =
-\alpha + \mathbf{x}_{ijt}^{T}\boldsymbol{\beta} + u_j + v_t + \epsilon_{ijt}.
+\alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt}.
 $$
 
-Here, $\mathbf{x}_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$. Population summaries of the predictors $\bar{\mathbf{x}}_{jt}$ are substituted into the fitted unit-level model:
+Here, $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
+
+Population summaries of the predictors $\bar{x}_{jt}$ are substituted into the fitted unit-level model:
 
 $$
 \hat{\mu}_{jt}
 =
-\widehat{\mathbb{E}}(Y \mid j, t, \bar{\mathbf{x}}_{jt}).
+\widehat{\mathbb{E}}(Y \mid j, t, \bar{x}_{jt}).
 $$
 :::
 
@@ -89,12 +91,13 @@ chart_text_theme <- theme(
 
 Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications.
 
-This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model, extended here through a generalised mixed model so it can be used with both continuous and binary outcomes. The individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. Here, those summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. This reduces reliance on unstable or missing direct estimates, but it assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell. 
+This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model, where the individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. The model is extended through a generalised mixed model so it can be used with both continuous and binary outcomes. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates.
 
-::: {.callout-note title="Continuous and binary outcomes"}
-For **continuous outcomes**, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.
+::: {.callout-note"}
+Aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell.
 
-For **binary outcomes** such as `freq_cyclist`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.
+- For **continuous outcomes**, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.
+- For **binary outcomes** such as `freq_cyclist`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.
 :::
 
 ## Prepare model and aggregation data
@@ -125,7 +128,6 @@ model_data <- survey_microdata |>
 
 head(model_data)
 ```
-
 
 ```{r}
 #| label: bhf-agg-data
@@ -247,7 +249,7 @@ When fitting unit-level SAE models with `INLA`, these arguments are needed:
 - `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
 :::
 
-To compare the fitted models' overall performance, we again use `WAIC` as a first check. Here, the car-access extension has the strongest WAIC support among the model specifications.
+To compare the fitted models' overall performance, we again use `WAIC` as a first check. Here, the car-access specification has the strongest WAIC support among the model specifications.
 ```{r}
 #| label: bhf-waic
 
@@ -268,9 +270,10 @@ model_waic
 bhf_best_model <- model_waic |>
   slice(1) |>
   pull(model)
-message("Best fitted model spec: ", bhf_best_model)
 bhf_selected_fit <- bhf_fits[[bhf_best_model]]
+cat("Best fitted model spec: ", bhf_best_model)
 ```
+The fitted model summary reports the estimated coefficients and their uncertainty intervals.
 ```{r}
 #| label: bhf-fixed
 
@@ -285,7 +288,7 @@ bhf_fits[[bhf_best_model]]$summary.fixed |>
   )
 ```
 
-Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `phi` help show what the temporal and spatial terms are doing in the selected model. 
+Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `phi` help show what the temporal and spatial terms are doing in the selected model.
 
 ```{r}
 #| label: bhf-hyper
@@ -462,9 +465,9 @@ This limitation is especially important for a binary outcome modelled using a lo
 
 $$
 \frac{1}{N}\sum_{i=1}^{N}
-\operatorname{logit}^{-1}(\alpha + \mathbf{x}_{i}^{T}\boldsymbol{\beta})
+\operatorname{logit}^{-1}(\alpha + x_{i}^{T}\beta)
 \neq
-\operatorname{logit}^{-1}(\alpha + \bar{\mathbf{x}}^{T}\boldsymbol{\beta}).
+\operatorname{logit}^{-1}(\alpha + \bar{x}^{T}\beta).
 $$
 
 A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.
@@ -521,10 +524,10 @@ bhf_besag_fit <- inla(
   control.compute = list(waic = TRUE)
 )
 
-area_effect_lookup <- inla_domain_index |>
+iid_lookup <- inla_domain_index |>
   distinct(area_id, area_inla_id)
 
-bhf_area_effects <- bind_rows(
+bhf_iid <- bind_rows(
   bhf_besag_fit$summary.random$area_struct_id |>
     as_tibble() |>
     transmute(
@@ -544,9 +547,9 @@ bhf_area_effects <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(area_effect_lookup, by = "area_inla_id") |>
+  left_join(iid_lookup, by = "area_inla_id") |>
   mutate(method = "BHF") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
-write_csv(bhf_area_effects, file.path(base_path, "freqcyc_area_effects_bhf.csv"))
+write_csv(bhf_iid, file.path(base_path, "freqcyc_iid_bhf.csv"))
 ```

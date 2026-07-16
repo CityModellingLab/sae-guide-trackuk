@@ -15,7 +15,7 @@ Tutorial-ready files derived from the raw survey, lookup, boundary, Census, and 
 
 ## Cycling Auxiliary and Validation Files
 
-- `areapred_freqcyc.csv`: one row per MSOA, keyed by `area_id`, with raw and z-scored area predictors for frequent cycling models, including Census 2021 mean age among usual residents aged 16+ and adult female share.
+- `areapred_freqcyc.csv`: one row per MSOA, keyed by `area_id`, with raw area predictors for frequent cycling models. Scaled model terms use the `z_*` prefix when needed.
 - `poststrat_freqcyc_age_sex_212325.csv`: one row per MSOA-year-age-sex cell with `pop_count` for shallow poststratification. Age bands are grouped to match the rich poststratification table.
 - `poststrat_freqcyc_age_sex_car_21.csv`: one row per MSOA-year-age-sex-car-access cell with `pop_count` for richer poststratification.
 - `validation_bicycle_to_work_share.csv`: one row per Wales MSOA with a simple 2021 bicycle-to-work benchmark. The numerator is the TS061 bicycle-to-work count and the denominator is the TS061 total usual residents aged 16+ in employment.

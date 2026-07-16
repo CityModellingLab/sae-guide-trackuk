@@ -795,10 +795,6 @@ Target estimand
 <p>Area-level SAE models need area-level predictors that plausibly explain between-area differences in the target outcome. The area predictors are drawn from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, and car access.</p>
 <p>The area-predictor input <em>has one row per MSOA</em>:</p>
 <table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Column</th>
@@ -811,12 +807,20 @@ Target estimand
 <td>MSOA estimation area</td>
 </tr>
 <tr class="even">
-<td>Raw predictors</td>
-<td><code>pop_density</code>; <code>age_adult_mean</code>; <code>female_adult_share</code>; <code>caraccess_adult_share</code></td>
+<td><code>pop_density</code></td>
+<td>Population density</td>
 </tr>
 <tr class="odd">
-<td>Scaled predictors</td>
-<td>Z-scored versions for model input</td>
+<td><code>age_adult_mean</code></td>
+<td>Mean adult age</td>
+</tr>
+<tr class="even">
+<td><code>female_adult_share</code></td>
+<td>Adult female share</td>
+</tr>
+<tr class="odd">
+<td><code>caraccess_adult_share</code></td>
+<td>Adult share with car access</td>
 </tr>
 </tbody>
 </table>
@@ -830,15 +834,11 @@ Target estimand
 <div class="kable-table">
 <table class="table table-sm table-striped small">
 <colgroup>
-<col style="width: 5%">
-<col style="width: 6%">
-<col style="width: 8%">
-<col style="width: 10%">
 <col style="width: 12%">
-<col style="width: 10%">
-<col style="width: 12%">
-<col style="width: 14%">
-<col style="width: 16%">
+<col style="width: 15%">
+<col style="width: 19%">
+<col style="width: 24%">
+<col style="width: 28%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -847,10 +847,6 @@ Target estimand
 <th style="text-align: right;">age_adult_mean</th>
 <th style="text-align: right;">female_adult_share</th>
 <th style="text-align: right;">caraccess_adult_share</th>
-<th style="text-align: right;">scaled_pop_density</th>
-<th style="text-align: right;">scaled_age_adult_mean</th>
-<th style="text-align: right;">scaled_female_adult_share</th>
-<th style="text-align: right;">scaled_caraccess_adult_share</th>
 </tr>
 </thead>
 <tbody>
@@ -860,10 +856,6 @@ Target estimand
 <td style="text-align: right;">53.79873</td>
 <td style="text-align: right;">0.5062767</td>
 <td style="text-align: right;">0.9042796</td>
-<td style="text-align: right;">-0.7385764</td>
-<td style="text-align: right;">0.6562949</td>
-<td style="text-align: right;">-0.7414699</td>
-<td style="text-align: right;">0.6195734</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -871,10 +863,6 @@ Target estimand
 <td style="text-align: right;">57.52072</td>
 <td style="text-align: right;">0.5122086</td>
 <td style="text-align: right;">0.9322563</td>
-<td style="text-align: right;">-0.7435073</td>
-<td style="text-align: right;">1.5025271</td>
-<td style="text-align: right;">-0.2874700</td>
-<td style="text-align: right;">1.0017460</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -882,10 +870,6 @@ Target estimand
 <td style="text-align: right;">49.32470</td>
 <td style="text-align: right;">0.5185096</td>
 <td style="text-align: right;">0.7528430</td>
-<td style="text-align: right;">0.3977772</td>
-<td style="text-align: right;">-0.3609228</td>
-<td style="text-align: right;">0.1947866</td>
-<td style="text-align: right;">-1.4491107</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -893,10 +877,6 @@ Target estimand
 <td style="text-align: right;">55.72271</td>
 <td style="text-align: right;">0.5165892</td>
 <td style="text-align: right;">0.9350858</td>
-<td style="text-align: right;">-0.7200726</td>
-<td style="text-align: right;">1.0937329</td>
-<td style="text-align: right;">0.0478090</td>
-<td style="text-align: right;">1.0403976</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -904,10 +884,6 @@ Target estimand
 <td style="text-align: right;">57.86602</td>
 <td style="text-align: right;">0.5230947</td>
 <td style="text-align: right;">0.9223441</td>
-<td style="text-align: right;">-0.7196659</td>
-<td style="text-align: right;">1.5810357</td>
-<td style="text-align: right;">0.5457165</td>
-<td style="text-align: right;">0.8663418</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -915,10 +891,6 @@ Target estimand
 <td style="text-align: right;">51.49705</td>
 <td style="text-align: right;">0.5169933</td>
 <td style="text-align: right;">0.8796979</td>
-<td style="text-align: right;">-0.6930287</td>
-<td style="text-align: right;">0.1329849</td>
-<td style="text-align: right;">0.0787411</td>
-<td style="text-align: right;">0.2837776</td>
 </tr>
 </tbody>
 </table>
@@ -931,7 +903,7 @@ Target estimand
 <h4 data-number="2.3.3" class="anchored" data-anchor-id="aggregation-input-for-unit-level-sae"><span class="header-section-number">2.3.3</span> Aggregation input (for unit-level SAE)</h4>
 <section id="predictor-area-summaries-see-unit-level-sae-with-predictor-summaries" class="level5" data-number="2.3.3.1">
 <h5 data-number="2.3.3.1" class="anchored" data-anchor-id="predictor-area-summaries-see-unit-level-sae-with-predictor-summaries"><span class="header-section-number">2.3.3.1</span> Predictor area summaries (See <a href="./unit-sae-summ.html">unit-level SAE with predictor summaries</a>)</h5>
-<p>The raw area-level predictors <code>age_adult_mean</code>, <code>female_adult_share</code>, and <code>caraccess_adult_share</code> are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.</p>
+<p>The area-level predictors <code>age_adult_mean</code>, <code>female_adult_share</code>, and <code>caraccess_adult_share</code> are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.</p>
 </section>
 <section id="poststratification-table-see-unit-level-sae-with-poststratification" class="level5" data-number="2.3.3.2">
 <h5 data-number="2.3.3.2" class="anchored" data-anchor-id="poststratification-table-see-unit-level-sae-with-poststratification"><span class="header-section-number">2.3.3.2</span> Poststratification Table (See <a href="./unit-sae-mrp.html">unit-level SAE with poststratification</a>)</h5>
