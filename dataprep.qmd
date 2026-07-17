@@ -17,20 +17,24 @@ library(scales)
 library(spdep)
 
 base_path <- here::here("data")
-survey_microdata <- read_csv(file.path(base_path, "clean", "survey_microdata_msoayear.csv"), show_col_types = FALSE)
+
+survey_microdata <- read_csv(
+  file.path(base_path, "clean", "survey_microdata_msoayear.csv"),
+  show_col_types = FALSE
+)
 
 la_boundaries <- st_read(
   file.path(base_path, "boundaries-ltla.geojson"),
   quiet = TRUE
 ) |>
-  transmute(la_code = LAD21CD) |>
+  select(la_code = LAD21CD) |>
   filter(str_starts(la_code, "W"))
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  transmute(
+  select(
     area_id = MSOA21CD,
     msoa_name = MSOA21NM
   ) |>
@@ -185,7 +189,10 @@ The survey indicator input has *one row per respondent-wave*:
 ```{r}
 #| label: data-survey-indicator
 
-read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+read_csv(
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
   select(unit_id, time_id, area_id, strata, freq_cyclist, weight) |>
   head()
 ```
@@ -237,6 +244,7 @@ To include spatial structure in the model, we need an adjacency matrix that enco
 
 ```{r}
 #| label: data-inla-graph
+
 msoa_boundaries_sorted <- msoa_boundaries |>
   inner_join(area_index, by = "area_id") |>
   arrange(area_inla_id)
@@ -269,7 +277,10 @@ Unit-level SAE models need predictors that can be used to model the outcome at t
 ```{r}
 #| label: data-unit-predictors
 
-read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+read_csv(
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
   select(unit_id, time_id, area_id, freq_cyclist, sex, age, caraccess) |>
   head()
 ```
@@ -291,7 +302,10 @@ The area-predictor input *has one row per MSOA*:
 ```{r}
 #| label: data-area-predictors
 
-read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
+read_csv(
+  file.path(base_path, "clean", "areapred_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
   head()
 ```
 

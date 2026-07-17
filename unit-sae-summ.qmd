@@ -3,6 +3,7 @@ title: "Unit-level SAE model with area summaries"
 subtitle: "A Bayesian spatio-temporal extension of a unit-level GLMM with area-summary prediction"
 ---
 
+<!--
 ::: {.callout-note title="Theory in brief"}
 Unit-level SAE models the individual outcome before aggregating predictions to area-time estimates. For a continuous outcome, the unit-level model can be written as:
 
@@ -21,7 +22,7 @@ $$
 =
 \widehat{\mathbb{E}}(Y \mid j, t, \bar{x}_{jt}).
 $$
-:::
+::: -->
 
 
 ```{r}
@@ -39,17 +40,21 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
-domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), show_col_types = FALSE)
-spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
-share_label <- label_percent(accuracy = 0.1)
-pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(area_id, "W"))
+  rename(area_id = MSOA21CD) |>
+  filter(str_starts(area_id, "W")) |>
+  arrange(area_id)
+
+domain_frame <- read_csv(
+  file.path(base_path, "clean", "domain_msoayear.csv"),
+  show_col_types = FALSE
+)
+
+spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
 ```
 
 ```{r}
@@ -57,7 +62,8 @@ msoa_boundaries <- st_read(
 #| echo: false
 variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
-
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 map_text_theme <- theme(
   plot.title = element_text(size = 12, face = "bold", hjust = 0.5),
   axis.title.y = element_text(
@@ -89,16 +95,9 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates, which helps when direct estimates are too sparse or unstable to provide reliable modelling inputs. Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications.
+Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates. This is useful when direct estimates are too sparse or unstable to provide reliable area-level modelling inputs. Inspired by the Battese--Harter--Fuller model, this approach uses a generalised linear mixed model to model the individual outcome, whether continuous or binary, using predictors available in the survey microdata. Final small area estimates are then produced by applying the fitted model to area-level summaries of those predictors.
 
-This method follows the classic Battese--Harter--Fuller (BHF) unit-level SAE model, where the individual outcome is modelled using predictors present in the survey microdata, then evaluated using MSOA-level summaries of those predictors. The model is extended through a generalised mixed model so it can be used with both continuous and binary outcomes. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates.
-
-::: {.callout-note"}
-Aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell.
-
-- For **continuous outcomes**, area-level predictor summaries can be substituted into the fitted model to obtain an area-level prediction, since predicting at the average predictor values gives the same result as averaging predictions over individuals.
-- For **binary outcomes** such as `freq_cyclist`, the target is the population proportion in the area, which is best estimated by averaging predicted probabilities over the area population. Substituting area-level summaries into the model is only an approximation to that population average.
-:::
+Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. Note that aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell.
 
 ## Prepare model and aggregation data
 
@@ -132,8 +131,11 @@ head(model_data)
 ```{r}
 #| label: bhf-agg-data
 
-area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
-  transmute(
+area_predictors <- read_csv(
+  file.path(base_path, "clean", "areapred_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
+  select(
     area_id,
     age = age_adult_mean,
     female = female_adult_share,
@@ -142,14 +144,7 @@ area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"
 
 aggregation_data <- domain_frame |>
   left_join(area_predictors, by = "area_id") |>
-  select(
-    area_id,
-    msoa_name,
-    time_id,
-    age,
-    female,
-    caraccess
-  ) |>
+  select(area_id, msoa_name, time_id, age, female, caraccess) |>
   arrange(time_id, area_id)
 
 head(aggregation_data)
@@ -159,26 +154,26 @@ head(aggregation_data)
 The aggregation data contains the complete area-time grid we want to estimate, and the area-level mean of the unit-level predictors. These area means come from Census 2021 and are used as a time-stable MSOA predictor across the three survey waves. This is reasonable only if auxiliary variables are unlikely to change quickly.
 :::
 
-Before fitting the model, we set `INLA` time and area indices to both all the datasets we have prepared.
+Before fitting the model, we add the `INLA` time and area indices to the prepared datasets.
 
 ```{r}
 #| label: bhf-add-ids
 #| code-fold: false
 
-inla_domain_index <- domain_frame |>
-  select(area_id, time_id, area_inla_id, time_inla_id)
+area_index <- domain_frame |>
+  distinct(area_id, area_inla_id)
 
-area_ids <- sort(unique(inla_domain_index$area_inla_id))
-time_ids <- sort(unique(inla_domain_index$time_inla_id))
+time_index <- domain_frame |>
+  distinct(time_id, time_inla_id)
 
 model_data <- model_data |>
-  left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(freq_cyclist, age, female, caraccess, area_inla_id, time_inla_id) |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
   arrange(time_inla_id, area_inla_id)
 
 aggregation_data <- aggregation_data |>
-  left_join(inla_domain_index, by = c("area_id", "time_id")) |>
-  drop_na(age, female, caraccess, area_inla_id, time_inla_id) |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
   arrange(time_inla_id, area_inla_id)
 ```
 
@@ -212,16 +207,13 @@ m2_formula <- update(m1_formula, . ~ . +
   female
 )
 
-m3_formula <- update(m2_formula, . ~ . +
-  caraccess
-)
+m3_formula <- update(m2_formula, . ~ . + caraccess)
 
 model_formulas <- list(
   "M1 +TempSpatial" = m1_formula,
   "M2 +Demographic" = m2_formula,
   "M3 +CarAccess" = m3_formula
 )
-
 ```
 
 ```{r}
@@ -232,9 +224,7 @@ fit_bhf_model <- function(formula) {
   inla(
     formula = formula,
     family = "binomial",
-    Ntrials = 1,
     data = model_data,
-    control.predictor = list(compute = TRUE),
     control.compute = list(waic = TRUE, config = TRUE)
   )
 }
@@ -243,10 +233,7 @@ bhf_fits <- lapply(model_formulas, fit_bhf_model)
 ```
 
 :::{.callout-note}
-When fitting unit-level SAE models with `INLA`, these arguments are needed:
-
-- `control.predictor = list(compute = TRUE)` returns fitted values for the respondent rows used in the likelihood.
-- `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
+When fitting unit-level SAE models with `INLA`, `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
 :::
 
 To compare the fitted models' overall performance, we again use `WAIC` as a first check. Here, the car-access specification has the strongest WAIC support among the model specifications.
@@ -314,7 +301,6 @@ Each posterior draw stores the fixed effects, spatial area effect, and temporal 
 #| label: bhf-draws
 #| code-fold: false
 
-# Draw 300 posterior samples from the selected fit.
 set.seed(100)
 posterior_draws <- inla.posterior.sample(
   n = 300,
@@ -331,6 +317,7 @@ fixed_draws <- sapply(posterior_draws, \(draw) {
 })
 
 # Area-effect draw matrix
+area_ids <- sort(area_index$area_inla_id)
 area_draws <- sapply(posterior_draws, \(draw) {
   setNames(
     as.numeric(draw$latent[paste0("area_inla_id:", area_ids), 1]),
@@ -339,6 +326,7 @@ area_draws <- sapply(posterior_draws, \(draw) {
 })
 
 # Time-effect draw matrix
+time_ids <- sort(time_index$time_inla_id)
 time_draws <- sapply(posterior_draws, \(draw) {
   setNames(
     as.numeric(draw$latent[paste0("time_inla_id:", time_ids), 1]),
@@ -347,7 +335,26 @@ time_draws <- sapply(posterior_draws, \(draw) {
 })
 ```
 
-Each posterior draw is evaluated over the MSOA-year aggregation frame.
+Each posterior draw is evaluated over the MSOA-year aggregation frame by plugging in the area-level predictor summaries and the corresponding area and time effects.
+
+::: {.callout-note title="Area summaries and binary outcomes"}
+For **continuous outcomes**, such as commute time in minutes, substituting area-level predictor summaries into a linear model gives the same result as averaging individual predictions:
+
+$$
+\bar{x}\beta
+=
+\frac{1}{N}\sum_{i=1}^{N} x_i\beta
+$$
+
+For **binary outcomes**, such as `freq_cyclist` (`1` = yes, `0` = no), the target is the population proportion in the area, or the average predicted probability across individuals. Plugging in area-level summaries instead gives the predicted probability for an “average” individual, so it is only an approximation to the target.
+
+$$
+\operatorname{logit}^{-1}(\bar{x}\beta)
+\approx
+\frac{1}{N}\sum_{i=1}^{N}
+\operatorname{logit}^{-1}(x_i\beta)
+$$
+:::
 
 ```{r}
 #| label: bhf-predict
@@ -359,19 +366,24 @@ prediction_matrix <- model.matrix(
 )[, fixed_terms, drop = FALSE]
 
 prediction_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
-  log_odds <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
+  predictions <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
     area_draws[as.character(aggregation_data$area_inla_id), draw_id] +
     time_draws[as.character(aggregation_data$time_inla_id), draw_id]
 
-  plogis(log_odds) # For binomial model
+  # Convert log-odds to probabilities.
+  plogis(predictions)
 })
 ```
 
-The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
+The matrix `prediction_draws` now has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
 
 ```{r}
 #| label: bhf-results
 #| code-fold: false
+
+draw_quantile <- \(p) {
+  apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
+}
 
 final_bhf_results <- aggregation_data |>
   select(area_id, time_id) |>
@@ -379,8 +391,8 @@ final_bhf_results <- aggregation_data |>
     tibble(
       bhf_estimate = rowMeans(prediction_draws),
       bhf_variance = apply(prediction_draws, 1, var),
-      bhf_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
-      bhf_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
+      bhf_lower = draw_quantile(0.025),
+      bhf_upper = draw_quantile(0.975)
     )
   ) |>
   mutate(
@@ -461,14 +473,7 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(bhf_wave_years)) +
 
 Although unit-level modelling can stabilise estimates where direct estimates are weak, aggregation using area-level predictor summaries still relies on strong assumptions about population composition. Representing age, sex, and car access using mean adult age, the adult female share, and the adult share with car access can conceal important differences in their joint distribution. Two areas may have similar marginal summaries but very different age–sex–car compositions, leading to similar model-based estimates even when cycling behaviour differs across particular population groups.
 
-This limitation is especially important for a binary outcome modelled using a logistic model (i.e., `family = "binomial"`). The target is the population-average predicted probability, but substituting area-level predictor summaries estimates the probability at the average predictor values:
-
-$$
-\frac{1}{N}\sum_{i=1}^{N}
-\operatorname{logit}^{-1}(\alpha + x_{i}^{T}\beta)
-\neq
-\operatorname{logit}^{-1}(\alpha + \bar{x}^{T}\beta).
-$$
+This limitation is especially important for a binary outcome modelled using a logistic model (setting `family = "binomial"`). The target is the population-average predicted probability. Substituting area-level predictor summaries to estimate the probability at the average predictor values only is an approximation.
 
 A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.
 
@@ -519,13 +524,8 @@ if (bhf_best_model == "M3 +CarAccess") {
 bhf_besag_fit <- inla(
   formula = bhf_besag_formula,
   family = "binomial",
-  Ntrials = 1,
   data = besag_model_data,
-  control.compute = list(waic = TRUE)
 )
-
-iid_lookup <- inla_domain_index |>
-  distinct(area_id, area_inla_id)
 
 bhf_iid <- bind_rows(
   bhf_besag_fit$summary.random$area_struct_id |>
@@ -547,7 +547,7 @@ bhf_iid <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(iid_lookup, by = "area_inla_id") |>
+  left_join(area_index, by = "area_inla_id") |>
   mutate(method = "BHF") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 

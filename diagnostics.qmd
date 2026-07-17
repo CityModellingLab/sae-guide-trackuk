@@ -30,6 +30,12 @@ method_labels <- c(
 )
 method_levels <- names(method_labels)
 method_labeller <- labeller(method = as_labeller(method_labels))
+```
+
+```{r}
+#| label: diag-plot-config
+#| include: false
+
 missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
 overestimate_colour <- "#b2182b"
@@ -139,6 +145,11 @@ method_map <- function(data, fill_col) {
     facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
     map_panel_theme
 }
+```
+
+```{r}
+#| label: diag-helpers
+#| include: false
 
 read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NULL, variance_col = NULL) {
   estimate_data <- read_csv(path, show_col_types = FALSE)
@@ -200,7 +211,7 @@ msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(area_id = all_of("MSOA21CD")) |>
+  rename(area_id = MSOA21CD) |>
   filter(str_starts(area_id, "W"))
 ```
 

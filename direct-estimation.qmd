@@ -2,7 +2,8 @@
 title: "Direct estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
-::: {.callout-note title="Theory in brief"}
+
+<!-- ::: {.callout-note title="Theory in brief"}
 For an area-time cell $(j,t)$, the target is a population mean or proportion:
 
 $$
@@ -16,7 +17,7 @@ $$
 \frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
 {\sum_{i \in S_{jt}} w_{ijt}}.
 $$
-:::
+::: -->
 
 ```{r}
 #| label: direct-setup
@@ -32,14 +33,19 @@ library(tibble)
 library(scales)
 
 base_path <- here::here("data")
+
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(area_id = all_of("MSOA21CD")) |>
-  filter(str_starts(area_id, "W"))
+  rename(area_id = MSOA21CD) |>
+  filter(str_starts(area_id, "W")) |>
+  arrange(area_id)
 
-domain_frame <- read_csv(file.path(base_path, "clean", "domain_msoayear.csv"), show_col_types = FALSE)
+domain_frame <- read_csv(
+  file.path(base_path, "clean", "domain_msoayear.csv"),
+  show_col_types = FALSE
+)
 ```
 
 ```{r}
@@ -100,9 +106,13 @@ We use a Horvitz–Thompson weighted proportion among usable adult respondents. 
 | `strata` | Local Authority code |
 ```{r}
 #| label: direct-load
-survey_bike <- read_csv(file.path(base_path, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
+
+survey_bike <- read_csv(
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
   drop_na(freq_cyclist, weight, area_id, strata)
-  
+
 head(survey_bike)
 ```
 
@@ -116,16 +126,16 @@ head(survey_bike)
 
 # Define survey design
 bike_design <- svydesign(
-  ids = as.formula("~1"),
-  strata = as.formula("~strata"),
-  weights = as.formula("~weight"),
+  ids = ~1,
+  strata = ~strata,
+  weights = ~weight,
   data = survey_bike
 )
 
 # Calculate direct estimate and uncertainty
 direct_bike_estimates <- svyby(
-  formula = as.formula("~freq_cyclist"),
-  by = as.formula("~area_id + time_id"),
+  formula = ~freq_cyclist,
+  by = ~area_id + time_id,
   design = bike_design,
   FUN = svymean,
   vartype = "se",
@@ -142,7 +152,7 @@ direct_bike_estimates <- svyby(
 
 # Calculate sample size per area-time cell
 direct_bike_counts <- survey_bike |>
-  group_by(across(all_of(c("area_id", "time_id")))) |>
+  group_by(area_id, time_id) |>
   summarise(n = n(), .groups = "drop")
 
 # Join together
@@ -260,8 +270,8 @@ Sparse and uneven survey coverage limits how far direct estimates can be used on
 
 Two model-based options follow:
 
-- **Area-level SAE models** stabilise direct area estimates using sampling variances to control how much weight each direct estimate receives.
-- **Unit-level SAE models** estimate the individual outcome from survey microdata and aggregate predictions to target area-years.
+- **Area-level SAE models** stabilise direct MSOA-year estimates using sampling variances to control how much weight each direct estimate receives.
+- **Unit-level SAE models** estimate the individual outcome from survey microdata and aggregate predictions to target MSOA-years.
 
 
 ```{r}
@@ -276,7 +286,7 @@ direct_summary_by_wave <- direct_bike |>
     `Median sample size` = median(n),
     .groups = "drop"
   ) |>
-  rename(`Wave` = all_of("time_id"))
+  rename(Wave = time_id)
 
 direct_summary_by_wave
 ```

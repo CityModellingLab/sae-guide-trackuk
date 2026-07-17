@@ -3,7 +3,7 @@ title: "Area-level SAE model"
 subtitle: "A Bayesian spatio-temporal extension of the Fay--Herriot model"
 ---
 
-::: {.callout-note title="Theory in brief"}
+<!-- ::: {.callout-note title="Theory in brief"}
 The area-level model treats each direct estimate $\hat{\mu}^{w}_{jt}$ as a noisy observation of a true value $\mu_{jt}$:
 
 $$
@@ -22,7 +22,7 @@ $$
 \widehat{\mathbb{E}}(\mu_{jt} \mid \hat{\mu}^{w}_{jt}, \psi_{jt}, x_{jt}).
 $$
 
-:::
+::: -->
 
 ```{r}
 #| label: fh-setup
@@ -39,23 +39,12 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
-share_label <- label_percent(accuracy = 0.1)
-pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
-z_score <- function(x) {
-  x <- as.numeric(x)
-  x_mean <- mean(x, na.rm = TRUE)
-  x_sd <- sqrt(mean((x - x_mean)^2, na.rm = TRUE))
-  if (!is.finite(x_sd) || x_sd == 0) {
-    return(rep(NA_real_, length(x)))
-  }
-  (x - x_mean) / x_sd
-}
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
 ) |>
-  rename(area_id = all_of("MSOA21CD")) |>
+  rename(area_id = MSOA21CD) |>
   filter(str_starts(area_id, "W")) |>
   arrange(area_id)
 
@@ -74,6 +63,8 @@ variance_label <- label_number(accuracy = 0.0001)
 missing_fill <- "grey85"
 diverging_low <- "#2166ac"
 diverging_high <- "#b2182b"
+share_label <- label_percent(accuracy = 0.1)
+pp_label <- label_number(accuracy = 0.1, scale = 100, suffix = " pp")
 
 map_text_theme <- theme(
   plot.title.position = "plot",
@@ -118,36 +109,32 @@ We start from generated direct estimates and raw area predictors, which will be 
 
 ```{r}
 #| label: fh-load-direct
-direct_bike <- read_csv(file.path(base_path, "freqcyc_estimates_direct.csv"), show_col_types = FALSE) |>
-  select(
-    all_of(c(
-      "area_id",
-      "msoa_name",
-      "time_id",
-      "direct_estimate",
-      "variance",
-      "n"
-    ))
-  )
+
+direct_bike <- read_csv(
+  file.path(base_path, "freqcyc_estimates_direct.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, msoa_name, time_id, direct_estimate, variance, n)
 
 head(direct_bike)
 ```
+
 ```{r}
 #| label: fh-load-predictors
-area_predictors <- read_csv(file.path(base_path, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
-  select(
-    all_of(c(
-      "area_id",
-      "age_adult_mean",
-      "caraccess_adult_share",
-      "pop_density"
-    ))
-  ) |>
+
+area_predictors <- read_csv(
+  file.path(base_path, "clean", "areapred_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, age_adult_mean, caraccess_adult_share, pop_density) |>
   mutate(
-    z_age_adult_mean = z_score(age_adult_mean),
-    z_caraccess_adult_share = z_score(caraccess_adult_share),
-    z_pop_density = z_score(pop_density)
+    across(
+      c(age_adult_mean, caraccess_adult_share, pop_density),
+      ~ as.numeric(scale(.x)),
+      .names = "z_{.col}"
+    )
   )
+
 head(area_predictors)
 ```
 
@@ -179,14 +166,16 @@ Finally, we assemble the modelling data for `INLA` by combining the direct estim
 #| label: fh-model-data
 #| code-fold: false
 
-inla_domain_index <- domain_frame |>
-  select(area_id, time_id, area_inla_id, time_inla_id)
-area_ids <- sort(unique(inla_domain_index$area_inla_id))
-time_ids <- sort(unique(inla_domain_index$time_inla_id))
+area_index <- domain_frame |>
+  distinct(area_id, area_inla_id)
+
+time_index <- domain_frame |>
+  distinct(time_id, time_inla_id)
 
 model_data <- direct_bike |>
   left_join(area_predictors, by = "area_id") |>
-  left_join(inla_domain_index, by = c("area_id", "time_id")) |>
+  left_join(area_index, by = "area_id") |>
+  left_join(time_index, by = "time_id") |>
   arrange(time_inla_id, area_inla_id)
 
 head(model_data)
@@ -231,9 +220,7 @@ m1_formula <- direct_estimate ~
   ) +
   f(time_inla_id, model = "rw1", constr = TRUE)
 
-m2_formula <- update(m1_formula, . ~ . +
-  z_age_adult_mean
-)
+m2_formula <- update(m1_formula, . ~ . + z_age_adult_mean)
 
 m3_formula <- update(m2_formula, . ~ . +
   z_pop_density +
@@ -246,6 +233,7 @@ model_formulas <- list(
   "M3 +PopdensCaraccess" = m3_formula
 )
 ```
+
 ```{r}
 #| label: fh-fit
 #| code-fold: false
@@ -317,7 +305,6 @@ Posterior draws from the selected `INLA` fit give area-level SAE estimates for e
 #| label: fh-draws
 #| code-fold: false
 
-# Draw 300 posterior samples from the selected fit.
 set.seed(100)
 posterior_draws <- inla.posterior.sample(
   n = 300,
@@ -329,7 +316,6 @@ posterior_draws <- inla.posterior.sample(
 #| label: fh-predict
 #| code-fold: false
 
-# Keep the model prediction rows for each MSOA-year cell.
 prediction_draws <- sapply(posterior_draws, \(draw) {
   prediction_rows <- startsWith(rownames(draw$latent), "Predictor")
   as.numeric(draw$latent[prediction_rows, 1])
@@ -342,14 +328,18 @@ The matrix `prediction_draws` has one MSOA-year estimate per row and one posteri
 #| label: fh-results
 #| code-fold: false
 
+draw_quantile <- \(p) {
+  apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
+}
+
 final_fh_results <- model_data |>
   select(area_id, time_id) |>
   bind_cols(
     tibble(
       fh_estimate = rowMeans(prediction_draws),
       fh_variance = apply(prediction_draws, 1, var),
-      fh_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
-      fh_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
+      fh_lower = draw_quantile(0.025),
+      fh_upper = draw_quantile(0.975)
     )
   ) |>
   mutate(
@@ -431,14 +421,34 @@ wrap_plots(c(fh_estimate_maps, fh_uncertainty_maps), ncol = length(fh_wave_years
 The area-level SAE estimates are less jagged across neighbouring areas and show clearer broad regional structure than the direct estimates. In sparsely sampled MSOA-year cells, the FH estimate depends heavily on area-level predictors and random effects because the direct estimate contributes limited local information. The model therefore cannot use within-area respondent variation beyond what is already captured in the direct estimate. [**Unit-level models**](unit-sae-summ.qmd) address this by modelling individual outcomes with respondent-level predictors.
 
 ## Comparative analysis
+
 ```{r}
 #| label: fh-collate
 
-all_fh_results <- imap_dfr(fh_fits, \(fit, model_name) {
+summarise_fh_draws <- function(fit, model_name, n_draws = 250) {
+  posterior_draws <- inla.posterior.sample(
+    n = n_draws,
+    result = fit
+  )
+
+  prediction_draws <- sapply(posterior_draws, \(draw) {
+    prediction_rows <- startsWith(rownames(draw$latent), "Predictor")
+    as.numeric(draw$latent[prediction_rows, 1])
+  })
+
+  draw_quantile <- \(p) {
+    apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
+  }
+
   bind_cols(
     model_data |>
       select(area_id, time_id, msoa_name, direct_estimate, variance, n),
-    as_tibble(fit$summary.fitted.values)
+    tibble(
+      fh_estimate = rowMeans(prediction_draws),
+      fh_variance = apply(prediction_draws, 1, var),
+      fh_lower = draw_quantile(0.025),
+      fh_upper = draw_quantile(0.975)
+    )
   ) |>
     transmute(
       model = model_name,
@@ -448,27 +458,30 @@ all_fh_results <- imap_dfr(fh_fits, \(fit, model_name) {
       direct_estimate,
       variance,
       n,
-      fh_estimate = mean,
-      fh_variance = sd^2,
-      fh_lower = `0.025quant`,
-      fh_upper = `0.975quant`,
+      fh_estimate,
+      fh_variance,
+      fh_lower,
+      fh_upper,
       fh_ci_width = fh_upper - fh_lower
     )
-}) |>
-  mutate(model = factor(model, levels = names(model_formulas)))
+}
 
-all_fh_results <- all_fh_results |>
-  select(area_id, time_id, model, direct_estimate, variance, fh_estimate, fh_variance) |>
+all_fh_results <- imap_dfr(
+  fh_fits,
+  \(fit, model_name) summarise_fh_draws(fit, model_name)
+) |>
+  mutate(model = factor(model, levels = names(model_formulas))) |>
   pivot_wider(
+    id_cols = c(area_id, time_id, msoa_name, direct_estimate, variance, n),
     names_from = model,
-    values_from = c(fh_estimate, fh_variance),
+    values_from = c(fh_estimate, fh_variance, fh_lower, fh_upper, fh_ci_width),
     names_sep = "__"
   )
+
+head(all_fh_results)
 ```
 
-### How the area-level model smooths direct estimates
-
-We start by comparing the direct estimates with M1, the temporal-spatial area-level model with no area predictors, to understand how the model handles noisy direct estimates before adding predictors.
+We can compare how the direct estimate for each MSOA is handled by the baseline area-level model (M1) with only the temporal-spatial random effects and no predictors to understand area-level smoothing. Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. 
 
 ```{r}
 #| label: fh-baseline-data
@@ -603,58 +616,94 @@ direct_to_m1_ranked_plot <- ggplot(
     theme = map_annotation_theme
   )
 ```
-Area-time cells with high sampling variance contain less reliable local information, so M1 pulls them more strongly toward the temporal-spatial model prediction. The Bayesian area-level fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
+
+The `INLA` fit also produces posterior estimates for cells with missing direct estimates or zero/missing variance, allowing sparse or unsampled area-time cells to remain in the output with explicit uncertainty.
 
 ```{r}
-#| label: fh-missing-direct
+#| label: fh-synthetic-est
+
+cat("Missing direct estimates / variances")
 all_fh_results |>
-  filter(is.na(direct_estimate) | is.na(variance)) |>
+  filter(is.na(direct_estimate) | is.na(variance) )|>
   transmute(
     `MSOA` = area_id,
     `Wave year` = time_id,
     `Direct estimate` = share_label(direct_estimate),
     `Sampling variance` = round(variance, 6),
     `M1 estimate` = share_label(.data[["fh_estimate__M1 +TempSpatial"]]),
-    `M1 posterior variance` = round(
+    `M1 variance` = round(
       .data[["fh_variance__M1 +TempSpatial"]],
       6
     )
   )
+
+cat("Zero variances")
+all_fh_results |>
+  filter(variance < 1e-8) |>
+  transmute(
+    `MSOA` = area_id,
+    `Wave year` = time_id,
+    `Direct estimate` = share_label(direct_estimate),
+    `Sampling variance` = round(variance, 6),
+    `M1 estimate` = share_label(.data[["fh_estimate__M1 +TempSpatial"]]),
+    `M1 variance` = round(
+      .data[["fh_variance__M1 +TempSpatial"]],
+      6
+    )
+  ) |>
+  head(5)
 ```
 
-### Adding Temporal and Spatial Effects
+For *spatial and temporal random effects*, `INLA` also estimates hyperparameters that show residual variation and how that remaining variation is structured across time and space.
 
-The selected area-level model estimates hyperparameters for the temporal and spatial random effects. These parameters show how much residual variation remains after accounting for the fixed-effect predictors and sampling variances, and how that remaining variation is structured across time and space.
+- `tau` is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher `tau` for the spatial term indicates smaller area differences between neighbouring MSOAs. Temporal term's `tau` in comparison is moderate.
 
-- `tau` is the precision of a random effect, or the inverse of its variance. Higher precision means less residual variation in that component. A higher temporal `tau` than spatial indicates a smoother time pattern with smaller differences between neighbouring survey years than between MSOAs. The temporal random effect keeps wave-to-wave differences explicit instead of pooling the three waves into one period.
-
-- `phi` is the BYM2 mixing parameter for the area random effect. It describes how much of that residual area effect is spatially structured. A lower `phi` here (less than `0.5`) means the remaining area differences are mostly local and less strongly explained by adjacency. This can also be due to sparse direct estimates in many areas, which give the model less reliable area-level evidence for learning a coherent spatial pattern.
+- `phi` is the BYM2 mixing parameter for the area random effect. It describes how much of that residual area effect is spatially structured. A lower `phi` here (less than `0.5`) means the remaining area differences are mostly local and less strongly explained by adjacency. 
 
 ```{r}
 #| label: fh-hyper
 
-fh_fits[[fh_best_model]]$summary.hyperpar |>
+fh_fits[["M1 +TempSpatial"]]$summary.hyperpar |>
   as_tibble(rownames = "parameter") |>
   filter(str_detect(parameter, "time_inla_id|area_inla_id|Phi")) |>
   select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
   mutate(across(where(is.numeric), ~ round(.x, 3)))
 ```
+The temporal term captures moderate wave-to-wave variation, keeping differences between survey years explicit instead of pooling the three waves into a single period, so its inclusion is integral. The spatial term, on the other hand, appears to add little to model fit. This may reflect sparse or missing direct estimates in many areas, making the spatial structure not especially informative to the model.
 
-### Adding Predictors
+So far, model choice has favoured a parsimonious specification, but area-level predictor inclusion can also be assessed by looking at how estimates change locally and by using domain knowledge about the outcome. Thsi is because adding predictors changes the model prediction for each area-time cell, and unstable or missing direct estimates are further pulled towards these updated predictions. These small local changes may not produce a large improvement in global fit, but they can still show substantive plausibility.
 
-Besides comparing models using WAIC, we should also inspect how the estimates change locally. This helps identify where the model shifts the target estimates and whether those changes are substantively plausible. In this area-level model, adding predictors changes the model prediction for each area-time cell; when those predictors are informative, unstable direct estimates are pulled more strongly toward the updated predictions. Models should therefore be judged not only by their global predictive fit, as summarised by WAIC, but also by whether they produce locally defensible adjustments to the estimates.
-
-Here we compare M1 with M3, which adds average age, population density, and car access as predictors.
+For example, we compare M1 with M3, where M3 adds average age, population density, and car access as predictors.
 
 ```{r}
 #| label: fh-predictor-change
-
 predictor_change <- all_fh_results |>
   transmute(
     area_id,
-    estimate_change = .data[["fh_estimate__M3 +PopdensCaraccess"]] - .data[["fh_estimate__M1 +TempSpatial"]]
+    estimate_change =
+      .data[["fh_estimate__M3 +PopdensCaraccess"]] -
+      .data[["fh_estimate__M1 +TempSpatial"]]
   ) |>
   distinct(area_id, .keep_all = TRUE)
+
+model_data |>
+  distinct(area_id, .keep_all = TRUE) |>
+  left_join(predictor_change, by = "area_id") |>
+  mutate(
+    lower_cutoff = quantile(estimate_change, 0.1, na.rm = TRUE),
+    upper_cutoff = quantile(estimate_change, 0.9, na.rm = TRUE),
+    change_group = case_when(
+      estimate_change >= upper_cutoff ~ "Raised most when adding 3 predictors",
+      estimate_change <= lower_cutoff ~ "Lowered most when adding 3 predictors"
+    )
+  ) |>
+  drop_na(change_group) |>
+  summarise(
+    `Mean adult age (z)` = mean(z_age_adult_mean, na.rm = TRUE),
+    `Population density (z)` = mean(z_pop_density, na.rm = TRUE),
+    `Car-access share (z)` = mean(z_caraccess_adult_share, na.rm = TRUE),
+    .by = change_group
+  )
 ```
 ```{r}
 #| label: fh-map-change
@@ -693,31 +742,7 @@ msoa_boundaries |>
   map_text_theme
 ```
 ```{r}
-#| label: fh-change-summary
-model_data |>
-  distinct(area_id, .keep_all = TRUE) |>
-  left_join(predictor_change, by = "area_id") |>
-  mutate(
-    lower_cutoff = quantile(estimate_change, 0.1, na.rm = TRUE),
-    upper_cutoff = quantile(estimate_change, 0.9, na.rm = TRUE),
-    change_group = case_when(
-      estimate_change >= upper_cutoff ~ "Raised most with M3",
-      estimate_change <= lower_cutoff ~ "Lowered most with M3"
-    )
-  ) |>
-  drop_na(change_group) |>
-summarise(
-  `Mean adult age (z)` = mean(z_age_adult_mean, na.rm = TRUE),
-  `Population density (z)` = mean(z_pop_density, na.rm = TRUE),
-  `Car-access share (z)` = mean(z_caraccess_adult_share, na.rm = TRUE),
-  .by = change_group
-)
-```
-
-The M3 coefficients suggest that MSOAs with older populations, lower population density, and a higher share of adults with car access tend to have lower rates of frequent cycling. Each coefficient is the modelled association with a one-standard-deviation increase in the corresponding predictor. Predictor inclusion should be assessed using global model diagnostics, stepwise changes across model specifications, and domain knowledge about the outcome.
-
-```{r}
-#| label: fh-fixed
+#| label: fh-m3-fixed
 fh_fits[["M3 +PopdensCaraccess"]]$summary.fixed |>
   as_tibble(rownames = "term") |>
   transmute(
@@ -727,6 +752,8 @@ fh_fits[["M3 +PopdensCaraccess"]]$summary.fixed |>
     upper = `0.975quant`
   )
 ```
+
+The M3 fixed-effect summary suggests that MSOAs with older populations, lower population density, and a higher share of adults with car access tend to have lower rates of frequent cycling. This supports considering these predictors, but with the caveat that their contribution should be judged alongside model fit diagnostics and local estimate changes.
 
 ```{r}
 #| label: fh-export
@@ -779,11 +806,7 @@ fh_besag_fit <- inla(
       prec = list(initial = 0, fixed = TRUE)
     )
   ),
-  control.compute = list(waic = TRUE)
 )
-
-iid_lookup <- inla_domain_index |>
-  distinct(area_id, area_inla_id)
 
 fh_iid <- bind_rows(
   fh_besag_fit$summary.random$area_struct_id |>
@@ -805,7 +828,7 @@ fh_iid <- bind_rows(
       upper = `0.975quant`
     )
 ) |>
-  left_join(iid_lookup, by = "area_inla_id") |>
+  left_join(area_index, by = "area_inla_id") |>
   mutate(method = "FH") |>
   select(method, component, area_id, area_inla_id, effect, lower, upper)
 
