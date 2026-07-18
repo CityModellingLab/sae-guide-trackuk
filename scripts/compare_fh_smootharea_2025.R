@@ -21,7 +21,6 @@ data_dir <- file.path(root, "data")
 out_dir <- file.path(root, "outputs", "compare_fh_smootharea_2025")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-z_score <- function(x) as.numeric(scale(x))
 plot_limit <- function(x) c(0, max(0.1, quantile(x[is.finite(x)], 0.99, na.rm = TRUE, names = FALSE)))
 pct <- label_percent(accuracy = 0.1)
 
@@ -37,13 +36,15 @@ survey_2025 <- read_csv(file.path(data_dir, "clean", "surveyind_freqcyc.csv"), s
 area_x <- read_csv(file.path(data_dir, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
   select(area_id, age_adult_mean, caraccess_adult_share, pop_density) |>
   mutate(
-    z_age_adult_mean = z_score(age_adult_mean),
-    z_pop_density = z_score(pop_density),
-    z_caraccess_adult_share = z_score(caraccess_adult_share)
+    across(
+      c(age_adult_mean, caraccess_adult_share, pop_density),
+      ~ as.numeric(scale(.x)),
+      .names = "z_{.col}"
+    )
   )
 
 boundaries <- st_read(file.path(data_dir, "boundaries-msoa.geojson"), quiet = TRUE) |>
-  rename(area_id = all_of("MSOA21CD")) |>
+  rename(area_id = MSOA21CD) |>
   filter(area_id %in% domain$area_id) |>
   left_join(domain |> select(area_id, area_inla_id), by = "area_id") |>
   arrange(area_inla_id)

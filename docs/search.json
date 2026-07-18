@@ -2,42 +2,42 @@
   {
     "objectID": "toolkit.html",
     "href": "toolkit.html",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "",
     "text": "This SAE toolkit provides templates for preparing survey and auxiliary data, a decision framework for choosing an appropriate SAE method, and method-specific scripts with the expected inputs and outputs."
   },
   {
     "objectID": "toolkit.html#define-the-estimands-and-estimation-domain",
     "href": "toolkit.html#define-the-estimands-and-estimation-domain",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "1 Define the estimands and estimation domain",
     "text": "1 Define the estimands and estimation domain\nStart by defining the estimand:\n\nwhat outcome is being estimated;\nwho is in the target population;\nat which spatial scale;\nover which time periods.\n\nIn a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination estimation domain. Each is an area-time cell."
   },
   {
     "objectID": "toolkit.html#choose-the-modelling-route",
     "href": "toolkit.html#choose-the-modelling-route",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "2 Choose the modelling route",
     "text": "2 Choose the modelling route"
   },
   {
     "objectID": "toolkit.html#prepare-the-modelling-input",
     "href": "toolkit.html#prepare-the-modelling-input",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "3 Prepare the modelling input",
     "text": "3 Prepare the modelling input\nPrepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.\n\n3.1 Domain frame\nAlways prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by INLA.\n\n\n\nColumn\nMeaning\n\n\n\n\narea_id\nArea to estimate\n\n\ntime_id\nTime period to estimate\n\n\narea_inla_id\nNumeric area index for INLA\n\n\ntime_inla_id\nNumeric time index for INLA\n\n\nlabels\nOptional area or period labels for display\n\n\n\n\n\n3.2 Spatial graph\nPrepare a spatial graph if the selected model includes spatial random effects.\n\n\n\nFile\nMeaning\n\n\n\n\n*.adj\nINLA adjacency graph, ordered by area_inla_id\n\n\n\n\n\n3.3 Survey input\nPrepare one row per respondent-period for the outcome being estimated.\n\n\n\nColumn\nMeaning\n\n\n\n\nunit_id\nRespondent identifier\n\n\narea_id\nArea assigned to the respondent\n\n\ntime_id\nSurvey period\n\n\noutcome\nOutcome used in estimation, either binary or continuous\n\n\nweight\nSurvey design weight\n\n\nstrata\nSurvey stratum, if available\n\n\nunitpred_*\nUnit-level predictors, required for unit-level SAE\n\n\n\n\n\n3.4 Area-level predictors or summaries\nPrepare one row per area. This table is used for area-level SAE, and unit-level SAE with area summaries, if applicable.\n\n\n\n\n\n\n\nColumn\nMeaning\n\n\n\n\narea_id\nArea identifier\n\n\nareapred_*\nRaw area-level predictors\n\n\n*_mean / *_share\nArea summaries of unitpred_*, required for unit-level SAE with area summaries\n\n\n\n\n\n3.5 Poststratification data\nRequired for unit-level SAE with poststratification. The population cells must match the categorical unitpred_* variables used in the poststratified unit-level model.\n\n\n\n\n\n\n\nColumn\nMeaning\n\n\n\n\narea_id\nArea identifier\n\n\ntime_id\nTime period\n\n\npopulation groups\nCategories used for poststratification; must match unitpred_*\n\n\npop_count\nPopulation count for each cell"
   },
   {
     "objectID": "toolkit.html#r-inla-starter-scripts",
     "href": "toolkit.html#r-inla-starter-scripts",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "4 R-INLA starter scripts",
     "text": "4 R-INLA starter scripts\nTBD"
   },
   {
     "objectID": "toolkit.html#expected-outputs",
     "href": "toolkit.html#expected-outputs",
-    "title": "SAE Toolkit",
+    "title": "[WIP] SAE Toolkit",
     "section": "5 Expected outputs",
     "text": "5 Expected outputs\nAfter each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.\n\n\n\nColumn\nMeaning\n\n\n\n\narea_id\nEstimated area\n\n\ntime_id\nEstimated period\n\n\nestimate\nDirect or model-based point estimate\n\n\nvariance\nSampling or posterior variance\n\n\nlower, upper\nUncertainty interval bounds\n\n\nci_width\nUncertainty interval width\n\n\nn\nSample size\n\n\nremarks\nEstimation method, model specification or other notes"
   },
@@ -226,28 +226,28 @@
   {
     "objectID": "diagnostics.html",
     "href": "diagnostics.html",
-    "title": "Model diagnostics and comparison",
+    "title": "[WIP] Model diagnostics and comparison",
     "section": "",
     "text": "This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification."
   },
   {
     "objectID": "diagnostics.html#estimate-scale-and-smoothing",
     "href": "diagnostics.html#estimate-scale-and-smoothing",
-    "title": "Model diagnostics and comparison",
+    "title": "[WIP] Model diagnostics and comparison",
     "section": "1 Estimate Scale and Smoothing",
     "text": "1 Estimate Scale and Smoothing\nThe distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.\n\nDirect estimates retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The area-level FH model is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.\nDifferences between the two unit-level models are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias."
   },
   {
     "objectID": "diagnostics.html#uncertainty-ci-width",
     "href": "diagnostics.html#uncertainty-ci-width",
-    "title": "Model diagnostics and comparison",
+    "title": "[WIP] Model diagnostics and comparison",
     "section": "2 Uncertainty CI Width",
     "text": "2 Uncertainty CI Width\nInterval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors."
   },
   {
     "objectID": "diagnostics.html#residual-area-effects",
     "href": "diagnostics.html#residual-area-effects",
-    "title": "Model diagnostics and comparison",
+    "title": "[WIP] Model diagnostics and comparison",
     "section": "3 Residual Area Effects",
     "text": "3 Residual Area Effects\nThe unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered."
   }

@@ -45,7 +45,7 @@ survey_2025 <- read_csv(file.path(data_dir, "clean", "surveyind_freqcyc.csv"), s
   drop_na(area_id, strata, weight, freq_cyclist, age, female, caraccess)
 
 area_x <- read_csv(file.path(data_dir, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
-  transmute(
+  select(
     area_id,
     age = age_adult_mean,
     female = female_adult_share,
@@ -58,7 +58,7 @@ agg <- domain |>
   arrange(area_inla_id)
 
 boundaries <- st_read(file.path(data_dir, "boundaries-msoa.geojson"), quiet = TRUE) |>
-  rename(area_id = all_of("MSOA21CD")) |>
+  rename(area_id = MSOA21CD) |>
   filter(area_id %in% agg$area_id) |>
   left_join(agg |> select(area_id, area_inla_id), by = "area_id") |>
   arrange(area_inla_id)
@@ -108,9 +108,7 @@ bhf_fit <- inla(
     f(area_inla_id, model = "bym2", graph = graph_file, scale.model = TRUE, constr = TRUE) +
     age + female + caraccess,
   family = "binomial",
-  Ntrials = 1,
   data = model_data,
-  control.predictor = list(compute = TRUE),
   control.compute = list(config = TRUE)
 )
 
