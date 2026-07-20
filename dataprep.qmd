@@ -142,74 +142,25 @@ msoa_count_map <- plot_response_map(
 wrap_plots(la_count_map, msoa_count_map, ncol = 2)
 ```
 
-## Data Preparation Pipeline
+## Data Preparation
 
-![Preparation pipeline for analysis-ready inputs](assets/dataprep.png)
-
-### Defining The Estimand and Estimation Domain
+### Target Estimand 
 
 The *target estimand* is the quantity we want to estimate. It defines the outcome, population, geography, time period, and the auxiliary data needed for modelling, such as predictors or population counts.
 
 > Estimate **what outcome among which population**, across **which geography** and **time period**.
 
-In spatio-temporal SAE, this estimand is evaluated for every combination of area and time period. Each combination is an area-time cell: one observation we want to estimate. The *estimation domain* is therefore, all possible combination of areas and time periods.
-
-For example, with the *target estimand*
+For example,
 
 {{< include assets/target-estimand.qmd >}}
 
-The *estimation domain* is therefore, all possible combination of MSOAs-years.
+The most common outcomes to estimate are **means** of continuous variables and **prevalence**—expressed as shares or proportions—within the target population.
 
-### Preparing the Survey Indicator and Weight
+### Estimation Domains
 
-The estimand is the proportion of the target population who cycle frequently. We therefore code the survey response as a binary indicator, `freq_cyclist`, because the average of a binary indicator gives the estimated prevalence. `freq_cyclist` is coded from `AtFrqBke`, the active-travel frequency question for cycling:
+In spatio-temporal SAE, the estimand is evaluated for every combination of area and time period. Each combination forms an area-time cell for which an estimate is required. The **estimation domains** are the complete set of these cells.
 
-- `1`: `AtFrqBke` is `1` or `2`, meaning at least several times a week
-- `0`: less frequent cycling or never cycling
-- `NA`: missing, ineligible, or not asked
-
-For each survey respondent, we also need a design weight, which adjusts the sample so that weighted estimates better represent the target population. Since the survey question was administered to all respondents during some survey periods and subsampled in others, the corresponding `weight` variable selection rule is as follows:
-
-- Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists, 
-- Use `SampleAdultWeight` in survey waves where this question was asked to the main sample. 
-
-The survey design may include `stratum`, which records the sampling group each respondent belongs to. Including it helps the variance calculation reflect how the sample was drawn, if not randomised.
-
-The survey indicator input has *one row per respondent-wave*:
-
-| Column | Meaning |
-|---|---|
-| `unit_id` | Unique identifier (respondent-wave) |
-| `time_id` | Survey wave year |
-| `area_id` | MSOA (Synthetic assignment) |
-| `strata` | Stratum (Local Authority) |
-| `freq_cyclist` | Binary response |
-| `weight` | Matched weight |
-
-```{r}
-#| label: data-survey-indicator
-
-read_csv(
-  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
-  show_col_types = FALSE
-) |>
-  select(unit_id, time_id, area_id, strata, freq_cyclist, weight) |>
-  head()
-```
-
-As an overview, the current cleaned data give the following usable observations for the cycling estimand:
-
-| Year | Usable observations | MSOAs with usable observations |
-|---:|---:|---:|
-| 2021 | 3,438 | 408 |
-| 2023 (subsampled) | 1,989 | 405 |
-| 2025 | 5,886 | 408 |
-
-### Preparing Auxiliary Data
-
-#### Domain Frame and Spatial Graph
-
-The domain frame defines the complete area-time grid where estimates are needed, including those that have no sample. It also stores the numeric area and time indices required by `INLA`.
+For the estimand defined above, the estimation domains therefore include every *MSOA-year* combination, including cells with no survey observations. For use in `INLA`, each area and time period is assigned a numeric index.
 
 ```{r}
 #| label: data-inla-indices
@@ -238,9 +189,66 @@ write_csv(domain_frame, file.path(base_path, "clean", "domain_msoayear.csv"))
 head(domain_frame)
 ```
 
-To include spatial structure in the model, we need an adjacency matrix that encodes neighbouring MSOAs by their numeric codes. The graph uses Queen contiguity, where two MSOAs are treated as neighbours if their boundaries touch at either an edge or a point.
+### Survey Data
 
-![](assets/spatial_weights_example.png)
+With the estimand being the prevalence of frequent cycling among the target population, we derive a binary indicator, `freq_cyclist`, from `AtFrqBke` (the active-travel question on cycling frequency).
+
+| `freq_cyclist` | Coding rule | Meaning |
+|:---:|---|---|
+| `1` | `AtFrqBke` is `1` or `2` | Cycles at least several times a week |
+| `0` | Any other valid `AtFrqBke` response | Cycles less frequently or never |
+| `NA` | Missing or not asked |-W |
+
+Each survey respondent may also require a design weight and other survey design components if available such as stratum, which are used to calculate design-based [direct estimates](direct-estimation.qmd), i.e. the estimated target population proportions or means using only the observed survey data. First, we include `strata`, which identifies each respondent’s sampling group and allows the variance calculation to reflect a stratified, non-random sampling design. Second, because the survey question was administered to the full sample in some waves and to a subsample in others, the appropriate `weight` variable varies by wave:
+
+- Use `SampleTravelWeight` in survey waves where this question was asked to a subsample and the corresponding weight for this module exists (2023), 
+- Use `SampleAdultWeight` in survey waves where this question was asked to the main sample (2021, 2025). 
+
+The final survey indicator input has *one row per respondent-wave*:
+
+| Column | Meaning |
+|---|---|
+| `unit_id` | Unique identifier (respondent-wave) |
+| `time_id` | Survey wave year |
+| `area_id` | MSOA (Synthetic assignment) |
+| `freq_cyclist` | Binary response |
+| `strata` | Stratum |
+| `weight` | Matched weight |
+
+```{r}
+#| label: data-survey-indicator
+
+read_csv(
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
+  select(unit_id, time_id, area_id, strata, freq_cyclist, weight) |>
+  head()
+```
+
+As an overview, the current cleaned data give the following usable observations for the cycling estimand:
+
+| Year | Usable observations | MSOAs with usable observations |
+|---:|---:|---:|
+| 2021 | 3,438 | 408 |
+| 2023 (subsampled) | 1,989 | 405 |
+| 2025 | 5,886 | 408 |
+
+### Auxiliary Data for spatio-temporal SAE 
+
+This tutorial assumes that all required forms of auxiliary data are available so that each method can be demonstrated. In practice, auxiliary-data availability, quality, coverage, and compatibility with the target estimand are important constraints on method selection.
+
+| Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
+|---|:---:|:---:|:---:|:---:|
+| Spatial graph |-| Yes | Yes | Yes |
+| Modelling: Area-level predictors |-| Yes |-|-|
+| Modelling: Unit-level predictors |-|-| Yes | Yes |
+| Aggregation: predictor area summaries |-|-| Yes |-|
+| Aggregation: poststratification table |-|-|-| Yes |
+
+#### Spatial Adjacency Matrix
+
+To represent spatial structure in the model, we construct an adjacency matrix identifying neighbouring MSOAs by their numeric indices. Neighbours are defined using Queen contiguity: two MSOAs are adjacent if their boundaries share an edge or a point. This structure allows the model to identify potential spatial autocorrelation and borrow information across neighbouring areas, supporting predictions for areas with limited or missing survey observations.
 
 ```{r}
 #| label: data-inla-graph
@@ -262,30 +270,10 @@ nb2INLA(
   nb = msoa_neighbours
 )
 ```
+![](assets/spatial_weights_example.png)
 
-#### Modelling input
-##### Unit-Level Predictors
 
-Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_cyclist`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
-
-| Column | Meaning |
-|---|---|
-| `age` | Respondent age |
-| `sex` | Respondent sex (`1` for Male, `2` for Female) |
-| `caraccess` | Binary car access predictor (`1` for car/van available, `0` for none available) |
-
-```{r}
-#| label: data-unit-predictors
-
-read_csv(
-  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
-  show_col_types = FALSE
-) |>
-  select(unit_id, time_id, area_id, freq_cyclist, sex, age, caraccess) |>
-  head()
-```
-
-##### Area-level Predictors
+#### Modelling input: Area-level Predictors
 
 Area-level SAE models need area-level predictors that plausibly explain between-area differences in the target outcome. The area predictors are drawn from [ONS UK Census 2021](https://www.ons.gov.uk/census) at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, and car access.
 
@@ -309,14 +297,51 @@ read_csv(
   head()
 ```
 
-#### Aggregation input (for unit-level SAE)
-##### Predictor area summaries (See [unit-level SAE with predictor summaries](unit-sae-summ.qmd))
+#### Modelling input: Unit-Level Predictors
 
-The area-level predictors `age_adult_mean`, `female_adult_share`, and `caraccess_adult_share` are defined for the adult target population, so they can also be used as predictor summaries to aggregate unit-level model predictions to target small areas.
+Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_cyclist`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
 
-##### Poststratification Table (See [unit-level SAE with poststratification](unit-sae-mrp.qmd))
+| Column | Meaning |
+|---|---|
+| `age` | Respondent age |
+| `sex` | Respondent sex (`1` for Male, `2` for Female) |
+| `caraccess` | Binary car access predictor (`1` for car/van available, `0` for none available) |
 
-Population cell counts (poststratification table) are another possible input needed to aggregate the fitted estimation model predictions to the target population for each area-time cell. We use a three-variable poststratification table with `age_band`, `sex`, and `caraccess`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census).
+```{r}
+#| label: data-unit-predictors
+
+read_csv(
+  file.path(base_path, "clean", "surveyind_freqcyc.csv"),
+  show_col_types = FALSE
+) |>
+  select(unit_id, time_id, area_id, sex, age, caraccess) |>
+  head()
+```
+
+#### Aggregation input for unit-level SAE
+##### Predictor area summaries {.unnumbered}
+
+A unit-level SAE method can aggregate unit-level model predictions to target small areas using area summaries of the corresponding predictors. See [unit-level SAE with predictor summaries](unit-sae-summ.qmd)
+
+E.g., 
+
+|Predictor| Corresponding area summary |
+|---|---|
+|`age`, continuous|`age_adult_mean`|
+|`sex_female`, binary|`female_adult_share`|
+|`caraccess`, binary|`caraccess_adult_share`|
+
+The previously prepared variables `age_adult_mean`, `female_adult_share`, and `caraccess_adult_share` can therefore serve two different purposes. In an area-level SAE model, they are used as area-level predictors. In a unit-level SAE model, they are used as area summaries of the corresponding unit-level predictors.
+
+:::{.callout-note}
+Area-level predictors only need to capture relevant variation between areas. Area summaries used to aggregate unit-level predictions must not only cover all unit-level predictors used in the model, they must also correctly represent the target population (e.g., the adult population) and therefore require a stricter preparation pipeline.
+:::
+
+#### Poststratification Table {.unnumbered}
+
+A more sophisticated unit-level SAE method may use population cell counts, provided in a poststratification table, to aggregate fitted model predictions for each area-time cell. This weights predictions according to the target population distribution of the unit-level predictors instead of relying on area summaries. Predictors included in the poststratification table must be represented as categorical variables. See [unit-level SAE with poststratification](unit-sae-mrp.qmd)
+
+We use a three-variable poststratification table with `age_band`, `sex`, and `caraccess`, sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census). The population counts must correspond to the target population defined by the estimand—for example, the adult population.
 
 The poststratification output *has one row per area-time-age-sex-caraccess combination*:
 
@@ -325,9 +350,9 @@ The poststratification output *has one row per area-time-age-sex-caraccess combi
 | `area_id` | MSOA estimation area |
 | `time_id` | Survey year |
 | `age_band` | Census age band |
-| `sex` | Sex category (`1` for Male, `2` for Female) |
-| `caraccess` | Household car-access category |
-| `pop_count` | Adult population count |
+| `sex` | Male / Female |
+| `caraccess` | Binary car-access indicator |
+| `pop_count` | *Adult* population count |
 
 ```{r}
 #| label: data-poststrat-head
