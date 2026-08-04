@@ -8,7 +8,7 @@ invisible(lapply(pkgs, library, character.only = TRUE))
 year <- 2025
 n_draw <- 300
 var_tol <- 1e-8
-pseudo_var_multiplier <- 1e6
+pseudo_high_var <- 1e8
 
 script_path <- tryCatch(normalizePath(sys.frame(1)$ofile), error = function(e) NA_character_)
 if (is.na(script_path)) {
@@ -110,7 +110,7 @@ smooth_direct <- direct |>
   transmute(
     area_id,
     direct_estimate = if_else(has_direct, direct_estimate, weighted.mean(survey_2025$freq_cyclist, survey_2025$weight)),
-    variance = if_else(has_direct, adj_variance, max_var * pseudo_var_multiplier)
+    variance = if_else(has_direct, adj_variance, pseudo_high_var)
   )
 
 summer_fit <- smoothArea(
