@@ -806,6 +806,51 @@ fh_besag_fit <- inla(
       prec = list(initial = 0, fixed = TRUE)
     )
   ),
+  control.predictor = list(compute = TRUE),
+  control.compute = list(config = TRUE)
+)
+
+set.seed(104)
+n_besag_draws <- 300L
+fh_besag_draws <- inla.posterior.sample(
+  n = n_besag_draws,
+  result = fh_besag_fit
+)
+
+saveRDS(
+  fh_besag_draws,
+  file.path(base_path, "freqcyc_besag_posterior_draws_fh.rds")
+)
+
+fh_iid_contribution_draws <- imap_dfr(
+  fh_besag_draws,
+  \(draw, draw_id) {
+    full_estimate <- as.numeric(
+      draw$latent[startsWith(rownames(draw$latent), "Predictor"), 1]
+    )
+    iid_effect <- as.numeric(
+      draw$latent[
+        paste0("area_unstruct_id:", besag_model_data$area_unstruct_id),
+        1
+      ]
+    )
+
+    tibble(
+      method = "FH",
+      draw = as.integer(draw_id),
+      area_id = besag_model_data$area_id,
+      time_id = besag_model_data$time_id,
+      full_estimate,
+      no_iid_estimate = full_estimate - iid_effect,
+      iid_effect_latent = iid_effect,
+      iid_effect_pp = 100 * iid_effect
+    )
+  }
+)
+
+write_csv(
+  fh_iid_contribution_draws,
+  file.path(base_path, "freqcyc_iid_contribution_draws_fh.csv")
 )
 
 fh_iid <- bind_rows(

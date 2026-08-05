@@ -525,6 +525,76 @@ bhf_besag_fit <- inla(
   formula = bhf_besag_formula,
   family = "binomial",
   data = besag_model_data,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(config = TRUE)
+)
+
+set.seed(104)
+n_besag_draws <- 300L
+bhf_besag_draws <- inla.posterior.sample(
+  n = n_besag_draws,
+  result = bhf_besag_fit
+)
+
+saveRDS(
+  bhf_besag_draws,
+  file.path(base_path, "freqcyc_besag_posterior_draws_bhf.rds")
+)
+
+bhf_fixed_terms <- rownames(bhf_besag_fit$summary.fixed)
+bhf_prediction_matrix <- model.matrix(
+  ~ age + female + caraccess,
+  data = aggregation_data
+)[, bhf_fixed_terms, drop = FALSE]
+
+bhf_iid_contribution_draws <- imap_dfr(
+  bhf_besag_draws,
+  \(draw, draw_id) {
+    fixed_effect <- as.numeric(
+      draw$latent[paste0(bhf_fixed_terms, ":1"), 1]
+    )
+    structured_effect <- as.numeric(
+      draw$latent[
+        paste0("area_struct_id:", aggregation_data$area_inla_id),
+        1
+      ]
+    )
+    iid_effect <- as.numeric(
+      draw$latent[
+        paste0("area_unstruct_id:", aggregation_data$area_inla_id),
+        1
+      ]
+    )
+    temporal_effect <- as.numeric(
+      draw$latent[
+        paste0("time_inla_id:", aggregation_data$time_inla_id),
+        1
+      ]
+    )
+
+    eta_without_iid <- as.numeric(
+      bhf_prediction_matrix %*% fixed_effect
+    ) + structured_effect + temporal_effect
+    eta_full <- eta_without_iid + iid_effect
+    full_estimate <- plogis(eta_full)
+    no_iid_estimate <- plogis(eta_without_iid)
+
+    tibble(
+      method = "BHF",
+      draw = as.integer(draw_id),
+      area_id = aggregation_data$area_id,
+      time_id = aggregation_data$time_id,
+      full_estimate,
+      no_iid_estimate,
+      iid_effect_latent = iid_effect,
+      iid_effect_pp = 100 * (full_estimate - no_iid_estimate)
+    )
+  }
+)
+
+write_csv(
+  bhf_iid_contribution_draws,
+  file.path(base_path, "freqcyc_iid_contribution_draws_bhf.csv")
 )
 
 bhf_iid <- bind_rows(

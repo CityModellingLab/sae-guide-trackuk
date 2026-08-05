@@ -952,6 +952,105 @@ mrp_besag_fit <- inla(
   formula = mrp_besag_formula,
   family = "binomial",
   data = besag_model_data,
+  control.predictor = list(compute = TRUE),
+  control.compute = list(config = TRUE)
+)
+
+set.seed(104)
+n_besag_draws <- 300L
+mrp_besag_draws <- inla.posterior.sample(
+  n = n_besag_draws,
+  result = mrp_besag_fit
+)
+
+saveRDS(
+  mrp_besag_draws,
+  file.path(base_path, "freqcyc_besag_posterior_draws_mrp_rich.rds")
+)
+
+mrp_fixed_terms <- rownames(mrp_besag_fit$summary.fixed)
+mrp_prediction_matrix <- model.matrix(
+  ~ age_band + sex + caraccess,
+  data = poststrat_data
+)[, mrp_fixed_terms, drop = FALSE]
+
+mrp_group_key <- paste(
+  poststrat_data$area_id,
+  poststrat_data$time_id,
+  sep = "__"
+)
+mrp_group <- factor(mrp_group_key, levels = unique(mrp_group_key))
+mrp_group_keys <- poststrat_data |>
+  distinct(area_id, time_id)
+mrp_group_pop <- as.numeric(
+  rowsum(poststrat_data$pop_count, mrp_group, reorder = FALSE)
+)
+
+mrp_weighted_domain_mean <- function(values) {
+  as.numeric(
+    rowsum(
+      values * poststrat_data$pop_count,
+      mrp_group,
+      reorder = FALSE
+    )
+  ) / mrp_group_pop
+}
+
+mrp_iid_contribution_draws <- imap_dfr(
+  mrp_besag_draws,
+  \(draw, draw_id) {
+    fixed_effect <- as.numeric(
+      draw$latent[paste0(mrp_fixed_terms, ":1"), 1]
+    )
+    structured_effect <- as.numeric(
+      draw$latent[
+        paste0("area_struct_id:", poststrat_data$area_inla_id),
+        1
+      ]
+    )
+    iid_effect <- as.numeric(
+      draw$latent[
+        paste0("area_unstruct_id:", poststrat_data$area_inla_id),
+        1
+      ]
+    )
+    temporal_effect <- as.numeric(
+      draw$latent[
+        paste0("time_inla_id:", poststrat_data$time_inla_id),
+        1
+      ]
+    )
+
+    eta_without_iid <- as.numeric(
+      mrp_prediction_matrix %*% fixed_effect
+    ) + structured_effect + temporal_effect
+    eta_full <- eta_without_iid + iid_effect
+    full_estimate <- mrp_weighted_domain_mean(plogis(eta_full))
+    no_iid_estimate <- mrp_weighted_domain_mean(plogis(eta_without_iid))
+
+    mrp_group_keys |>
+      mutate(
+        method = "MRP Rich",
+        draw = as.integer(draw_id),
+        full_estimate = full_estimate,
+        no_iid_estimate = no_iid_estimate,
+        iid_effect_pp = 100 * (full_estimate - no_iid_estimate)
+      ) |>
+      select(
+        method,
+        draw,
+        area_id,
+        time_id,
+        full_estimate,
+        no_iid_estimate,
+        iid_effect_pp
+      )
+  }
+)
+
+write_csv(
+  mrp_iid_contribution_draws,
+  file.path(base_path, "freqcyc_iid_contribution_draws_mrp_rich.csv")
 )
 
 mrp_iid <- bind_rows(
