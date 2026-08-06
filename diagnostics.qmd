@@ -15,6 +15,8 @@ library(sf)
 library(ggplot2)
 library(patchwork)
 library(scales)
+library(tidyr)
+library(tibble)
 
 base_path <- if (dir.exists("data")) {
   normalizePath("data")
@@ -39,7 +41,21 @@ method_labeller <- labeller(method = as_labeller(method_labels))
 missing_fill <- "grey85"
 underestimate_colour <- "#2166ac"
 overestimate_colour <- "#b2182b"
-year_colours <- c("#2166ac", "#b2182b", "#4d9221")
+period_order <- c(2021, 2023, 2025)
+period_labels <- c(
+  "2021" = "2020-2021",
+  "2023" = "2022-2023",
+  "2025" = "2024-2025"
+)
+year_colours <- c(
+  "2021" = "#2166ac",
+  "2023" = "#b2182b",
+  "2025" = "#4d9221"
+)
+effect_colours <- c(
+  "Area-level SAE" = "#2F6F9F",
+  "Unit-level SAE" = "#D95F02"
+)
 selected_time_id <- 2025
 estimate_palette <- "magma"
 uncertainty_palette <- "Oranges"
@@ -171,6 +187,50 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
       ci_width = ci_width
     )
 }
+
+read_draw_bundle <- function(path, label) {
+  if (!file.exists(path)) {
+    stop(label, " not found: ", path)
+  }
+
+  bundle <- readRDS(path)
+  required_fields <- c(
+    "schema_version", "route", "model", "n_draws", "fixed", "area",
+    "time", "hyperparameters", "area_index", "time_index"
+  )
+  missing_fields <- setdiff(required_fields, names(bundle))
+  if (length(missing_fields) > 0) {
+    stop(
+      label,
+      " is missing fields: ",
+      paste(missing_fields, collapse = ", ")
+    )
+  }
+
+  draw_components <- bundle[c("fixed", "area", "time", "hyperparameters")]
+  if (!all(vapply(draw_components, is.matrix, logical(1)))) {
+    stop(label, " draw components must all be matrices.")
+  }
+  if (!all(vapply(draw_components, ncol, integer(1)) == bundle$n_draws)) {
+    stop(label, " draw components do not have the declared number of draws.")
+  }
+
+  bundle
+}
+
+extract_hyperparameter_draws <- function(draw_matrix, name_pattern, label) {
+  matching_names <- grep(name_pattern, rownames(draw_matrix), value = TRUE)
+  if (length(matching_names) != 1) {
+    stop(
+      "Expected one ",
+      label,
+      " hyperparameter; found: ",
+      paste(matching_names, collapse = ", ")
+    )
+  }
+
+  as.numeric(draw_matrix[matching_names, ])
+}
 ```
 
 ```{r}
@@ -207,6 +267,16 @@ estimate_sets <- bind_rows(
 diagnostic_estimates <- estimate_sets |>
   mutate(method = factor(method, levels = method_levels))
 
+posterior_output_dir <- file.path(dirname(base_path), "outputs")
+area_draw_bundle <- read_draw_bundle(
+  file.path(posterior_output_dir, "freqcyc_posterior_draws_area.rds"),
+  "Area-level posterior-draw bundle"
+)
+unit_mrp_draw_bundle <- read_draw_bundle(
+  file.path(posterior_output_dir, "freqcyc_posterior_draws_unit_mrp.rds"),
+  "Unit-level MRP posterior-draw bundle"
+)
+
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
   quiet = TRUE
@@ -235,22 +305,12 @@ estimate_plot_data <- diagnostic_estimates |>
   filter(!is.na(estimate)) |>
   mutate(
     method = factor(method, levels = method_levels),
-    time_id = factor(time_id, levels = sort(unique(time_id)))
+    time_id = factor(time_id, levels = period_order)
   )
 
-rank_reference_year <- levels(estimate_plot_data$time_id)[1]
-
-estimate_rank <- estimate_plot_data |>
+overall_route_means <- estimate_plot_data |>
   group_by(method) |>
-  filter(time_id == rank_reference_year) |>
-  arrange(estimate, .by_group = TRUE) |>
-  mutate(msoa_rank = row_number()) |>
-  ungroup() |>
-  select(method, area_id, msoa_rank)
-
-ranked_estimate_data <- estimate_plot_data |>
-  inner_join(estimate_rank, by = c("method", "area_id")) |>
-  mutate(method = factor(method, levels = method_levels))
+  summarise(mean_estimate = mean(estimate, na.rm = TRUE), .groups = "drop")
 
 estimate_map_data <- msoa_boundaries |>
   left_join(diagnostic_estimates, by = "area_id") |>
@@ -288,29 +348,173 @@ ci_map_data <- msoa_boundaries |>
     method = factor(method, levels = method_levels)
   )
 
-iid_method_levels <- setdiff(method_levels, "Direct")
 iid_files <- c(
-  "freqcyc_iid_fh.csv",
-  "freqcyc_iid_bhf.csv",
-  "freqcyc_iid_mrp_rich.csv"
+  "Area-level SAE" = "freqcyc_iid_effect_fh.csv",
+  "Unit-level SAE" = "freqcyc_iid_effect_mrp_rich.csv"
 )
 
-iid_effects <- iid_files |>
-  lapply(\(file_name) read_csv(file.path(base_path, file_name), show_col_types = FALSE)) |>
+iid_effects <- names(iid_files) |>
+  lapply(\(model_name) {
+    read_csv(
+      file.path(base_path, iid_files[[model_name]]),
+      show_col_types = FALSE
+    ) |>
+      transmute(model = model_name, area_id, effect = iid_effect_pp)
+  }) |>
   bind_rows() |>
-  filter(component == "Unstructured") |>
   mutate(
-    method = factor(method, levels = iid_method_levels)
+    model = factor(model, levels = names(iid_files))
   )
 
-iid_limits <- safe_limit(
-  iid_effects$effect,
-  fallback = 0.01,
-  symmetric = TRUE,
-  p = 0.95
-)
+area_reference_probability <- diagnostic_estimates |>
+  filter(method == "FH") |>
+  summarise(value = mean(estimate, na.rm = TRUE)) |>
+  pull(value)
+unit_reference_probability <- diagnostic_estimates |>
+  filter(method == "MRP Rich") |>
+  summarise(value = mean(estimate, na.rm = TRUE)) |>
+  pull(value)
 
-iid_label_accuracy <- if (max(abs(iid_limits)) < 0.01) 0.0001 else 0.01
+make_effect_draws <- function(bundle, model_name, reference_probability, identity_link) {
+  spatial_precision <- extract_hyperparameter_draws(
+    bundle$hyperparameters,
+    "^Precision for area_inla_id$",
+    "spatial precision"
+  )
+  temporal_precision <- extract_hyperparameter_draws(
+    bundle$hyperparameters,
+    "^Precision for time_inla_id$",
+    "temporal precision"
+  )
+
+  spatial_sd <- 1 / sqrt(spatial_precision)
+  temporal_sd <- 1 / sqrt(temporal_precision)
+  to_response_scale <- function(latent_sd) {
+    if (identity_link) {
+      return(100 * latent_sd)
+    }
+
+    reference_logit <- qlogis(reference_probability)
+    50 * (
+      plogis(reference_logit + latent_sd) -
+        plogis(reference_logit - latent_sd)
+    )
+  }
+
+  tibble(
+    model = model_name,
+    spatial = to_response_scale(spatial_sd),
+    temporal = to_response_scale(temporal_sd)
+  )
+}
+
+bym2_effect_summary <- bind_rows(
+  make_effect_draws(
+    area_draw_bundle,
+    "Area-level SAE",
+    area_reference_probability,
+    identity_link = TRUE
+  ),
+  make_effect_draws(
+    unit_mrp_draw_bundle,
+    "Unit-level SAE",
+    unit_reference_probability,
+    identity_link = FALSE
+  )
+) |>
+  pivot_longer(
+    cols = c(spatial, temporal),
+    names_to = "effect",
+    values_to = "effect_pp"
+  ) |>
+  group_by(model, effect) |>
+  summarise(
+    median = median(effect_pp),
+    lower = quantile(effect_pp, 0.025),
+    upper = quantile(effect_pp, 0.975),
+    .groups = "drop"
+  ) |>
+  mutate(
+    model = factor(
+      model,
+      levels = c("Unit-level SAE", "Area-level SAE")
+    )
+  )
+
+bym2_phi_summary <- bind_rows(
+  tibble(
+    model = "Area-level SAE",
+    phi = extract_hyperparameter_draws(
+      area_draw_bundle$hyperparameters,
+      "^Phi for area_inla_id$|^Phi ",
+      "area-level BYM2 phi"
+    )
+  ),
+  tibble(
+    model = "Unit-level SAE",
+    phi = extract_hyperparameter_draws(
+      unit_mrp_draw_bundle$hyperparameters,
+      "^Phi for area_inla_id$|^Phi ",
+      "unit-level BYM2 phi"
+    )
+  )
+) |>
+  group_by(model) |>
+  summarise(
+    median = median(phi),
+    lower = quantile(phi, 0.025),
+    upper = quantile(phi, 0.975),
+    .groups = "drop"
+  ) |>
+  mutate(
+    model = factor(
+      model,
+      levels = c("Unit-level SAE", "Area-level SAE")
+    ),
+    interval_label = sprintf("%.2f [%.2f, %.2f]", median, lower, upper)
+  )
+
+direct_evidence <- read_csv(
+  file.path(base_path, "freqcyc_estimates_direct.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, time_id, direct_estimate, variance, n)
+
+evidence_adjustment_summary <- diagnostic_estimates |>
+  filter(method %in% c("FH", "MRP Rich")) |>
+  select(method, area_id, time_id, model_estimate = estimate) |>
+  inner_join(direct_evidence, by = c("area_id", "time_id")) |>
+  filter(is.finite(direct_estimate), is.finite(model_estimate), n > 0) |>
+  mutate(
+    model = recode(
+      as.character(method),
+      "FH" = "Area-level SAE",
+      "MRP Rich" = "Unit-level SAE"
+    ),
+    sample_band = cut(
+      n,
+      breaks = c(0, 4, 9, 19, Inf),
+      labels = c("1-4", "5-9", "10-19", "20+"),
+      right = TRUE
+    ),
+    adjustment_pp = 100 * (model_estimate - direct_estimate)
+  ) |>
+  group_by(model, sample_band) |>
+  summarise(
+    median = median(adjustment_pp),
+    lower = quantile(adjustment_pp, 0.25),
+    upper = quantile(adjustment_pp, 0.75),
+    domains = n(),
+    .groups = "drop"
+  ) |>
+  mutate(
+    model = factor(model, levels = c("Area-level SAE", "Unit-level SAE")),
+    sample_position = as.numeric(sample_band) + if_else(
+      model == "Area-level SAE",
+      -0.07,
+      0.07
+    )
+  )
 ```
 
 This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.
@@ -319,89 +523,176 @@ This comparison focuses on the trade-offs between direct estimation, area-level 
 |---|---|---|---|
 | Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
 | Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
-| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Medium | Area summaries only approximate the population composition, not robust for binary outcome. |
-| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | The 2021 population structure is reused for later years. |
+| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Moderate | Area summaries only approximate the population composition, not robust for binary outcome. |
+| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | Adding more predictors produce suppressed cells (false population zeros). |
 
-## Estimate Scale and Smoothing
+## Estimate smoothing and target population adjustment
 
 The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
 
-- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level FH model** is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.
-- Differences between the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
+- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level model** is anchored by the direct estimates, so weak direct evidence can influence the modelled results. 
+- Differences between the estimates from the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
 
 ```{r}
-#| label: diag-estimate-dist-rank
+#| label: diag-estimate-density-map
 #| echo: false
-#| fig-width: 14
-#| fig-height: 16
+#| fig-width: 18
+#| fig-height: 12
 #| out-width: "100%"
 
-method_plots <- unlist(lapply(method_levels, function(method_name) {
-  show_year_legend <- method_name == method_levels[1]
+route_labels <- c(
+  "Direct" = "Direct estimation from survey data",
+  "FH" = "Area-level SAE",
+  "BHF" = "Unit-level SAE + summaries",
+  "MRP Rich" = "Unit-level SAE + poststratification"
+)
 
-  distribution_plot <- estimate_plot_data |>
+density_theme <- theme_minimal(base_size = 12) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(colour = "#E3E6EA", linewidth = 0.35),
+    plot.title = element_text(size = 12.5, face = "bold", hjust = 0),
+    axis.title = element_text(size = 11, face = "bold"),
+    axis.text = element_text(size = 10, colour = "#30343B"),
+    legend.title = element_text(size = 10.5, face = "bold"),
+    legend.text = element_text(size = 10),
+    plot.margin = margin(5, 8, 5, 5)
+  )
+
+make_route_density <- function(method_name, show_x_title = FALSE) {
+  mean_data <- overall_route_means |>
+    filter(method == method_name)
+
+  estimate_plot_data |>
     filter(method == method_name) |>
     ggplot(aes(x = estimate, colour = time_id, fill = time_id)) +
-    geom_density(linewidth = 0.8, alpha = 0.2, show.legend = show_year_legend) +
-    scale_x_continuous(labels = share_label, limits = c(0, 0.1)) +
-    scale_colour_manual(values = year_colours) +
-    scale_fill_manual(values = year_colours) +
-    guides(fill = "none") +
+    geom_density(linewidth = 0.9, alpha = 0.2, na.rm = TRUE) +
+    geom_vline(
+      data = mean_data,
+      aes(xintercept = mean_estimate, linetype = "Overall mean"),
+      inherit.aes = FALSE,
+      colour = "#202124",
+      linewidth = 0.9
+    ) +
+    scale_x_continuous(
+      breaks = seq(0, 0.10, by = 0.025),
+      labels = label_percent(accuracy = 0.1),
+      limits = c(0, 0.10),
+      expand = expansion(mult = c(0, 0.015))
+    ) +
+    scale_colour_manual(
+      values = year_colours,
+      breaks = as.character(period_order),
+      labels = unname(period_labels[as.character(period_order)])
+    ) +
+    scale_fill_manual(
+      values = year_colours,
+      breaks = as.character(period_order),
+      labels = unname(period_labels[as.character(period_order)])
+    ) +
+    scale_linetype_manual(
+      name = NULL,
+      values = c("Overall mean" = "22")
+    ) +
+    guides(
+      fill = "none",
+      colour = guide_legend(order = 1),
+      linetype = guide_legend(order = 2)
+    ) +
     labs(
-      title = method_labels[[method_name]],
-      x = "Estimate",
+      title = unname(route_labels[[method_name]]),
+      x = if (show_x_title) "Estimated frequent-cycling prevalence" else NULL,
       y = "Density",
-      colour = "Survey year"
+      colour = "Survey period"
     ) +
-    chart_theme +
-    theme(
-      panel.grid.minor = element_blank(),
-      plot.title = element_text(size = 12, face = "bold", hjust = 0),
-      legend.position = "bottom"
-    )
+    density_theme
+}
 
-  rank_plot <- ranked_estimate_data |>
-    filter(method == method_name) |>
-    ggplot(aes(x = msoa_rank, y = estimate, colour = time_id, group = time_id)) +
-    geom_line(linewidth = 0.5, alpha = 0.9, show.legend = FALSE) +
-    scale_y_continuous(labels = share_label, limits = c(0, 0.1)) +
-    scale_colour_manual(values = year_colours) +
+make_route_map <- function(method_name, year, show_year = FALSE) {
+  map_data <- estimate_map_data |>
+    filter(method == method_name, time_id == year)
+
+  ggplot(map_data) +
+    geom_sf(aes(fill = estimate), colour = "transparent") +
+    scale_fill_viridis_c(
+      name = "Estimate",
+      option = estimate_palette,
+      limits = c(0, 0.08),
+      breaks = seq(0, 0.08, by = 0.02),
+      labels = label_percent(accuracy = 1),
+      oob = squish,
+      na.value = missing_fill,
+      guide = guide_colourbar(
+        title.position = "top",
+        barwidth = grid::unit(55, "mm"),
+        barheight = grid::unit(4, "mm")
+      )
+    ) +
+    coord_sf(datum = NA, expand = FALSE) +
     labs(
-      x = "Ranked MSOA",
-      y = "Estimate",
-      colour = "Survey year"
+      title = if (show_year) {
+        unname(period_labels[[as.character(year)]])
+      } else {
+        NULL
+      }
     ) +
-    chart_theme +
+    theme_void(base_size = 12) +
     theme(
-      panel.grid.minor = element_blank(),
-      plot.title = element_blank(),
-      legend.position = "bottom"
+      plot.title = element_text(size = 12.5, face = "bold", hjust = 0.5),
+      legend.title = element_text(size = 10.5, face = "bold"),
+      legend.text = element_text(size = 10),
+      plot.margin = margin(0, 0, 0, 0)
     )
+}
 
-  list(distribution_plot, rank_plot)
+density_panels <- lapply(seq_along(method_levels), function(method_index) {
+  make_route_density(
+    method_levels[[method_index]],
+    show_x_title = method_index == length(method_levels)
+  )
+})
+
+map_panels <- unlist(lapply(seq_along(method_levels), function(method_index) {
+  lapply(period_order, function(year) {
+    make_route_map(
+      method_levels[[method_index]],
+      year,
+      show_year = method_index == 1
+    )
+  })
 }), recursive = FALSE)
 
-wrap_plots(method_plots, ncol = 2, widths = c(1, 1.35), guides = "collect") +
+density_column <- (
+  wrap_plots(density_panels, ncol = 1) +
+    plot_layout(guides = "collect")
+) &
+  theme(
+    legend.position = "bottom",
+    legend.box = "horizontal",
+    legend.box.just = "left",
+    legend.justification = "left"
+  )
+
+map_grid <- (
+  wrap_plots(map_panels, ncol = 3) +
+    plot_layout(guides = "collect")
+) &
+  theme(
+    legend.position = "bottom",
+    legend.box.just = "center"
+  )
+
+(density_column | map_grid) +
+  plot_layout(widths = c(1.25, 1.75), guides = "keep") +
   plot_annotation(
-    title = "Estimate distributions and stack-ranked",
+    title = "Estimated frequent-cycling prevalence across estimation routes",
+    subtitle = paste(
+      "MSOA distributions and mapped estimates across three survey periods;",
+      "the dashed line is the overall mean for each route"
+    ),
     theme = annotation_theme
   ) &
   theme(legend.position = "bottom")
-```
-
-```{r}
-#| label: diag-estimate-map
-#| echo: false
-#| fig-width: 18
-#| fig-height: 20
-#| out-width: "100%"
-
-estimate_map_data |>
-  ggplot() +
-  geom_sf(aes(fill = estimate), colour = "transparent") +
-  facet_grid(rows = vars(method), cols = vars(time_id), labeller = method_labeller) +
-  estimate_fill_scale(estimate_colour_limits) +
-  map_panel_theme
 ```
 
 
@@ -426,16 +717,293 @@ method_agreement |>
     title = "Cross-method comparison",
     subtitle = "Dashed line shows equality; points are MSOA-year cells",
     x = "Comparison estimate",
-    y = "Reference estimate",
+    y = "Unit-level SAE with poststratification (MRP)",
     colour = "Survey year"
   ) +
   chart_theme +
   theme(panel.grid.minor = element_blank())
 ```
 
-## Uncertainty CI Width
+Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees a upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
 
-Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
+```{r}
+#| label: diag-poststratification-effect
+#| echo: false
+#| fig-width: 18
+#| fig-height: 7
+#| out-width: "100%"
+
+poststrat_year <- 2023L
+poststrat_age_levels <- c("16_24", "25_34", "35_49", "50_64", "65_plus")
+
+poststrat_domain_frame <- read_csv(
+  file.path(base_path, "clean", "domain_msoayear.csv"),
+  show_col_types = FALSE
+) |>
+  select(area_id, time_id, msoa_name, area_inla_id, time_inla_id)
+
+poststrat_area_index <- poststrat_domain_frame |>
+  distinct(area_id, area_inla_id)
+poststrat_time_index <- poststrat_domain_frame |>
+  distinct(time_id, time_inla_id)
+
+poststrat_cells <- read_csv(
+  file.path(base_path, "clean", "poststrat_freqcyc_age_sex_car_21.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    age_band = factor(age_band, levels = poststrat_age_levels),
+    sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
+    caraccess = as.integer(caraccess)
+  ) |>
+  filter(time_id == poststrat_year, pop_count > 0) |>
+  left_join(poststrat_area_index, by = "area_id") |>
+  left_join(poststrat_time_index, by = "time_id") |>
+  arrange(area_inla_id, age_band, sex, caraccess)
+
+if (anyNA(poststrat_cells$area_inla_id) ||
+    anyNA(poststrat_cells$time_inla_id)) {
+  stop("Poststratification inputs could not be matched to the model indices.")
+}
+
+poststrat_fixed_draws <- unit_mrp_draw_bundle$fixed
+poststrat_area_draws <- unit_mrp_draw_bundle$area
+poststrat_time_draws <- unit_mrp_draw_bundle$time
+poststrat_fixed_terms <- rownames(poststrat_fixed_draws)
+
+if (!setequal(
+  rownames(poststrat_area_draws),
+  as.character(poststrat_area_index$area_inla_id)
+) || !setequal(
+  rownames(poststrat_time_draws),
+  as.character(poststrat_time_index$time_inla_id)
+)) {
+  stop("Posterior-draw indices do not match the poststratification frame.")
+}
+
+poststrat_prediction_matrix <- model.matrix(
+  ~age_band + sex + caraccess,
+  data = poststrat_cells
+)
+missing_poststrat_terms <- setdiff(
+  poststrat_fixed_terms,
+  colnames(poststrat_prediction_matrix)
+)
+if (length(missing_poststrat_terms) > 0) {
+  stop(
+    "The poststratification matrix is missing fixed terms: ",
+    paste(missing_poststrat_terms, collapse = ", ")
+  )
+}
+poststrat_prediction_matrix <- poststrat_prediction_matrix[
+  , poststrat_fixed_terms, drop = FALSE
+]
+
+poststrat_linear_predictor <-
+  poststrat_prediction_matrix %*% poststrat_fixed_draws +
+  poststrat_area_draws[
+    as.character(poststrat_cells$area_inla_id),
+    ,
+    drop = FALSE
+  ] +
+  poststrat_time_draws[
+    as.character(poststrat_cells$time_inla_id),
+    ,
+    drop = FALSE
+  ]
+poststrat_cell_draws <- plogis(poststrat_linear_predictor)
+
+aggregate_poststrat_draws <- function(draw_matrix, weights, groups) {
+  weighted_sum <- rowsum(
+    draw_matrix * weights,
+    group = groups,
+    reorder = FALSE
+  )
+  weight_sum <- rowsum(weights, group = groups, reorder = FALSE)
+  weighted_sum / as.numeric(weight_sum)
+}
+
+poststrat_equal_draws <- aggregate_poststrat_draws(
+  poststrat_cell_draws,
+  weights = rep(1, nrow(poststrat_cells)),
+  groups = poststrat_cells$area_id
+)
+poststrat_weighted_draws <- aggregate_poststrat_draws(
+  poststrat_cell_draws,
+  weights = poststrat_cells$pop_count,
+  groups = poststrat_cells$area_id
+)
+
+poststrat_effects <- tibble(
+  area_id = rownames(poststrat_equal_draws),
+  equal_cell_estimate = rowMeans(poststrat_equal_draws),
+  poststratified_estimate = rowMeans(poststrat_weighted_draws),
+  estimate_change = rowMeans(poststrat_weighted_draws - poststrat_equal_draws)
+) |>
+  left_join(
+    poststrat_domain_frame |>
+      filter(time_id == poststrat_year) |>
+      select(area_id, msoa_name),
+    by = "area_id"
+  )
+
+poststrat_cases <- bind_rows(
+  poststrat_effects |>
+    slice_min(estimate_change, n = 1, with_ties = FALSE) |>
+    mutate(case_type = "Largest decrease"),
+  poststrat_effects |>
+    slice_max(estimate_change, n = 1, with_ties = FALSE) |>
+    mutate(case_type = "Largest increase")
+) |>
+  mutate(
+    case_type = factor(
+      case_type,
+      levels = c("Largest decrease", "Largest increase")
+    ),
+    case_label = paste0(
+      case_type,
+      "\n",
+      msoa_name,
+      ": ",
+      sprintf("%+.2f pp", estimate_change * 100)
+    ),
+    case_label = factor(case_label, levels = case_label)
+  )
+
+poststrat_cell_summary <- poststrat_cells |>
+  mutate(cell_estimate = rowMeans(poststrat_cell_draws)) |>
+  group_by(area_id, time_id) |>
+  mutate(population_share = pop_count / sum(pop_count)) |>
+  ungroup() |>
+  inner_join(
+    poststrat_cases |>
+      select(area_id, case_type, case_label),
+    by = "area_id"
+  ) |>
+  mutate(
+    age_label = recode(
+      as.character(age_band),
+      "16_24" = "16-24",
+      "25_34" = "25-34",
+      "35_49" = "35-49",
+      "50_64" = "50-64",
+      "65_plus" = "65+"
+    ),
+    sex_label = ifelse(sex == "Female", "F", "M"),
+    car_label = ifelse(caraccess == 1, "car", "no car"),
+    cell_label = paste(age_label, sex_label, car_label, sep = " | ")
+  )
+
+poststrat_cell_order <- poststrat_cell_summary |>
+  group_by(cell_label) |>
+  summarise(mean_prediction = mean(cell_estimate), .groups = "drop") |>
+  arrange(mean_prediction) |>
+  pull(cell_label)
+poststrat_cell_summary$cell_label <- factor(
+  poststrat_cell_summary$cell_label,
+  levels = poststrat_cell_order
+)
+
+poststrat_references <- poststrat_cases |>
+  select(
+    area_id,
+    case_label,
+    equal_cell_estimate,
+    poststratified_estimate
+  ) |>
+  pivot_longer(
+    cols = c(equal_cell_estimate, poststratified_estimate),
+    names_to = "reference_method",
+    values_to = "reference_estimate"
+  ) |>
+  mutate(
+    reference_method = recode(
+      reference_method,
+      equal_cell_estimate = "Unweighted average",
+      poststratified_estimate = "Census-weighted MRP"
+    ),
+    reference_method = factor(
+      reference_method,
+      levels = c("Unweighted average", "Census-weighted MRP")
+    )
+  )
+
+ggplot(
+  poststrat_cell_summary,
+  aes(
+    x = cell_estimate,
+    y = cell_label,
+    size = population_share
+  )
+) +
+  geom_point(
+    shape = 21,
+    fill = alpha("#2166AC", 0.45),
+    colour = "#174A7E",
+    stroke = 0.5
+  ) +
+  geom_vline(
+    data = poststrat_references,
+    aes(
+      xintercept = reference_estimate,
+      colour = reference_method,
+      linetype = reference_method
+    ),
+    linewidth = 1.2,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(vars(case_label), nrow = 1) +
+  scale_x_continuous(labels = label_percent(accuracy = 0.1)) +
+  scale_size_continuous(
+    range = c(3.2, 12),
+    labels = label_percent(accuracy = 1),
+    name = "Census population share"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "Unweighted average" = "#5F6368",
+      "Census-weighted MRP" = "#B35806"
+    ),
+    name = NULL
+  ) +
+  scale_linetype_manual(
+    values = c(
+      "Unweighted average" = "dashed",
+      "Census-weighted MRP" = "solid"
+    ),
+    name = NULL
+  ) +
+  labs(
+    title = "Poststratification effect on MRP estimates",
+    subtitle = paste0(
+      period_labels[[as.character(poststrat_year)]],
+      " MSOAs with the largest decrease and increase; ",
+      "point size shows Census population share"
+    ),
+    x = "Predicted frequent-cycling prevalence",
+    y = "Age band | sex | car access"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 12, colour = "grey30"),
+    strip.text = element_text(face = "bold", size = 13),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    axis.text.y = element_text(
+      colour = "#41464D",
+      face = "bold",
+      size = 10.5
+    ),
+    axis.title = element_text(face = "bold"),
+    legend.position = "bottom",
+    legend.box = "horizontal"
+  )
+```
+
+## Uncertainty improvement
+
+Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approach produced creidle interval widths which reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
 
 ```{r}
 #| label: diag-ci-map
@@ -450,10 +1018,17 @@ ci_map_data |>
   facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
   ci_width_fill_scale(ci_width_colour_limits) +
   labs(
-    title = "CI widths",
-    subtitle = paste("Selected survey year:", selected_time_id)
+    title = "Uncertainty in estimated frequent-cycling prevalence across estimation routes",
+    subtitle = paste0(
+      "Mapped 95% interval widths for ",
+      period_labels[[as.character(selected_time_id)]]
+    )
   ) +
-  map_panel_theme
+  map_panel_theme +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+  )
 ```
 
 ```{r}
@@ -488,36 +1063,186 @@ diagnostic_estimates |>
   theme(legend.position = "none")
 ```
 
-## Residual Area Effects
+## Spatial and Temporal Effect
 
-The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.
+The posterior precision hyperparameters, $\tau$, determine the variability of the random effects, with a latent-scale standard deviation of $1/\sqrt{\tau}$. After conversion to the response scale of frequent-cycling prevalence (percentage point), the temporal effect indicates that estimates typically differ by approximately 0.75--1 percentage point between adjacent survey periods. The spatial effect produces a larger typical adjustment in the unit-level model than in the area-level model, indicating that residual geographic variation plays a greater role in differentiating its estimates across MSOAs.
+
+```{r}
+#| label: diag-spatiotemporal-effects
+#| echo: false
+#| fig-width: 18
+#| fig-height: 5
+#| out-width: "100%"
+
+make_effect_panel <- function(effect_name, panel_title, axis_title, show_models) {
+  panel_data <- bym2_effect_summary |>
+    filter(effect == effect_name) |>
+    mutate(
+      interval_label = sprintf("%.2f [%.2f, %.2f]", median, lower, upper)
+    )
+
+  axis_limit <- max(panel_data$upper) * 1.18
+
+  ggplot(panel_data, aes(y = model, colour = model)) +
+    geom_segment(
+      aes(x = lower, xend = upper, yend = model),
+      linewidth = 1.8,
+      lineend = "round"
+    ) +
+    geom_point(aes(x = median), size = 4.8) +
+    geom_text(
+      aes(x = upper + 0.025 * axis_limit, label = interval_label),
+      hjust = 0,
+      colour = "#555B63",
+      size = 4,
+      show.legend = FALSE
+    ) +
+    scale_x_continuous(
+      limits = c(0, axis_limit),
+      breaks = pretty_breaks(n = 5),
+      labels = label_number(accuracy = 0.1),
+      expand = expansion(mult = c(0, 0))
+    ) +
+    scale_colour_manual(values = effect_colours, guide = "none") +
+    coord_cartesian(clip = "off") +
+    labs(title = panel_title, x = axis_title, y = NULL) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+      axis.title.x = element_text(size = 12, face = "bold", margin = margin(t = 10)),
+      axis.text.x = element_text(size = 11, colour = "#555B63"),
+      axis.text.y = if (show_models) {
+        element_text(size = 12, face = "bold", colour = "#202124")
+      } else {
+        element_blank()
+      },
+      axis.ticks.y = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.y = element_blank(),
+      plot.margin = margin(8, 95, 8, if (show_models) 8 else 0)
+    )
+}
+
+spatial_effect_panel <- make_effect_panel(
+  "spatial",
+  "Spatial effect (BYM2)",
+  "Typical spatial adjustment to estimate (pp)",
+  show_models = TRUE
+)
+
+temporal_effect_panel <- make_effect_panel(
+  "temporal",
+  "Temporal effect (RW1)",
+  "Typical change between adjacent periods (pp)",
+  show_models = FALSE
+)
+
+(spatial_effect_panel | temporal_effect_panel) +
+  plot_layout(widths = c(1, 1)) +
+  plot_annotation(
+    title = "Magnitude and precision of spatial and temporal effects",
+    subtitle = "Posterior medians and 95% credible intervals on the response scale",
+    theme = annotation_theme
+  )
+```
+
+The BYM2 mixing parameter, $\phi$, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. The lower $\phi$ estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.
+
+The unit-level model uses individual responses directly and estimates a higher $\phi$, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.
 
 ```{r}
 #| label: diag-area-effect-map
 #| echo: false
-#| fig-width: 18
-#| fig-height: 7
+#| fig-width: 14
+#| fig-height: 10
 #| out-width: "100%"
 
-msoa_boundaries |>
-  select(area_id) |>
-  left_join(iid_effects, by = "area_id") |>
-  method_map("effect") +
-  scale_fill_gradient2(
-    low = underestimate_colour,
-    mid = "white",
-    high = overestimate_colour,
-    midpoint = 0,
-    limits = iid_limits,
-    oob = squish,
-    labels = label_number(accuracy = iid_label_accuracy),
-    na.value = missing_fill,
-    name = "Effect",
-    guide = colourbar_guide
+make_iid_map <- function(model_name, scale_limit) {
+  map_data <- msoa_boundaries |>
+    select(area_id) |>
+    left_join(
+      iid_effects |>
+        filter(model == model_name),
+      by = "area_id"
+    )
+
+  effect_limits <- c(-scale_limit, scale_limit)
+
+  ggplot(map_data) +
+    geom_sf(aes(fill = effect), colour = "transparent") +
+    scale_fill_gradient2(
+      low = underestimate_colour,
+      mid = "white",
+      high = overestimate_colour,
+      midpoint = 0,
+      limits = effect_limits,
+      breaks = c(effect_limits[1], 0, effect_limits[2]),
+      labels = label_number(accuracy = 0.01),
+      oob = squish,
+      na.value = missing_fill,
+      name = "Residual area effect (pp)",
+      guide = colourbar_guide
+    ) +
+    coord_sf(datum = NA, expand = FALSE) +
+    labs(title = model_name) +
+    map_panel_theme
+}
+
+area_iid_map <- make_iid_map("Area-level SAE", 0.5)
+unit_iid_map <- make_iid_map("Unit-level SAE", 0.05)
+
+phi_colour <- "#2F6F9F"
+
+phi_panel <- ggplot(
+  bym2_phi_summary,
+  aes(y = model)
+) +
+  geom_segment(
+    aes(x = lower, xend = upper, yend = model),
+    colour = phi_colour,
+    linewidth = 1.8,
+    lineend = "round"
   ) +
+  geom_point(aes(x = median), colour = phi_colour, size = 4.8) +
+  geom_text(
+    aes(x = upper + 0.025, label = interval_label),
+    hjust = 0,
+    colour = "#555B63",
+    size = 4,
+    show.legend = FALSE
+  ) +
+  scale_x_continuous(
+    limits = c(0, 1.12),
+    breaks = seq(0, 1, by = 0.25),
+    labels = label_number(accuracy = 0.25),
+    expand = expansion(mult = c(0, 0))
+  ) +
+  coord_cartesian(clip = "off") +
+  labs(
+    title = "BYM2 structured share (\u03C6)",
+    x = "Share of residual spatial variance assigned to the structured component",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold", margin = margin(t = 9)),
+    axis.text = element_text(size = 11, colour = "#555B63"),
+    axis.text.y = element_text(size = 12, face = "bold", colour = "#202124"),
+    axis.ticks.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    plot.margin = margin(8, 95, 8, 8)
+  )
+
+((area_iid_map | unit_iid_map) / phi_panel) +
+  plot_layout(heights = c(4.2, 1.5)) +
   plot_annotation(
-    title = "Unstructured area effects",
-    subtitle = paste("Selected survey year:", selected_time_id),
+    title = "Unstructured residual effects and spatial structure",
+    subtitle = paste(
+      "Maps show response-scale area effects with separate symmetric colour ranges;",
+      "\u03C6 summarises the structured share of residual spatial variation"
+    ),
     theme = annotation_theme
   )
 ```

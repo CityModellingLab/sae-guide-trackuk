@@ -63,6 +63,22 @@ ul.task-list li input[type="checkbox"] {
   }
 }</script>
 
+  <script>window.backupDefine = window.define; window.define = undefined;</script><script src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
 
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -244,9 +260,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#estimate-scale-and-smoothing" id="toc-estimate-scale-and-smoothing" class="nav-link active" data-scroll-target="#estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</a></li>
-  <li><a href="#uncertainty-ci-width" id="toc-uncertainty-ci-width" class="nav-link" data-scroll-target="#uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</a></li>
-  <li><a href="#residual-area-effects" id="toc-residual-area-effects" class="nav-link" data-scroll-target="#residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</a></li>
+  <li><a href="#estimate-smoothing-and-target-population-adjustment" id="toc-estimate-smoothing-and-target-population-adjustment" class="nav-link active" data-scroll-target="#estimate-smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Estimate smoothing and target population adjustment</a></li>
+  <li><a href="#uncertainty-improvement" id="toc-uncertainty-improvement" class="nav-link" data-scroll-target="#uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</a></li>
+  <li><a href="#spatial-and-temporal-effect" id="toc-spatial-and-temporal-effect" class="nav-link" data-scroll-target="#spatial-and-temporal-effect"><span class="header-section-number">3</span> Spatial and Temporal Effect</a></li>
   </ul>
 </nav>
     </div>
@@ -303,32 +319,27 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>Unit-level SAE with area summaries</td>
 <td>Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries.</td>
-<td>Medium</td>
+<td>Moderate</td>
 <td>Area summaries only approximate the population composition, not robust for binary outcome.</td>
 </tr>
 <tr class="even">
 <td>Unit-level SAE with poststratification</td>
 <td>Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts.</td>
 <td>High</td>
-<td>The 2021 population structure is reused for later years.</td>
+<td>Adding more predictors produce suppressed cells (false population zeros).</td>
 </tr>
 </tbody>
 </table>
-<section id="estimate-scale-and-smoothing" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="estimate-scale-and-smoothing"><span class="header-section-number">1</span> Estimate Scale and Smoothing</h2>
+<section id="estimate-smoothing-and-target-population-adjustment" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="estimate-smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Estimate smoothing and target population adjustment</h2>
 <p>The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.</p>
 <ul>
-<li><strong>Direct estimates</strong> retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The <strong>area-level FH model</strong> is anchored by the direct estimates, so weak direct evidence can still influence the modelled results. The lower mean estimate in 2023 is consistent with weaker direct-estimate input in that wave, possibly due to smaller sample sizes.</li>
-<li>Differences between the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.</li>
+<li><strong>Direct estimates</strong> retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The <strong>area-level model</strong> is anchored by the direct estimates, so weak direct evidence can influence the modelled results.</li>
+<li>Differences between the estimates from the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.</li>
 </ul>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-estimate-dist-rank-1.png" class="img-fluid" style="width:100.0%"></p>
-</div>
-</div>
-<div class="cell">
-<div class="cell-output-display">
-<p><img src="diagnostics_files/figure-html/diag-estimate-map-1.png" class="img-fluid" style="width:100.0%"></p>
+<p><img src="diagnostics_files/figure-html/diag-estimate-density-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 <div class="cell">
@@ -336,10 +347,16 @@ ul.task-list li input[type="checkbox"] {
 <p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+<p>Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees a upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/diag-poststratification-effect-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
 </section>
-<section id="uncertainty-ci-width" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="uncertainty-ci-width"><span class="header-section-number">2</span> Uncertainty CI Width</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based widths reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
+<section id="uncertainty-improvement" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</h2>
+<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approach produced creidle interval widths which reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -351,9 +368,16 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="residual-area-effects" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="residual-area-effects"><span class="header-section-number">3</span> Residual Area Effects</h2>
-<p>The unstructured area-effect maps show where the fitted models allocate remaining area-level variation after the fixed effects and temporal and spatial structure are considered.</p>
+<section id="spatial-and-temporal-effect" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="spatial-and-temporal-effect"><span class="header-section-number">3</span> Spatial and Temporal Effect</h2>
+<p>The posterior precision hyperparameters, <span class="math inline">\tau</span>, determine the variability of the random effects, with a latent-scale standard deviation of <span class="math inline">1/\sqrt{\tau}</span>. After conversion to the response scale of frequent-cycling prevalence (percentage point), the temporal effect indicates that estimates typically differ by approximately 0.75–1 percentage point between adjacent survey periods. The spatial effect produces a larger typical adjustment in the unit-level model than in the area-level model, indicating that residual geographic variation plays a greater role in differentiating its estimates across MSOAs.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="diagnostics_files/figure-html/diag-spatiotemporal-effects-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<p>The BYM2 mixing parameter, <span class="math inline">\phi</span>, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. The lower <span class="math inline">\phi</span> estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.</p>
+<p>The unit-level model uses individual responses directly and estimates a higher <span class="math inline">\phi</span>, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
