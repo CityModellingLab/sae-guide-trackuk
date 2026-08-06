@@ -101,7 +101,9 @@ map_annotation_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Area-level SAE uses direct estimates as the modelling input. In the Fay--Herriot area-level model, each direct estimate for an *MSOA-year* cell is treated as a noisy observation of the underlying frequent-cycling rate, with its sampling variance determining how much weight the model gives to that estimate. The model borrows strength across MSOAs and survey years through spatial and temporal random effects, while area-level predictors, obtained from aggregated benchmarked sources such as [ONS UK Census 2021](https://www.ons.gov.uk/census), help explain systematic differences in the frequent cycling estimand across areas.
+Area-level SAE stabilises direct estimates by using them as modelling inputs. Each direct estimate for an *MSOA-year* cell is treated as a noisy observation of its underlying frequent-cycling rate, with its sampling variance determining the strength of the local survey evidence.
+
+The model predicts the underlying rate by combining MSOA-level information from the [ONS UK Census 2021](https://www.ons.gov.uk/census) with spatial and temporal random effects, allowing information to be shared across MSOAs and survey years. The final estimate remains close to the direct estimate where survey evidence is strong but depends more on the predictors and random effects where the direct estimate is uncertain or unavailable.
 
 ## Prepare modelling data
 
