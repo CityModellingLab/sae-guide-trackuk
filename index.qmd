@@ -20,9 +20,11 @@ This guide introduces several **spatio-temporal Bayesian small area estimation (
 Bayesian inference and INLA
 :::
 
-Bayesian inference combines survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. Modelled estimates are returned as posterior distributions, which makes uncertainty explicit.
+Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.
 
-The examples use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.
+Frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE). Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
+
+The examples use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models and is generally much faster than Markov chain Monte Carlo (MCMC) for this workflow.
 :::
 
 ::: {.home-section}
@@ -53,7 +55,7 @@ The data are synthetic datasets based on the [**National Survey for Wales**](htt
 
 ::: {.home-section}
 ::: {.section-label}
-About the project
+About the project 
 :::
 
 The tutorial is part of the **TRACK-UK** project by the [**City Modelling Lab**](https://citymodellinglab.uk).
