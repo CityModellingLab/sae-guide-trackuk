@@ -274,8 +274,10 @@ ul.task-list li input[type="checkbox"] {
 <div class="section-label">
 <p>Bayesian inference and INLA</p>
 </div>
-<p>Bayesian inference combines survey evidence, auxiliary predictors, neighbouring-area structure, year-to-year structure, and uncertainty from sparse cells in one estimation framework. Modelled estimates are returned as posterior distributions, which makes uncertainty explicit.</p>
-<p>The examples use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models, usually much faster than MCMC for this workflow.</p>
+<p>Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.</p>
+<p>Frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE). Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
+<p><img src="assets/bayesiansae.png" class="img-fluid" style="width:100.0%"></p>
+<p>The examples use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models and is generally much faster than Markov chain Monte Carlo (MCMC) for this workflow.</p>
 </div>
 <div class="home-section">
 <div class="section-label">
