@@ -551,9 +551,9 @@ These estimates reuse the 2021 age-sex-caraccess population composition for the 
 
 ## Appendix: Enhance shallow poststratification with contextual predictors
 
-Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `caraccess`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table.
+Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `caraccess`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table. 
 
-Contextual predictors can explain between-area or between-year variation, but they do not describe respondent composition within an MSOA. They cannot represent how cycling behaviour differs between adults with and without car access inside the same age-sex cell.
+To recover some between-area variation in `caraccess`, we can add a contextual predictor representing average share of the adult population that has access to a car. However, they do not describe respondent composition within an MSOA, i.e., they cannot represent how cycling behaviour differs between adults with and without car access inside the same age-sex cell.
 
 ```{r}
 #| label: mrp-load-shallow
@@ -593,17 +593,13 @@ head(shallow_model_data)
 ```{r}
 #| label: mrp-add-context
 
-area_context_predictors <- read_csv(
+area_context_predictors <- readr::read_csv(
   file.path(base_path, "clean", "areapred_freqcyc.csv"),
   show_col_types = FALSE
 ) |>
-  select(area_id, pop_density, caraccess_adult_share) |>
-  mutate(
-    across(
-      c(pop_density, caraccess_adult_share),
-      ~ as.numeric(scale(.x)),
-      .names = "z_{.col}"
-    )
+  dplyr::transmute(
+    area_id,
+    z_caraccess_adult_share = as.numeric(scale(caraccess_adult_share))
   )
 
 shallow_model_data <- shallow_model_data |>
@@ -611,7 +607,7 @@ shallow_model_data <- shallow_model_data |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   drop_na(
-    freq_cyclist, age_band, sex, z_pop_density, z_caraccess_adult_share,
+    freq_cyclist, age_band, sex, z_caraccess_adult_share,
     area_inla_id, time_inla_id
   ) |>
   arrange(time_inla_id, area_inla_id)
@@ -621,13 +617,13 @@ shallow_poststrat_data <- shallow_poststrat_data |>
   left_join(area_index, by = "area_id") |>
   left_join(time_index, by = "time_id") |>
   drop_na(
-    age_band, sex, z_pop_density, z_caraccess_adult_share,
+    age_band, sex, z_caraccess_adult_share,
     area_inla_id, time_inla_id
   ) |>
   arrange(time_inla_id, area_inla_id, age_band, sex)
 ```
 
-In the **modelling** step, the model specification uses `age_band` and `sex` as the poststratification-cell predictors, and adds the contextual area predictors directly as fixed effect terms.
+In the **modelling** step, the model specification uses `age_band` and `sex` as the poststratification-cell predictors, and adds the contextual area predictor directly as fixed effect terms.
 
 ```{r}
 #| label: mrp-fit-shallow
@@ -644,7 +640,6 @@ shallow_formula <- freq_cyclist ~
   ) +
   age_band +
   sex +
-  z_pop_density +
   z_caraccess_adult_share
 
 shallow_context_fit <- inla(
@@ -671,7 +666,7 @@ rich_shallow_waic <- bind_rows(
     ),
   tibble(
     workflow = "Shallow poststratification",
-    model = "Age + Sex (+Area context)",
+    model = "Age + Sex (Context: Car access rate)",
     waic = shallow_context_fit$waic$waic,
     eff_params = shallow_context_fit$waic$p.eff
   )
@@ -715,7 +710,7 @@ shallow_time_draws <- sapply(shallow_draws, \(draw) {
 })
 
 shallow_prediction_matrix <- model.matrix(
-  ~ age_band + sex + z_pop_density + z_caraccess_adult_share,
+  ~ age_band + sex + z_caraccess_adult_share,
   data = shallow_poststrat_data
 )[, shallow_fixed_terms, drop = FALSE]
 
@@ -830,13 +825,13 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 
 wrap_plots(c(shallow_estimate_maps, shallow_uncertainty_maps), ncol = length(mrp_wave_years)) +
   plot_annotation(
-    title = "Shallow poststratification with area summaries",
-    subtitle = "Age-sex poststratification with area summaries",
+    title = "Shallow poststratification",
+    subtitle = "Age-sex poststratification with MSOA car access rate as contextual",
     theme = map_annotation_theme
   )
 ```
 
-Compared with the richer three-predictor poststratified model, the local differences show whether estimates are driven more by detailed population composition or broader area context. The shallow model may raise estimates in areas where contextual predictors suggest favourable cycling conditions (e.g., high population density), while the rich model may lower them if the poststratification cells contain more residents with car access than the area-level car-ownership contextual predictor implies.
+Compared with the richer three-predictor poststratified model, the local differences show whether estimates are driven more by detailed population composition or broader area context. For example, the rich model may lower the estimate for an MSOA if its poststratification cells contain more residents with car access than the flat area-level contextual predictor implies, and vice versa.
 
 ```{r}
 #| label: mrp-map-rich-shallow
@@ -900,7 +895,7 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 
 wrap_plots(rich_minus_shallow_maps, ncol = 3) +
   plot_annotation(
-    title = "Rich minus shallow poststratification",
+    title = "DIfference in estimates between models with rich and shallow poststratification",
     theme = map_annotation_theme
   )
 ```

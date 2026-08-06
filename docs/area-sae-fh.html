@@ -936,7 +936,7 @@ Note
 <tr class="even">
 <td style="text-align: left;">M3 +PopdensCaraccess</td>
 <td style="text-align: right;">-848.4034</td>
-<td style="text-align: right;">6.781411</td>
+<td style="text-align: right;">6.781412</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -979,37 +979,11 @@ Note
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>posterior_seed <span class="ot">&lt;-</span> 100L</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(posterior_seed)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">result =</span> fh_selected_fit</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Retain only the reusable posterior components, not every fitted predictor.</span></span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>fixed_terms <span class="ot">&lt;-</span> <span class="fu">rownames</span>(fh_selected_fit<span class="sc">$</span>summary.fixed)</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>fixed_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(fixed_terms, <span class="st">":1"</span>), <span class="dv">1</span>]),</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    fixed_terms</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>area_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(area_index<span class="sc">$</span>area_inla_id)</span>
-<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>area_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"area_inla_id:"</span>, area_ids), <span class="dv">1</span>]),</span>
-<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    area_ids</span>
-<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>time_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(time_index<span class="sc">$</span>time_inla_id)</span>
-<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a>time_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb11-27"><a href="#cb11-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb11-28"><a href="#cb11-28" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"time_inla_id:"</span>, time_ids), <span class="dv">1</span>]),</span>
-<span id="cb11-29"><a href="#cb11-29" aria-hidden="true" tabindex="-1"></a>    time_ids</span>
-<span id="cb11-30"><a href="#cb11-30" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb11-31"><a href="#cb11-31" aria-hidden="true" tabindex="-1"></a>})</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">n =</span> <span class="dv">300</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">result =</span> fh_selected_fit</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>prediction_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
@@ -1065,56 +1039,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0467583</td>
-<td style="text-align: right;">0.0001192</td>
-<td style="text-align: right;">0.0250552</td>
-<td style="text-align: right;">0.0658674</td>
-<td style="text-align: right;">0.0408121</td>
+<td style="text-align: right;">0.0466365</td>
+<td style="text-align: right;">0.0001131</td>
+<td style="text-align: right;">0.0252701</td>
+<td style="text-align: right;">0.0691973</td>
+<td style="text-align: right;">0.0439272</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0395745</td>
-<td style="text-align: right;">0.0001218</td>
-<td style="text-align: right;">0.0174177</td>
-<td style="text-align: right;">0.0615038</td>
-<td style="text-align: right;">0.0440861</td>
+<td style="text-align: right;">0.0400147</td>
+<td style="text-align: right;">0.0001133</td>
+<td style="text-align: right;">0.0191105</td>
+<td style="text-align: right;">0.0603723</td>
+<td style="text-align: right;">0.0412618</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0560646</td>
-<td style="text-align: right;">0.0001689</td>
-<td style="text-align: right;">0.0336599</td>
-<td style="text-align: right;">0.0838080</td>
-<td style="text-align: right;">0.0501481</td>
+<td style="text-align: right;">0.0559228</td>
+<td style="text-align: right;">0.0001610</td>
+<td style="text-align: right;">0.0292512</td>
+<td style="text-align: right;">0.0807139</td>
+<td style="text-align: right;">0.0514627</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0439090</td>
-<td style="text-align: right;">0.0001109</td>
-<td style="text-align: right;">0.0232355</td>
-<td style="text-align: right;">0.0644361</td>
-<td style="text-align: right;">0.0412006</td>
+<td style="text-align: right;">0.0445213</td>
+<td style="text-align: right;">0.0001310</td>
+<td style="text-align: right;">0.0217087</td>
+<td style="text-align: right;">0.0675867</td>
+<td style="text-align: right;">0.0458780</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0393487</td>
-<td style="text-align: right;">0.0001261</td>
-<td style="text-align: right;">0.0164196</td>
-<td style="text-align: right;">0.0609107</td>
-<td style="text-align: right;">0.0444910</td>
+<td style="text-align: right;">0.0392761</td>
+<td style="text-align: right;">0.0001115</td>
+<td style="text-align: right;">0.0183145</td>
+<td style="text-align: right;">0.0598805</td>
+<td style="text-align: right;">0.0415660</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0488985</td>
-<td style="text-align: right;">0.0000982</td>
-<td style="text-align: right;">0.0287835</td>
-<td style="text-align: right;">0.0658637</td>
-<td style="text-align: right;">0.0370801</td>
+<td style="text-align: right;">0.0492508</td>
+<td style="text-align: right;">0.0001193</td>
+<td style="text-align: right;">0.0270840</td>
+<td style="text-align: right;">0.0704372</td>
+<td style="text-align: right;">0.0433532</td>
 </tr>
 </tbody>
 </table>
@@ -1247,21 +1221,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">6</td>
-<td style="text-align: right;">0.0502194</td>
-<td style="text-align: right;">0.0466021</td>
-<td style="text-align: right;">0.0456912</td>
-<td style="text-align: right;">0.0001255</td>
-<td style="text-align: right;">0.0001061</td>
-<td style="text-align: right;">0.0001211</td>
-<td style="text-align: right;">0.0285650</td>
-<td style="text-align: right;">0.0292831</td>
-<td style="text-align: right;">0.0244379</td>
-<td style="text-align: right;">0.0729310</td>
-<td style="text-align: right;">0.0661417</td>
-<td style="text-align: right;">0.0679450</td>
-<td style="text-align: right;">0.0443661</td>
-<td style="text-align: right;">0.0368586</td>
-<td style="text-align: right;">0.0435071</td>
+<td style="text-align: right;">0.0515910</td>
+<td style="text-align: right;">0.0471393</td>
+<td style="text-align: right;">0.0454787</td>
+<td style="text-align: right;">0.0001207</td>
+<td style="text-align: right;">0.0001218</td>
+<td style="text-align: right;">0.0001419</td>
+<td style="text-align: right;">0.0318057</td>
+<td style="text-align: right;">0.0279601</td>
+<td style="text-align: right;">0.0229872</td>
+<td style="text-align: right;">0.0742989</td>
+<td style="text-align: right;">0.0668641</td>
+<td style="text-align: right;">0.0712807</td>
+<td style="text-align: right;">0.0424932</td>
+<td style="text-align: right;">0.0389041</td>
+<td style="text-align: right;">0.0482935</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
@@ -1270,21 +1244,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">9</td>
-<td style="text-align: right;">0.0505149</td>
-<td style="text-align: right;">0.0397340</td>
-<td style="text-align: right;">0.0391916</td>
-<td style="text-align: right;">0.0001140</td>
-<td style="text-align: right;">0.0001105</td>
-<td style="text-align: right;">0.0001387</td>
-<td style="text-align: right;">0.0319534</td>
-<td style="text-align: right;">0.0195090</td>
-<td style="text-align: right;">0.0198486</td>
-<td style="text-align: right;">0.0713705</td>
-<td style="text-align: right;">0.0605712</td>
-<td style="text-align: right;">0.0641967</td>
-<td style="text-align: right;">0.0394171</td>
-<td style="text-align: right;">0.0410622</td>
-<td style="text-align: right;">0.0443481</td>
+<td style="text-align: right;">0.0515756</td>
+<td style="text-align: right;">0.0403291</td>
+<td style="text-align: right;">0.0378722</td>
+<td style="text-align: right;">0.0001266</td>
+<td style="text-align: right;">0.0001231</td>
+<td style="text-align: right;">0.0001482</td>
+<td style="text-align: right;">0.0275533</td>
+<td style="text-align: right;">0.0175941</td>
+<td style="text-align: right;">0.0125557</td>
+<td style="text-align: right;">0.0740477</td>
+<td style="text-align: right;">0.0611720</td>
+<td style="text-align: right;">0.0637846</td>
+<td style="text-align: right;">0.0464944</td>
+<td style="text-align: right;">0.0435779</td>
+<td style="text-align: right;">0.0512289</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
@@ -1293,21 +1267,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">11</td>
-<td style="text-align: right;">0.0526549</td>
-<td style="text-align: right;">0.0563108</td>
-<td style="text-align: right;">0.0536219</td>
-<td style="text-align: right;">0.0002605</td>
-<td style="text-align: right;">0.0001180</td>
-<td style="text-align: right;">0.0002150</td>
-<td style="text-align: right;">0.0242302</td>
-<td style="text-align: right;">0.0366175</td>
-<td style="text-align: right;">0.0224654</td>
-<td style="text-align: right;">0.0851133</td>
-<td style="text-align: right;">0.0795064</td>
-<td style="text-align: right;">0.0795264</td>
-<td style="text-align: right;">0.0608831</td>
-<td style="text-align: right;">0.0428889</td>
-<td style="text-align: right;">0.0570610</td>
+<td style="text-align: right;">0.0535568</td>
+<td style="text-align: right;">0.0569827</td>
+<td style="text-align: right;">0.0526686</td>
+<td style="text-align: right;">0.0002800</td>
+<td style="text-align: right;">0.0001802</td>
+<td style="text-align: right;">0.0002112</td>
+<td style="text-align: right;">0.0214587</td>
+<td style="text-align: right;">0.0306200</td>
+<td style="text-align: right;">0.0283068</td>
+<td style="text-align: right;">0.0864841</td>
+<td style="text-align: right;">0.0845058</td>
+<td style="text-align: right;">0.0829311</td>
+<td style="text-align: right;">0.0650253</td>
+<td style="text-align: right;">0.0538858</td>
+<td style="text-align: right;">0.0546244</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
@@ -1316,21 +1290,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">14</td>
-<td style="text-align: right;">0.0509601</td>
-<td style="text-align: right;">0.0433458</td>
-<td style="text-align: right;">0.0435914</td>
-<td style="text-align: right;">0.0001298</td>
-<td style="text-align: right;">0.0001043</td>
-<td style="text-align: right;">0.0001186</td>
-<td style="text-align: right;">0.0275380</td>
-<td style="text-align: right;">0.0256707</td>
-<td style="text-align: right;">0.0242787</td>
-<td style="text-align: right;">0.0774517</td>
-<td style="text-align: right;">0.0657543</td>
-<td style="text-align: right;">0.0646639</td>
-<td style="text-align: right;">0.0499136</td>
-<td style="text-align: right;">0.0400836</td>
-<td style="text-align: right;">0.0403852</td>
+<td style="text-align: right;">0.0502065</td>
+<td style="text-align: right;">0.0448694</td>
+<td style="text-align: right;">0.0441105</td>
+<td style="text-align: right;">0.0001342</td>
+<td style="text-align: right;">0.0001263</td>
+<td style="text-align: right;">0.0001323</td>
+<td style="text-align: right;">0.0271277</td>
+<td style="text-align: right;">0.0243301</td>
+<td style="text-align: right;">0.0227239</td>
+<td style="text-align: right;">0.0729261</td>
+<td style="text-align: right;">0.0642867</td>
+<td style="text-align: right;">0.0667091</td>
+<td style="text-align: right;">0.0457984</td>
+<td style="text-align: right;">0.0399566</td>
+<td style="text-align: right;">0.0439852</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
@@ -1339,21 +1313,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">17</td>
-<td style="text-align: right;">0.0498722</td>
-<td style="text-align: right;">0.0389402</td>
-<td style="text-align: right;">0.0383264</td>
-<td style="text-align: right;">0.0001642</td>
-<td style="text-align: right;">0.0001234</td>
-<td style="text-align: right;">0.0001585</td>
-<td style="text-align: right;">0.0254494</td>
-<td style="text-align: right;">0.0176620</td>
-<td style="text-align: right;">0.0147472</td>
-<td style="text-align: right;">0.0751204</td>
-<td style="text-align: right;">0.0612235</td>
-<td style="text-align: right;">0.0634903</td>
-<td style="text-align: right;">0.0496710</td>
-<td style="text-align: right;">0.0435615</td>
-<td style="text-align: right;">0.0487432</td>
+<td style="text-align: right;">0.0512114</td>
+<td style="text-align: right;">0.0393502</td>
+<td style="text-align: right;">0.0380281</td>
+<td style="text-align: right;">0.0001647</td>
+<td style="text-align: right;">0.0001451</td>
+<td style="text-align: right;">0.0001721</td>
+<td style="text-align: right;">0.0268195</td>
+<td style="text-align: right;">0.0136836</td>
+<td style="text-align: right;">0.0135199</td>
+<td style="text-align: right;">0.0768867</td>
+<td style="text-align: right;">0.0625367</td>
+<td style="text-align: right;">0.0630280</td>
+<td style="text-align: right;">0.0500671</td>
+<td style="text-align: right;">0.0488531</td>
+<td style="text-align: right;">0.0495080</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
@@ -1362,21 +1336,21 @@ Note
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: right;">19</td>
-<td style="text-align: right;">0.0473312</td>
-<td style="text-align: right;">0.0477767</td>
-<td style="text-align: right;">0.0468000</td>
-<td style="text-align: right;">0.0001040</td>
-<td style="text-align: right;">0.0000891</td>
-<td style="text-align: right;">0.0001147</td>
-<td style="text-align: right;">0.0274853</td>
-<td style="text-align: right;">0.0291003</td>
-<td style="text-align: right;">0.0227469</td>
-<td style="text-align: right;">0.0681074</td>
-<td style="text-align: right;">0.0638316</td>
-<td style="text-align: right;">0.0656195</td>
-<td style="text-align: right;">0.0406222</td>
-<td style="text-align: right;">0.0347313</td>
-<td style="text-align: right;">0.0428726</td>
+<td style="text-align: right;">0.0479024</td>
+<td style="text-align: right;">0.0492311</td>
+<td style="text-align: right;">0.0473185</td>
+<td style="text-align: right;">0.0001199</td>
+<td style="text-align: right;">0.0001148</td>
+<td style="text-align: right;">0.0001183</td>
+<td style="text-align: right;">0.0270648</td>
+<td style="text-align: right;">0.0277048</td>
+<td style="text-align: right;">0.0269763</td>
+<td style="text-align: right;">0.0669673</td>
+<td style="text-align: right;">0.0691642</td>
+<td style="text-align: right;">0.0679641</td>
+<td style="text-align: right;">0.0399026</td>
+<td style="text-align: right;">0.0414594</td>
+<td style="text-align: right;">0.0409878</td>
 </tr>
 </tbody>
 </table>
@@ -1455,24 +1429,24 @@ Note
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">NA</td>
 <td style="text-align: right;">NA</td>
-<td style="text-align: left;">4.7%</td>
-<td style="text-align: right;">0.000184</td>
+<td style="text-align: left;">4.6%</td>
+<td style="text-align: right;">0.000187</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000133</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">NA</td>
 <td style="text-align: right;">NA</td>
-<td style="text-align: left;">5.2%</td>
-<td style="text-align: right;">0.000144</td>
+<td style="text-align: left;">5.1%</td>
+<td style="text-align: right;">0.000154</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000152</td>
 <td style="text-align: right;">2023</td>
 <td style="text-align: left;">NA</td>
 <td style="text-align: right;">NA</td>
-<td style="text-align: left;">5.2%</td>
-<td style="text-align: right;">0.000134</td>
+<td style="text-align: left;">5.1%</td>
+<td style="text-align: right;">0.000137</td>
 </tr>
 </tbody>
 </table>
@@ -1529,40 +1503,40 @@ Note
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">0.0%</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.0%</td>
-<td style="text-align: right;">0.000126</td>
+<td style="text-align: left;">5.2%</td>
+<td style="text-align: right;">0.000121</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">0.0%</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.1%</td>
-<td style="text-align: right;">0.000114</td>
+<td style="text-align: left;">5.2%</td>
+<td style="text-align: right;">0.000127</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">0.0%</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.3%</td>
-<td style="text-align: right;">0.000261</td>
+<td style="text-align: left;">5.4%</td>
+<td style="text-align: right;">0.000280</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">0.0%</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.1%</td>
-<td style="text-align: right;">0.000130</td>
+<td style="text-align: left;">5.0%</td>
+<td style="text-align: right;">0.000134</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
 <td style="text-align: left;">0.0%</td>
 <td style="text-align: right;">0</td>
-<td style="text-align: left;">5.0%</td>
-<td style="text-align: right;">0.000164</td>
+<td style="text-align: left;">5.1%</td>
+<td style="text-align: right;">0.000165</td>
 </tr>
 </tbody>
 </table>
@@ -1607,11 +1581,11 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for area_inla_id</td>
-<td style="text-align: right;">24355.476</td>
-<td style="text-align: right;">30214.495</td>
-<td style="text-align: right;">3422.949</td>
-<td style="text-align: right;">15474.523</td>
-<td style="text-align: right;">101445.990</td>
+<td style="text-align: right;">24355.470</td>
+<td style="text-align: right;">30214.482</td>
+<td style="text-align: right;">3422.948</td>
+<td style="text-align: right;">15474.520</td>
+<td style="text-align: right;">101445.955</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Phi for area_inla_id</td>
@@ -1623,11 +1597,11 @@ Note
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">15357.541</td>
-<td style="text-align: right;">21562.373</td>
+<td style="text-align: right;">15357.539</td>
+<td style="text-align: right;">21562.367</td>
 <td style="text-align: right;">900.766</td>
-<td style="text-align: right;">8776.987</td>
-<td style="text-align: right;">70046.769</td>
+<td style="text-align: right;">8776.988</td>
+<td style="text-align: right;">70046.754</td>
 </tr>
 </tbody>
 </table>
@@ -1688,15 +1662,15 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Lowered most when adding 3 predictors</td>
-<td style="text-align: right;">1.270063</td>
-<td style="text-align: right;">-0.5436407</td>
-<td style="text-align: right;">0.4671506</td>
+<td style="text-align: right;">1.309449</td>
+<td style="text-align: right;">-0.5441509</td>
+<td style="text-align: right;">0.5435893</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Raised most when adding 3 predictors</td>
-<td style="text-align: right;">-1.924513</td>
-<td style="text-align: right;">1.9145091</td>
-<td style="text-align: right;">-1.2272008</td>
+<td style="text-align: right;">-1.880949</td>
+<td style="text-align: right;">1.9142081</td>
+<td style="text-align: right;">-1.1903468</td>
 </tr>
 </tbody>
 </table>
@@ -1765,36 +1739,61 @@ Note
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_names <span class="ot">&lt;-</span> <span class="fu">names</span>(posterior_draws[[<span class="dv">1</span>]]<span class="sc">$</span>hyperpar)</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>hyperpar[posterior_hyperparameter_names]),</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    posterior_hyperparameter_names</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>posterior_output_dir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">dirname</span>(base_path), <span class="st">"outputs"</span>)</span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(posterior_output_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(</span>
-<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
-<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema_version =</span> 1L,</span>
-<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">route =</span> <span class="st">"Area-level SAE"</span>,</span>
-<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> fh_best_model,</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> posterior_seed,</span>
-<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_draws =</span> <span class="fu">length</span>(posterior_draws),</span>
-<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">fixed =</span> fixed_draws,</span>
-<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> area_draws,</span>
-<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">time =</span> time_draws,</span>
-<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">hyperparameters =</span> posterior_hyperparameter_draws,</span>
-<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_index =</span> area_index,</span>
-<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_index =</span> time_index</span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(posterior_output_dir, <span class="st">"freqcyc_posterior_draws_area.rds"</span>),</span>
-<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">compress =</span> <span class="st">"xz"</span></span>
-<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_fh_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_fh.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Retain only the reusable posterior components</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>fixed_terms <span class="ot">&lt;-</span> <span class="fu">rownames</span>(fh_selected_fit<span class="sc">$</span>summary.fixed)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>fixed_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(fixed_terms, <span class="st">":1"</span>), <span class="dv">1</span>]),</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    fixed_terms</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>area_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(area_index<span class="sc">$</span>area_inla_id)</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>area_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"area_inla_id:"</span>, area_ids), <span class="dv">1</span>]),</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    area_ids</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>time_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(time_index<span class="sc">$</span>time_inla_id)</span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>time_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb25-21"><a href="#cb25-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>latent[<span class="fu">paste0</span>(<span class="st">"time_inla_id:"</span>, time_ids), <span class="dv">1</span>]),</span>
+<span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>    time_ids</span>
+<span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_names <span class="ot">&lt;-</span> <span class="fu">names</span>(posterior_draws[[<span class="dv">1</span>]]<span class="sc">$</span>hyperpar)</span>
+<span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
+<span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>hyperpar[posterior_hyperparameter_names]),</span>
+<span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>    posterior_hyperparameter_names</span>
+<span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb25-33"><a href="#cb25-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-34"><a href="#cb25-34" aria-hidden="true" tabindex="-1"></a>posterior_output_dir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">dirname</span>(base_path), <span class="st">"outputs"</span>)</span>
+<span id="cb25-35"><a href="#cb25-35" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(posterior_output_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb25-36"><a href="#cb25-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-37"><a href="#cb25-37" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(</span>
+<span id="cb25-38"><a href="#cb25-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb25-39"><a href="#cb25-39" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema_version =</span> 1L,</span>
+<span id="cb25-40"><a href="#cb25-40" aria-hidden="true" tabindex="-1"></a>    <span class="at">route =</span> <span class="st">"Area-level SAE"</span>,</span>
+<span id="cb25-41"><a href="#cb25-41" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> fh_best_model,</span>
+<span id="cb25-42"><a href="#cb25-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> 100L,</span>
+<span id="cb25-43"><a href="#cb25-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_draws =</span> <span class="fu">length</span>(posterior_draws),</span>
+<span id="cb25-44"><a href="#cb25-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">fixed =</span> fixed_draws,</span>
+<span id="cb25-45"><a href="#cb25-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> area_draws,</span>
+<span id="cb25-46"><a href="#cb25-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">time =</span> time_draws,</span>
+<span id="cb25-47"><a href="#cb25-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">hyperparameters =</span> posterior_hyperparameter_draws,</span>
+<span id="cb25-48"><a href="#cb25-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_index =</span> area_index,</span>
+<span id="cb25-49"><a href="#cb25-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_index =</span> time_index</span>
+<span id="cb25-50"><a href="#cb25-50" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb25-51"><a href="#cb25-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(posterior_output_dir, <span class="st">"freqcyc_posterior_draws_area.rds"</span>),</span>
+<span id="cb25-52"><a href="#cb25-52" aria-hidden="true" tabindex="-1"></a>  <span class="at">compress =</span> <span class="st">"xz"</span></span>
+<span id="cb25-53"><a href="#cb25-53" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb25-54"><a href="#cb25-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-55"><a href="#cb25-55" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_fh_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_fh.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 
