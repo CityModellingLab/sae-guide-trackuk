@@ -18,11 +18,13 @@ library(scales)
 library(tidyr)
 library(tibble)
 
-base_path <- if (dir.exists("data")) {
-  normalizePath("data")
+project_path <- if (dir.exists("data")) {
+  normalizePath(".")
 } else {
-  normalizePath(file.path("..", "data"))
+  normalizePath("..")
 }
+base_path <- file.path(project_path, "data")
+output_path <- file.path(project_path, "outputs")
 
 method_labels <- c(
   "Direct" = "Direct",
@@ -239,25 +241,25 @@ extract_hyperparameter_draws <- function(draw_matrix, name_pattern, label) {
 
 estimate_sets <- bind_rows(
   read_estimate_set(
-    file.path(base_path, "freqcyc_estimates_direct.csv"),
+    file.path(output_path, "freqcyc_estimates_direct.csv"),
     "Direct",
     "direct_estimate",
     variance_col = "variance"
   ),
   read_estimate_set(
-    file.path(base_path, "freqcyc_estimates_fh.csv"),
+    file.path(output_path, "freqcyc_estimates_fh.csv"),
     "FH",
     "fh_estimate",
     ci_width_col = "fh_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqcyc_estimates_bhf.csv"),
+    file.path(output_path, "freqcyc_estimates_bhf.csv"),
     "BHF",
     "bhf_estimate",
     ci_width_col = "bhf_ci_width"
   ),
   read_estimate_set(
-    file.path(base_path, "freqcyc_estimates_mrp_rich.csv"),
+    file.path(output_path, "freqcyc_estimates_mrp_rich.csv"),
     "MRP Rich",
     "mrp_estimate",
     ci_width_col = "mrp_ci_width"
@@ -267,13 +269,12 @@ estimate_sets <- bind_rows(
 diagnostic_estimates <- estimate_sets |>
   mutate(method = factor(method, levels = method_levels))
 
-posterior_output_dir <- file.path(dirname(base_path), "outputs")
 area_draw_bundle <- read_draw_bundle(
-  file.path(posterior_output_dir, "freqcyc_posterior_draws_area.rds"),
+  file.path(output_path, "freqcyc_posterior_draws_area.rds"),
   "Area-level posterior-draw bundle"
 )
 unit_mrp_draw_bundle <- read_draw_bundle(
-  file.path(posterior_output_dir, "freqcyc_posterior_draws_unit_mrp.rds"),
+  file.path(output_path, "freqcyc_posterior_draws_unit_mrp.rds"),
   "Unit-level MRP posterior-draw bundle"
 )
 
@@ -356,7 +357,7 @@ iid_files <- c(
 iid_effects <- names(iid_files) |>
   lapply(\(model_name) {
     read_csv(
-      file.path(base_path, iid_files[[model_name]]),
+      file.path(output_path, iid_files[[model_name]]),
       show_col_types = FALSE
     ) |>
       transmute(model = model_name, area_id, effect = iid_effect_pp)
@@ -475,7 +476,7 @@ bym2_phi_summary <- bind_rows(
   )
 
 direct_evidence <- read_csv(
-  file.path(base_path, "freqcyc_estimates_direct.csv"),
+  file.path(output_path, "freqcyc_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
   select(area_id, time_id, direct_estimate, variance, n)

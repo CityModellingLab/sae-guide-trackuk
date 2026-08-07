@@ -20,13 +20,11 @@ This guide introduces several **spatio-temporal Bayesian small area estimation (
 Bayesian inference and INLA
 :::
 
-Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.
+While frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
 
-Frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE). Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
+![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.](assets/bayesiansae.png){width="100%"}
 
-![](assets/bayesiansae.png){width="100%"}
-
-The examples use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models and is generally much faster than Markov chain Monte Carlo (MCMC) for this workflow.
+The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.
 :::
 
 ::: {.home-section}
@@ -66,7 +64,7 @@ TRACK-UK develops spatial and statistical methods for analysing mobility pattern
 
 For questions about the guide, contact:
 
-- **Shaun Hoang** - University College London
+- **Thehuan Hoang** - University College London
 - **Anna Freni-Sterrantino** - The Alan Turing Institute
 - **Esra Suel** - University College London; University of Zurich
 :::

@@ -33,6 +33,8 @@ library(tibble)
 library(scales)
 
 base_path <- here::here("data")
+output_path <- here::here("outputs")
+dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -298,5 +300,5 @@ In this setting, the summary points to important limitations for area-level mode
 ```{r}
 #| label: direct-export
 #| code-fold: true
-write_csv(direct_bike, file.path(base_path, "freqcyc_estimates_direct.csv"))
+write_csv(direct_bike, file.path(output_path, "freqcyc_estimates_direct.csv"))
 ```

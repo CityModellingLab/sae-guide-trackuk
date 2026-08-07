@@ -39,6 +39,8 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
+output_path <- here::here("outputs")
+dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -113,7 +115,7 @@ We start from generated direct estimates and raw area predictors, which will be 
 #| label: fh-load-direct
 
 direct_bike <- read_csv(
-  file.path(base_path, "freqcyc_estimates_direct.csv"),
+  file.path(output_path, "freqcyc_estimates_direct.csv"),
   show_col_types = FALSE
 ) |>
   select(area_id, msoa_name, time_id, direct_estimate, variance, n)
@@ -794,9 +796,6 @@ posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {
   )
 })
 
-posterior_output_dir <- file.path(dirname(base_path), "outputs")
-dir.create(posterior_output_dir, recursive = TRUE, showWarnings = FALSE)
-
 saveRDS(
   list(
     schema_version = 1L,
@@ -811,9 +810,9 @@ saveRDS(
     area_index = area_index,
     time_index = time_index
   ),
-  file.path(posterior_output_dir, "freqcyc_posterior_draws_area.rds"),
+  file.path(output_path, "freqcyc_posterior_draws_area.rds"),
   compress = "xz"
 )
 
-write_csv(final_fh_results, file.path(base_path, "freqcyc_estimates_fh.csv"))
+write_csv(final_fh_results, file.path(output_path, "freqcyc_estimates_fh.csv"))
 ```

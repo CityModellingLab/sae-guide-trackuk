@@ -40,6 +40,8 @@ library(purrr)
 library(scales)
 
 base_path <- here::here("data")
+output_path <- here::here("outputs")
+dir.create(output_path, recursive = TRUE, showWarnings = FALSE)
 
 msoa_boundaries <- st_read(
   file.path(base_path, "boundaries-msoa.geojson"),
@@ -490,9 +492,6 @@ posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {
   )
 })
 
-posterior_output_dir <- file.path(dirname(base_path), "outputs")
-dir.create(posterior_output_dir, recursive = TRUE, showWarnings = FALSE)
-
 saveRDS(
   list(
     schema_version = 1L,
@@ -508,11 +507,11 @@ saveRDS(
     time_index = time_index
   ),
   file.path(
-    posterior_output_dir,
+    output_path,
     "freqcyc_posterior_draws_unit_summary.rds"
   ),
   compress = "xz"
 )
 
-write_csv(final_bhf_results, file.path(base_path, "freqcyc_estimates_bhf.csv"))
+write_csv(final_bhf_results, file.path(output_path, "freqcyc_estimates_bhf.csv"))
 ```
