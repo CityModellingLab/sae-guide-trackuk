@@ -239,7 +239,18 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#small-area-estimation-for-urban-analytics" id="toc-small-area-estimation-for-urban-analytics" class="nav-link active" data-scroll-target="#small-area-estimation-for-urban-analytics"><span class="header-section-number">1</span> Small area estimation for Urban Analytics</a></li>
+  <li><a href="#bayesian-inference-and-inla" id="toc-bayesian-inference-and-inla" class="nav-link" data-scroll-target="#bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></a></li>
+  <li><a href="#navigating-the-guide" id="toc-navigating-the-guide" class="nav-link" data-scroll-target="#navigating-the-guide"><span class="header-section-number">3</span> Navigating the guide</a></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">4</span> Data</a></li>
+  <li><a href="#about-the-project" id="toc-about-the-project" class="nav-link" data-scroll-target="#about-the-project"><span class="header-section-number">5</span> About the project</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">6</span> References</a></li>
+  </ul>
+</nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -263,30 +274,24 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 <p><img src="assets/banner.png" class="img-fluid" style="width:100.0%"></p>
-<div class="home-section">
-<div class="section-label">
-<p>Small area estimation for Urban Analytics</p>
-</div>
+<section id="small-area-estimation-for-urban-analytics" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="small-area-estimation-for-urban-analytics"><span class="header-section-number">1</span> Small area estimation for Urban Analytics</h2>
 <p>Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales–such as neighbourhoods, census blocks, or transport zones–to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.</p>
 <p>This guide introduces several <strong>spatio-temporal Bayesian small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>INLA</code>. It aims to help researchers choose a method suited to their research needs and data limitations.</p>
-</div>
-<div class="home-section">
-<div class="section-label">
-<p>Bayesian inference and INLA</p>
-</div>
+</section>
+<section id="bayesian-inference-and-inla" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></h2>
 <p>While frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
+<p>The workbooks use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation (INLA)</em>, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="assets/bayesiansae.png" class="img-fluid figure-img" style="width:100.0%"></p>
 <figcaption class="figure-caption">Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.</figcaption>
 </figure>
 </div>
-<p>The workbooks use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation</em>. <code>INLA</code> provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.</p>
-</div>
-<div class="home-section">
-<div class="section-label">
-<p>Navigating the guide</p>
-</div>
+</section>
+<section id="navigating-the-guide" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="navigating-the-guide"><span class="header-section-number">3</span> Navigating the guide</h2>
 <p>The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.</p>
 <p><img src="assets/sae_method_selection.png" class="img-fluid" style="width:100.0%"></p>
 <ol type="1">
@@ -298,17 +303,13 @@ ul.task-list li input[type="checkbox"] {
 <li><strong><a href="./diagnostics.html">Comparative diagnostics</a></strong></li>
 <li><strong><a href="./toolkit.html">Toolkit</a></strong></li>
 </ol>
-</div>
-<div class="home-section">
-<div class="section-label">
-<p>Data</p>
-</div>
+</section>
+<section id="data" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="data"><span class="header-section-number">4</span> Data</h2>
 <p>The data are synthetic datasets based on the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>. The maps and estimates should not be interpreted as empirical findings about specific places in Wales. Auxiliary predictors, boundaries, and poststratification tables are derived from the <em>Office for National Statistics (ONS)</em>, including ONS UK Census 2021. The synthetic dataset construction and preprocessing steps are described in the <a href="./dataprep.html">estimation setup</a>.</p>
-</div>
-<div class="home-section">
-<div class="section-label">
-<p>About the project</p>
-</div>
+</section>
+<section id="about-the-project" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="about-the-project"><span class="header-section-number">5</span> About the project</h2>
 <p>The tutorial is part of the <strong>TRACK-UK</strong> project by the <a href="https://citymodellinglab.uk"><strong>City Modelling Lab</strong></a>.</p>
 <p>TRACK-UK develops spatial and statistical methods for analysing mobility patterns at fine geographic scales and assessing their implications for transport decarbonisation in the UK. The project works with academic, policy, and industry partners to produce evidence for transport and energy policy.</p>
 <p>For questions about the guide, contact:</p>
@@ -317,11 +318,9 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>Anna Freni-Sterrantino</strong> - The Alan Turing Institute</li>
 <li><strong>Esra Suel</strong> - University College London; University of Zurich</li>
 </ul>
-</div>
-<div class="home-section">
-<div class="section-label">
-<p>Bibliography</p>
-</div>
+</section>
+<section id="references" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="references"><span class="header-section-number">6</span> References</h2>
 <p><strong>Survey Estimation and Small Area Estimation</strong></p>
 <ul>
 <li>Horvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” <em>Journal of the American Statistical Association</em>, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.</li>
@@ -340,9 +339,9 @@ ul.task-list li input[type="checkbox"] {
 <li>Rue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” <em>Journal of the Royal Statistical Society: Series B</em>, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.</li>
 <li>Riebler, A., Sørbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” <em>Statistical Methods in Medical Research</em>, 25(4), 1145-1165. doi:10.1177/0962280216660421.</li>
 </ul>
-</div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

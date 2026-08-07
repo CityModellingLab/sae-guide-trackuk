@@ -5,32 +5,21 @@ subtitle: "From sparse survey data to reliable estimates over time and space"
 
 ![](assets/banner.png){width="100%"}
 
-::: {.home-section}
-::: {.section-label}
-Small area estimation for Urban Analytics
-:::
+## Small area estimation for Urban Analytics
 
 Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales--such as neighbourhoods, census blocks, or transport zones--to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.
 
 This guide introduces several **spatio-temporal Bayesian small area estimation (SAE)** methods for urban analytics, with implementation in `INLA`. It aims to help researchers choose a method suited to their research needs and data limitations.
-:::
 
-::: {.home-section}
-::: {.section-label}
-Bayesian inference and INLA
-:::
+## Bayesian inference and `INLA`
 
 While frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
 
+The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation (INLA)*, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.
+
 ![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.](assets/bayesiansae.png){width="100%"}
 
-The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation*. `INLA` provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.
-:::
-
-::: {.home-section}
-::: {.section-label}
-Navigating the guide
-:::
+## Navigating the guide
 
 The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.
 
@@ -43,20 +32,12 @@ The guide covers SAE routes commonly used with urban survey and auxiliary datase
 5. **[Modelling: Unit-level SAE with poststratification](unit-sae-mrp.qmd)**
 6. **[Comparative diagnostics](diagnostics.qmd)**
 7. **[Toolkit](toolkit.qmd)**
-:::
 
-::: {.home-section}
-::: {.section-label}
-Data
-:::
+## Data
 
 The data are synthetic datasets based on the [**National Survey for Wales**](https://www.gov.wales/national-survey-wales). The maps and estimates should not be interpreted as empirical findings about specific places in Wales. Auxiliary predictors, boundaries, and poststratification tables are derived from the *Office for National Statistics (ONS)*, including ONS UK Census 2021. The synthetic dataset construction and preprocessing steps are described in the [estimation setup](dataprep.qmd).
-:::
 
-::: {.home-section}
-::: {.section-label}
-About the project 
-:::
+## About the project 
 
 The tutorial is part of the **TRACK-UK** project by the [**City Modelling Lab**](https://citymodellinglab.uk).
 
@@ -67,12 +48,8 @@ For questions about the guide, contact:
 - **Thehuan Hoang** - University College London
 - **Anna Freni-Sterrantino** - The Alan Turing Institute
 - **Esra Suel** - University College London; University of Zurich
-:::
 
-::: {.home-section}
-::: {.section-label}
-Bibliography
-:::
+## References
 
 **Survey Estimation and Small Area Estimation**
 
@@ -91,4 +68,3 @@ Bibliography
 - Besag, J., York, J., and Mollié, A. (1991). "Bayesian Image Restoration, with Two Applications in Spatial Statistics." *Annals of the Institute of Statistical Mathematics*, 43(1), 1-20. doi:10.1007/BF00116466.
 - Rue, H., Martino, S., and Chopin, N. (2009). "Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations." *Journal of the Royal Statistical Society: Series B*, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.
 - Riebler, A., Sørbye, S. H., Simpson, D., and Rue, H. (2016). "An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling." *Statistical Methods in Medical Research*, 25(4), 1145-1165. doi:10.1177/0962280216660421.
-:::

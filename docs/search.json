@@ -313,5 +313,54 @@
     "title": "Model diagnostics and comparison",
     "section": "4 Comparison with Census cycling data",
     "text": "4 Comparison with Census cycling data\nThe Census benchmark measures cycling to work among employed adults, whereas the model estimates frequent cycling among all adults. The comparison therefore describes alignment with a related measure, not estimation error or bias."
+  },
+  {
+    "objectID": "index.html#small-area-estimation-for-urban-analytics",
+    "href": "index.html#small-area-estimation-for-urban-analytics",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "1 Small area estimation for Urban Analytics",
+    "text": "1 Small area estimation for Urban Analytics\nUrban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales–such as neighbourhoods, census blocks, or transport zones–to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.\nThis guide introduces several spatio-temporal Bayesian small area estimation (SAE) methods for urban analytics, with implementation in INLA. It aims to help researchers choose a method suited to their research needs and data limitations."
+  },
+  {
+    "objectID": "index.html#bayesian-inference-and-inla",
+    "href": "index.html#bayesian-inference-and-inla",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "2 Bayesian inference and INLA",
+    "text": "2 Bayesian inference and INLA\nWhile frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.\nThe workbooks use R-INLA, the R interface to Integrated Nested Laplace Approximation (INLA), which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.\n\n\n\nBayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model."
+  },
+  {
+    "objectID": "index.html#navigating-the-guide",
+    "href": "index.html#navigating-the-guide",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "3 Navigating the guide",
+    "text": "3 Navigating the guide\nThe guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.\n\n\nEstimation setup\nDirect estimation\nModelling: Area-level SAE\nModelling: Unit-level SAE with area summaries\nModelling: Unit-level SAE with poststratification\nComparative diagnostics\nToolkit"
+  },
+  {
+    "objectID": "index.html#data",
+    "href": "index.html#data",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "4 Data",
+    "text": "4 Data\nThe data are synthetic datasets based on the National Survey for Wales. The maps and estimates should not be interpreted as empirical findings about specific places in Wales. Auxiliary predictors, boundaries, and poststratification tables are derived from the Office for National Statistics (ONS), including ONS UK Census 2021. The synthetic dataset construction and preprocessing steps are described in the estimation setup."
+  },
+  {
+    "objectID": "index.html#about-the-project",
+    "href": "index.html#about-the-project",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "5 About the project",
+    "text": "5 About the project\nThe tutorial is part of the TRACK-UK project by the City Modelling Lab.\nTRACK-UK develops spatial and statistical methods for analysing mobility patterns at fine geographic scales and assessing their implications for transport decarbonisation in the UK. The project works with academic, policy, and industry partners to produce evidence for transport and energy policy.\nFor questions about the guide, contact:\n\nThehuan Hoang - University College London\nAnna Freni-Sterrantino - The Alan Turing Institute\nEsra Suel - University College London; University of Zurich"
+  },
+  {
+    "objectID": "index.html#bibliography",
+    "href": "index.html#bibliography",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "6 Bibliography",
+    "text": "6 Bibliography\nSurvey Estimation and Small Area Estimation\n\nHorvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” Journal of the American Statistical Association, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.\nFay, R. E., and Herriot, R. A. (1979). “Estimates of Income for Small Places: An Application of James-Stein Procedures to Census Data.” Journal of the American Statistical Association, 74(366), 269-277. doi:10.1080/01621459.1979.10482505.\nBattese, G. E., Harter, R. M., and Fuller, W. A. (1988). “An Error-Components Model for Prediction of County Crop Areas Using Survey and Satellite Data.” Journal of the American Statistical Association, 83(401), 28-36. doi:10.1080/01621459.1988.10478561.\nRao, J. N. K., and Yu, M. (1994). “Small-Area Estimation by Combining Time-Series and Cross-Sectional Data.” Canadian Journal of Statistics, 22(4), 511-528. doi:10.2307/3315407.\n\nMultilevel Regression with Poststratification\n\nGelman, A., and Little, T. C. (1997). “Poststratification into Many Categories Using Hierarchical Logistic Regression.” Survey Methodology, 23(2), 127-135.\nPark, D. K., Gelman, A., and Bafumi, J. (2004). “Bayesian Multilevel Estimation with Poststratification: State-Level Estimates from National Polls.” Political Analysis, 12(4), 375-385. doi:10.1093/pan/mph024.\n\nBayesian Spatial and Spatio-Temporal Modelling\n\nBesag, J., York, J., and Mollié, A. (1991). “Bayesian Image Restoration, with Two Applications in Spatial Statistics.” Annals of the Institute of Statistical Mathematics, 43(1), 1-20. doi:10.1007/BF00116466.\nRue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” Journal of the Royal Statistical Society: Series B, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.\nRiebler, A., Sørbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” Statistical Methods in Medical Research, 25(4), 1145-1165. doi:10.1177/0962280216660421."
+  },
+  {
+    "objectID": "index.html#references",
+    "href": "index.html#references",
+    "title": "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics",
+    "section": "6 References",
+    "text": "6 References\nSurvey Estimation and Small Area Estimation\n\nHorvitz, D. G., and Thompson, D. J. (1952). “A Generalization of Sampling Without Replacement from a Finite Universe.” Journal of the American Statistical Association, 47(260), 663-685. doi:10.1080/01621459.1952.10483446.\nFay, R. E., and Herriot, R. A. (1979). “Estimates of Income for Small Places: An Application of James-Stein Procedures to Census Data.” Journal of the American Statistical Association, 74(366), 269-277. doi:10.1080/01621459.1979.10482505.\nBattese, G. E., Harter, R. M., and Fuller, W. A. (1988). “An Error-Components Model for Prediction of County Crop Areas Using Survey and Satellite Data.” Journal of the American Statistical Association, 83(401), 28-36. doi:10.1080/01621459.1988.10478561.\nRao, J. N. K., and Yu, M. (1994). “Small-Area Estimation by Combining Time-Series and Cross-Sectional Data.” Canadian Journal of Statistics, 22(4), 511-528. doi:10.2307/3315407.\n\nMultilevel Regression with Poststratification\n\nGelman, A., and Little, T. C. (1997). “Poststratification into Many Categories Using Hierarchical Logistic Regression.” Survey Methodology, 23(2), 127-135.\nPark, D. K., Gelman, A., and Bafumi, J. (2004). “Bayesian Multilevel Estimation with Poststratification: State-Level Estimates from National Polls.” Political Analysis, 12(4), 375-385. doi:10.1093/pan/mph024.\n\nBayesian Spatial and Spatio-Temporal Modelling\n\nBesag, J., York, J., and Mollié, A. (1991). “Bayesian Image Restoration, with Two Applications in Spatial Statistics.” Annals of the Institute of Statistical Mathematics, 43(1), 1-20. doi:10.1007/BF00116466.\nRue, H., Martino, S., and Chopin, N. (2009). “Approximate Bayesian Inference for Latent Gaussian Models by Using Integrated Nested Laplace Approximations.” Journal of the Royal Statistical Society: Series B, 71(2), 319-392. doi:10.1111/j.1467-9868.2008.00700.x.\nRiebler, A., Sørbye, S. H., Simpson, D., and Rue, H. (2016). “An Intuitive Bayesian Spatial Model for Disease Mapping That Accounts for Scaling.” Statistical Methods in Medical Research, 25(4), 1145-1165. doi:10.1177/0962280216660421."
   }
 ]
