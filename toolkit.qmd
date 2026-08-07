@@ -1,6 +1,6 @@
 ---
 title: "[WIP] SAE Toolkit"
-subtitle: "Bring your own survey"
+subtitle: "Apply to your own survey"
 ---
 
 This SAE toolkit provides templates for preparing survey and auxiliary data, a decision framework for choosing an appropriate SAE method, and method-specific scripts with the expected inputs and outputs.
@@ -23,6 +23,14 @@ In a spatio-temporal SAE workflow, the target estimate is produced for every are
 ## Prepare the modelling input
 
 Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.
+
+| Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
+|---|:---:|:---:|:---:|:---:|
+| Spatial graph |-| Yes | Yes | Yes |
+| Modelling: Area-level predictors |-| Yes |-|-|
+| Modelling: Unit-level predictors |-|-| Yes | Yes |
+| Aggregation: predictor area summaries |-|-| Yes |-|
+| Aggregation: poststratification table |-|-|-| Yes |
 
 ### Domain frame
 

@@ -97,7 +97,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
         <li>
     <a class="dropdown-item" href="./dataprep.html" rel="" target="">
- <span class="dropdown-text">Setting up</span></a>
+ <span class="dropdown-text">Preparation</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
@@ -181,7 +181,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Setting up</span></a>
+ <span class="menu-text">Preparation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -264,7 +264,7 @@ ul.task-list li input[type="checkbox"] {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">[WIP] SAE Toolkit</h1>
-<p class="subtitle lead">Bring your own survey</p>
+<p class="subtitle lead">Apply to your own survey</p>
 </div>
 
 
@@ -298,6 +298,54 @@ ul.task-list li input[type="checkbox"] {
 <section id="prepare-the-modelling-input" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="prepare-the-modelling-input"><span class="header-section-number">3</span> Prepare the modelling input</h2>
 <p>Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.</p>
+<table class="table">
+<thead>
+<tr class="header">
+<th>Auxiliary data</th>
+<th style="text-align: center;"><a href="./direct-estimation.html">Direct estimation</a></th>
+<th style="text-align: center;"><a href="./area-sae-fh.html">Area-level SAE</a></th>
+<th style="text-align: center;"><a href="./unit-sae-summ.html">Unit-level SAE w/ Summaries</a></th>
+<th style="text-align: center;"><a href="./unit-sae-mrp.html">Unit-level SAE w/ Poststrat</a></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Spatial graph</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr class="even">
+<td>Modelling: Area-level predictors</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td>Modelling: Unit-level predictors</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+<tr class="even">
+<td>Aggregation: predictor area summaries</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">-</td>
+</tr>
+<tr class="odd">
+<td>Aggregation: poststratification table</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">-</td>
+<td style="text-align: center;">Yes</td>
+</tr>
+</tbody>
+</table>
 <section id="domain-frame" class="level3" data-number="3.1">
 <h3 data-number="3.1" class="anchored" data-anchor-id="domain-frame"><span class="header-section-number">3.1</span> Domain frame</h3>
 <p>Always prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by <code>INLA</code>.</p>
