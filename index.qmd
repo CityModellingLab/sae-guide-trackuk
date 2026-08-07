@@ -15,7 +15,7 @@ This guide introduces several **spatio-temporal Bayesian small area estimation (
 
 While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a **Bayesian approach** instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
 
-The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation (INLA)*, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation workflows.
+The workbooks use `R-INLA`, the R interface to [*Integrated Nested Laplace Approximation (INLA)*](https://www.r-inla.org/), which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation.
 
 ![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.](assets/bayesiansae.png){width="100%"}
 
