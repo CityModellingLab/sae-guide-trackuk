@@ -1,38 +1,41 @@
-# Clean Data
+# Clean data
 
-Tutorial-ready files derived from the raw survey, lookup, boundary, Census, and population sources.
+This folder contains the cleaned inputs used by the analysis. Fitted estimates and posterior outputs are stored in `outputs/`.
 
-## Lookups
+## Geography
 
-- `msoa_lad_lookup.csv`: Wales MSOA-to-local-authority lookup used by the clean-data scripts.
-- `dvla_lad_lookup.csv`: National Survey for Wales `DvLA` code to current local-authority code bridge.
+- `msoa_lad_lookup.csv`: Wales 2021 MSOAs and their current Local Authorities.
+- `dvla_lad_lookup.csv`: National Survey for Wales `DvLA` codes matched to current Local Authority codes.
+- `msoa_queen.adj`: INLA adjacency graph for Wales MSOAs. Two MSOAs are neighbours when they share a boundary or corner.
+- `domain_msoayear.csv`: complete grid of 408 MSOAs and the three analysis periods, coded as 2021, 2023 and 2025.
 
-## Survey Files
+## Survey data
 
-- `survey_microdata_msoayear.csv`: one row per respondent-wave. Includes harmonised survey fields, synthetic MSOA assignment, `strata`, cycling indicator, weights, and respondent predictors.
-- `surveyind_freqcyc.csv`: one row per respondent-wave for the cycling estimand. Includes `unit_id`, `time_id`, `area_id`, `strata`, `freq_cyclist`, `weight`, and unit predictors `sex`, `age`, and `caraccess`.
-- `domain_msoayear.csv`: complete MSOA-year estimation grid, including cells with no survey respondents.
+- `survey_microdata_msoayear.csv`: one row per respondent-wave, with harmonised survey fields, survey weights, respondent predictors and a synthetic MSOA assignment.
+- `surveyind_freqcyc.csv`: adult respondent-wave records used for the cycling models. `freq_cyclist` equals 1 for adults who cycle at least several times a week and 0 for other valid responses. Missing outcomes and weights are retained for downstream filtering.
 
-## Cycling Auxiliary and Validation Files
+The cycling file contains `unit_id`, `time_id`, `area_id`, `strata`, `freq_cyclist`, `weight`, `sex`, `age` and `caraccess`.
 
-- `areapred_freqcyc.csv`: one row per MSOA, keyed by `area_id`, with raw area predictors for frequent cycling models. Scaled model terms use the `z_*` prefix when needed.
-- `poststrat_freqcyc_age_sex_212325.csv`: one row per MSOA-year-age-sex cell with `pop_count` for shallow poststratification. Age bands are grouped to match the rich poststratification table.
-- `poststrat_freqcyc_age_sex_car_21.csv`: one row per MSOA-year-age-sex-car-access cell with `pop_count` for richer poststratification.
-- `validation_bicycle_to_work_share.csv`: one row per Wales MSOA with a simple 2021 bicycle-to-work benchmark. The numerator is the TS061 bicycle-to-work count and the denominator is the TS061 total usual residents aged 16+ in employment.
+## Census and population data
 
-## Notes
+- `areapred_freqcyc.csv`: Census 2021 MSOA predictors: population density, mean adult age, female share and car-access share.
+- `poststrat_freqcyc_age_sex_212325.csv`: age-by-sex population cells for all three periods. The population sources are mid-2020, mid-2022 and mid-2024 respectively.
+- `poststrat_freqcyc_age_sex_car_21.csv`: Census 2021 age-by-sex-by-car-access cells. The same 2021 counts are used for all three periods because equivalent joint counts are not available for each period.
+- `validation_bicycle_to_work_share.csv`: Census 2021 bicycle-to-work share for each MSOA. This is a related benchmark, not the same outcome as frequent cycling.
 
-- Updated MSOA codes with mismatch from survey microdata.
-    - `DvLA == 7` maps to Powys, `W06000023`.
-    - `DvLA == 17` maps to Merthyr Tydfil, `W06000024`.
-- The 2024-25 raw survey file does not contain exact respondent `Age`. The clean-data builder derives a synthetic numeric `age` from `DvAgeGrp7` by sampling from the 2021 observed age mix within each age-group interval, with deterministic random jitter and a cap of 95 for the open-ended 75+ group. The `survey_microdata_msoayear.csv` file records this in `age_source`.
-- The shallow 2025 poststratification table uses the latest supplied mid-2024 population denominator, as the mid-2025 estimates have not been published as of July 2026.
-- In the shallow poststratification table, the youngest available ONS age band is `15 to 19`, so age 15+ is used as the closest available match to the NSW adult definition of age 16+.
+## Data limitations
 
-## Build Scripts
+- The survey does not identify respondents' MSOAs. Each respondent is assigned at random to an MSOA within their Local Authority using a fixed seed. The resulting MSOA estimates are analysis examples, not observed local estimates.
+- The `DvLA` lookup maps code 7 to Powys (`W06000023`) and code 17 to Merthyr Tydfil (`W06000024`).
+- The 2024–25 survey does not contain exact age. Missing ages are generated within `DvAgeGrp7` bands using the observed 2020–21 age distribution and a fixed seed. `age_source` records whether age is observed or generated.
+- The travel weight is used in waves where it is supplied. The adult weight is used when a wave does not contain the travel-weight field.
+- The 2025 age-by-sex cells use mid-2024 population estimates. The source's youngest band is age 15–19, so it is used as the nearest available match to the survey population aged 16 and over.
 
-- `scripts/build_clean_survey_microdata.py`: builds `survey_microdata_msoayear.csv`, `surveyind_freqcyc.csv`, and `domain_msoayear.csv`.
-- `scripts/build_cycling_area_predictors.py`: builds `areapred_freqcyc.csv`.
-- `scripts/build_cycling_poststrat_shallow3y.py`: builds `poststrat_freqcyc_age_sex_212325.csv`.
-- `scripts/build_cycling_poststrat_rich1y.py`: builds `poststrat_freqcyc_age_sex_car_21.csv`.
-- `scripts/build_validation_bicycle_to_work.py`: builds `validation_bicycle_to_work_share.csv`.
+## Build sources
+
+- `scripts/build_clean_survey_microdata.py`: survey microdata, cycling analysis file and domain grid.
+- `scripts/build_cycling_area_predictors.py`: MSOA predictors.
+- `scripts/build_cycling_poststrat_shallow3y.py`: age-by-sex cells.
+- `scripts/build_cycling_poststrat_rich1y.py`: age-by-sex-by-car-access cells.
+- `scripts/build_validation_bicycle_to_work.py`: bicycle-to-work benchmark.
+- `dataprep.qmd`: Queen-contiguity adjacency graph.

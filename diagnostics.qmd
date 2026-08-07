@@ -1,5 +1,5 @@
 ---
-title: "[WIP] Model diagnostics and comparison"
+title: "Model diagnostics and comparison"
 subtitle: "Estimates, uncertainty, and residual structure"
 ---
 
@@ -29,8 +29,8 @@ output_path <- file.path(project_path, "outputs")
 method_labels <- c(
   "Direct" = "Direct",
   "FH" = "Area-level SAE",
-  "BHF" = "Unit-level SAE with area summaries",
-  "MRP Rich" = "Unit-level SAE with poststratification"
+  "BHF" = "Unit-level SAE\nwith area summaries",
+  "MRP Rich" = "Unit-level SAE\nwith poststratification"
 )
 method_levels <- names(method_labels)
 method_labeller <- labeller(method = as_labeller(method_labels))
@@ -284,6 +284,11 @@ msoa_boundaries <- st_read(
 ) |>
   rename(area_id = MSOA21CD) |>
   filter(str_starts(area_id, "W"))
+
+bicycle_to_work_benchmark <- read_csv(
+  file.path(base_path, "clean", "validation_bicycle_to_work_share.csv"),
+  show_col_types = FALSE
+)
 ```
 
 ```{r}
@@ -346,7 +351,12 @@ ci_map_data <- msoa_boundaries |>
   left_join(diagnostic_estimates, by = "area_id") |>
   filter(time_id == selected_time_id) |>
   mutate(
-    method = factor(method, levels = method_levels)
+    method = factor(method, levels = method_levels),
+    ci_width = if_else(
+      method == "Direct" & ci_width == 0,
+      NA_real_,
+      ci_width
+    )
   )
 
 iid_files <- c(
@@ -525,7 +535,7 @@ This comparison focuses on the trade-offs between direct estimation, area-level 
 | Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
 | Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
 | Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Moderate | Area summaries only approximate the population composition, not robust for binary outcome. |
-| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | Adding more predictors produce suppressed cells (false population zeros). |
+| Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | Adding more predictors produces suppressed cells (false population zeros). |
 
 ## Estimate smoothing and target population adjustment
 
@@ -687,10 +697,6 @@ map_grid <- (
   plot_layout(widths = c(1.25, 1.75), guides = "keep") +
   plot_annotation(
     title = "Estimated frequent-cycling prevalence across estimation routes",
-    subtitle = paste(
-      "MSOA distributions and mapped estimates across three survey periods;",
-      "the dashed line is the overall mean for each route"
-    ),
     theme = annotation_theme
   ) &
   theme(legend.position = "bottom")
@@ -716,7 +722,7 @@ method_agreement |>
   scale_colour_manual(values = year_colours) +
   labs(
     title = "Cross-method comparison",
-    subtitle = "Dashed line shows equality; points are MSOA-year cells",
+    subtitle = "Points are MSOA-year domains",
     x = "Comparison estimate",
     y = "Unit-level SAE with poststratification (MRP)",
     colour = "Survey year"
@@ -734,7 +740,6 @@ Poststratification changes how the predicted population cells are aggregated. By
 #| fig-height: 7
 #| out-width: "100%"
 
-poststrat_year <- 2023L
 poststrat_age_levels <- c("16_24", "25_34", "35_49", "50_64", "65_plus")
 
 poststrat_domain_frame <- read_csv(
@@ -757,7 +762,7 @@ poststrat_cells <- read_csv(
     sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
     caraccess = as.integer(caraccess)
   ) |>
-  filter(time_id == poststrat_year, pop_count > 0) |>
+  filter(time_id == selected_time_id, pop_count > 0) |>
   left_join(poststrat_area_index, by = "area_id") |>
   left_join(poststrat_time_index, by = "time_id") |>
   arrange(area_inla_id, age_band, sex, caraccess)
@@ -843,7 +848,7 @@ poststrat_effects <- tibble(
 ) |>
   left_join(
     poststrat_domain_frame |>
-      filter(time_id == poststrat_year) |>
+      filter(time_id == selected_time_id) |>
       select(area_id, msoa_name),
     by = "area_id"
   )
@@ -975,11 +980,9 @@ ggplot(
     name = NULL
   ) +
   labs(
-    title = "Poststratification effect on MRP estimates",
-    subtitle = paste0(
-      period_labels[[as.character(poststrat_year)]],
-      " MSOAs with the largest decrease and increase; ",
-      "point size shows Census population share"
+    title = "Poststratification effect on estimates",
+    subtitle = paste0("Survey period: ",
+      period_labels[[as.character(selected_time_id)]]
     ),
     x = "Predicted frequent-cycling prevalence",
     y = "Age band | sex | car access"
@@ -1019,11 +1022,12 @@ ci_map_data |>
   facet_wrap(vars(method), nrow = 1, labeller = method_labeller) +
   ci_width_fill_scale(ci_width_colour_limits) +
   labs(
-    title = "Uncertainty in estimated frequent-cycling prevalence across estimation routes",
+    title = "95% CI width of estimated frequent-cycling prevalence",
     subtitle = paste0(
-      "Mapped 95% interval widths for ",
+      "Survey period: ",
       period_labels[[as.character(selected_time_id)]]
-    )
+    ),
+    caption = "Grey indicates zero or missing sampling variance",
   ) +
   map_panel_theme +
   theme(
@@ -1137,12 +1141,12 @@ temporal_effect_panel <- make_effect_panel(
   "Typical change between adjacent periods (pp)",
   show_models = FALSE
 )
- 
+
 (spatial_effect_panel | temporal_effect_panel) +
   plot_layout(widths = c(1, 1)) +
   plot_annotation(
     title = "Magnitude and precision of spatial and temporal effects",
-    subtitle = "Posterior medians and 95% credible intervals on the response scale",
+    subtitle = "Converted to response scale (pp); all survey periods",
     theme = annotation_theme
   )
 ```
@@ -1220,7 +1224,7 @@ phi_panel <- ggplot(
   ) +
   coord_cartesian(clip = "off") +
   labs(
-    title = "BYM2 structured share (\u03C6)",
+    title = "BYM2 \u03C6",
     x = "Share of residual spatial variance assigned to the structured component",
     y = NULL
   ) +
@@ -1239,11 +1243,8 @@ phi_panel <- ggplot(
 ((area_iid_map | unit_iid_map) / phi_panel) +
   plot_layout(heights = c(4.2, 1.5)) +
   plot_annotation(
-    title = "Unstructured residual effects and spatial structure",
-    subtitle = paste(
-      "Maps show response-scale area effects with separate symmetric colour ranges;",
-      "\u03C6 summarises the structured share of residual spatial variation"
-    ),
+    title = "Unstructured residual area effects",
+    subtitle = "Converted to response scale (pp); all survey periods",
     theme = annotation_theme
   )
 ```

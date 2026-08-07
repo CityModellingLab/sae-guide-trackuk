@@ -370,21 +370,23 @@ where $N_{jtc}$ is the population count for cell $c$ in area $j$ and time $t$.
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">area_id =</span> MSOA21CD) <span class="sc">|&gt;</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_id)</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>domain_frame <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"domain_msoayear.csv"</span>),</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"msoa_queen.adj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>output_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"outputs"</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(output_path, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">area_id =</span> MSOA21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_id)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>domain_frame <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"domain_msoayear.csv"</span>),</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"msoa_queen.adj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <section id="estimation-approach" class="level2 unnumbered">
@@ -751,13 +753,13 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
-<td style="text-align: right;">2939.672</td>
-<td style="text-align: right;">37.39393</td>
+<td style="text-align: right;">2939.673</td>
+<td style="text-align: right;">37.39457</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
 <td style="text-align: right;">2952.863</td>
-<td style="text-align: right;">37.35872</td>
+<td style="text-align: right;">37.35903</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -809,21 +811,21 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.9456626</td>
-<td style="text-align: right;">-2.3957210</td>
-<td style="text-align: right;">-1.4963948</td>
+<td style="text-align: right;">-1.9456616</td>
+<td style="text-align: right;">-2.3957206</td>
+<td style="text-align: right;">-1.4963933</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band25_34</td>
-<td style="text-align: right;">-0.6308049</td>
-<td style="text-align: right;">-1.1326818</td>
-<td style="text-align: right;">-0.1288862</td>
+<td style="text-align: right;">-0.6308046</td>
+<td style="text-align: right;">-1.1326815</td>
+<td style="text-align: right;">-0.1288859</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band35_49</td>
-<td style="text-align: right;">-0.3256713</td>
-<td style="text-align: right;">-0.7684724</td>
-<td style="text-align: right;">0.1171837</td>
+<td style="text-align: right;">-0.3256711</td>
+<td style="text-align: right;">-0.7684722</td>
+<td style="text-align: right;">0.1171839</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band50_64</td>
@@ -833,21 +835,21 @@ Target estimand
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band65_plus</td>
-<td style="text-align: right;">-1.3504267</td>
-<td style="text-align: right;">-1.7978498</td>
-<td style="text-align: right;">-0.9029960</td>
+<td style="text-align: right;">-1.3504264</td>
+<td style="text-align: right;">-1.7978496</td>
+<td style="text-align: right;">-0.9029957</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">sexFemale</td>
-<td style="text-align: right;">-0.7336056</td>
-<td style="text-align: right;">-0.9555329</td>
-<td style="text-align: right;">-0.5116872</td>
+<td style="text-align: right;">-0.7336058</td>
+<td style="text-align: right;">-0.9555330</td>
+<td style="text-align: right;">-0.5116874</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5714113</td>
-<td style="text-align: right;">-0.8412843</td>
-<td style="text-align: right;">-0.3015202</td>
+<td style="text-align: right;">-0.5714116</td>
+<td style="text-align: right;">-0.8412847</td>
+<td style="text-align: right;">-0.3015205</td>
 </tr>
 </tbody>
 </table>
@@ -1013,56 +1015,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0232111</td>
-<td style="text-align: right;">0.0000584</td>
-<td style="text-align: right;">0.0116612</td>
-<td style="text-align: right;">0.0407888</td>
-<td style="text-align: right;">0.0291276</td>
+<td style="text-align: right;">0.0228379</td>
+<td style="text-align: right;">0.0000561</td>
+<td style="text-align: right;">0.0107066</td>
+<td style="text-align: right;">0.0402661</td>
+<td style="text-align: right;">0.0295595</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0190089</td>
-<td style="text-align: right;">0.0000371</td>
-<td style="text-align: right;">0.0086644</td>
-<td style="text-align: right;">0.0329145</td>
-<td style="text-align: right;">0.0242501</td>
+<td style="text-align: right;">0.0189250</td>
+<td style="text-align: right;">0.0000398</td>
+<td style="text-align: right;">0.0090716</td>
+<td style="text-align: right;">0.0323277</td>
+<td style="text-align: right;">0.0232561</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0444523</td>
-<td style="text-align: right;">0.0004847</td>
-<td style="text-align: right;">0.0157750</td>
-<td style="text-align: right;">0.1015937</td>
-<td style="text-align: right;">0.0858187</td>
+<td style="text-align: right;">0.0430507</td>
+<td style="text-align: right;">0.0003840</td>
+<td style="text-align: right;">0.0168704</td>
+<td style="text-align: right;">0.0954995</td>
+<td style="text-align: right;">0.0786291</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0293094</td>
-<td style="text-align: right;">0.0001032</td>
-<td style="text-align: right;">0.0147557</td>
-<td style="text-align: right;">0.0546851</td>
-<td style="text-align: right;">0.0399294</td>
+<td style="text-align: right;">0.0290247</td>
+<td style="text-align: right;">0.0001012</td>
+<td style="text-align: right;">0.0147111</td>
+<td style="text-align: right;">0.0519743</td>
+<td style="text-align: right;">0.0372632</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0172234</td>
-<td style="text-align: right;">0.0000445</td>
-<td style="text-align: right;">0.0073033</td>
-<td style="text-align: right;">0.0347813</td>
-<td style="text-align: right;">0.0274780</td>
+<td style="text-align: right;">0.0178239</td>
+<td style="text-align: right;">0.0000396</td>
+<td style="text-align: right;">0.0078830</td>
+<td style="text-align: right;">0.0303900</td>
+<td style="text-align: right;">0.0225070</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0250119</td>
-<td style="text-align: right;">0.0000543</td>
-<td style="text-align: right;">0.0136136</td>
-<td style="text-align: right;">0.0420330</td>
-<td style="text-align: right;">0.0284194</td>
+<td style="text-align: right;">0.0245900</td>
+<td style="text-align: right;">0.0000669</td>
+<td style="text-align: right;">0.0116369</td>
+<td style="text-align: right;">0.0448711</td>
+<td style="text-align: right;">0.0332343</td>
 </tr>
 </tbody>
 </table>
@@ -1381,14 +1383,14 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">Rich poststratification</td>
 <td style="text-align: left;">Age + Sex + CarAccess</td>
-<td style="text-align: right;">2939.672</td>
-<td style="text-align: right;">37.39393</td>
+<td style="text-align: right;">2939.673</td>
+<td style="text-align: right;">37.39457</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Shallow poststratification</td>
 <td style="text-align: left;">Age + Sex (Context: Car access rate)</td>
 <td style="text-align: right;">2955.057</td>
-<td style="text-align: right;">38.38744</td>
+<td style="text-align: right;">38.38738</td>
 </tr>
 </tbody>
 </table>
@@ -1507,56 +1509,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0240351</td>
-<td style="text-align: right;">0.0000781</td>
-<td style="text-align: right;">0.0114382</td>
-<td style="text-align: right;">0.0404307</td>
-<td style="text-align: right;">0.0289926</td>
+<td style="text-align: right;">0.0247537</td>
+<td style="text-align: right;">6.72e-05</td>
+<td style="text-align: right;">0.0123637</td>
+<td style="text-align: right;">0.0406246</td>
+<td style="text-align: right;">0.0282609</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0195385</td>
-<td style="text-align: right;">0.0000406</td>
-<td style="text-align: right;">0.0097457</td>
-<td style="text-align: right;">0.0339159</td>
-<td style="text-align: right;">0.0241702</td>
+<td style="text-align: right;">0.0196733</td>
+<td style="text-align: right;">4.85e-05</td>
+<td style="text-align: right;">0.0078613</td>
+<td style="text-align: right;">0.0351681</td>
+<td style="text-align: right;">0.0273069</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0414424</td>
-<td style="text-align: right;">0.0003783</td>
-<td style="text-align: right;">0.0143413</td>
-<td style="text-align: right;">0.0902555</td>
-<td style="text-align: right;">0.0759142</td>
+<td style="text-align: right;">0.0409149</td>
+<td style="text-align: right;">2.91e-04</td>
+<td style="text-align: right;">0.0161171</td>
+<td style="text-align: right;">0.0818476</td>
+<td style="text-align: right;">0.0657305</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0299049</td>
-<td style="text-align: right;">0.0001053</td>
-<td style="text-align: right;">0.0148972</td>
-<td style="text-align: right;">0.0542286</td>
-<td style="text-align: right;">0.0393314</td>
+<td style="text-align: right;">0.0313988</td>
+<td style="text-align: right;">1.38e-04</td>
+<td style="text-align: right;">0.0156406</td>
+<td style="text-align: right;">0.0635076</td>
+<td style="text-align: right;">0.0478670</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0190021</td>
-<td style="text-align: right;">0.0000454</td>
-<td style="text-align: right;">0.0083351</td>
-<td style="text-align: right;">0.0334717</td>
-<td style="text-align: right;">0.0251366</td>
+<td style="text-align: right;">0.0189057</td>
+<td style="text-align: right;">5.91e-05</td>
+<td style="text-align: right;">0.0076036</td>
+<td style="text-align: right;">0.0383520</td>
+<td style="text-align: right;">0.0307484</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0256240</td>
-<td style="text-align: right;">0.0000688</td>
-<td style="text-align: right;">0.0131435</td>
-<td style="text-align: right;">0.0461164</td>
-<td style="text-align: right;">0.0329729</td>
+<td style="text-align: right;">0.0260135</td>
+<td style="text-align: right;">6.93e-05</td>
+<td style="text-align: right;">0.0132295</td>
+<td style="text-align: right;">0.0469757</td>
+<td style="text-align: right;">0.0337462</td>
 </tr>
 </tbody>
 </table>
@@ -1585,29 +1587,26 @@ Why poststratification?
 <span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>posterior_output_dir <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="fu">dirname</span>(base_path), <span class="st">"outputs"</span>)</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(posterior_output_dir, <span class="at">recursive =</span> <span class="cn">TRUE</span>, <span class="at">showWarnings =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(</span>
-<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
-<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema_version =</span> 1L,</span>
-<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">route =</span> <span class="st">"Unit-level SAE with poststratification"</span>,</span>
-<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> mrp_best_model,</span>
-<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> 100L,</span>
-<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_draws =</span> <span class="fu">length</span>(posterior_draws),</span>
-<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">fixed =</span> fixed_draws,</span>
-<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> area_draws,</span>
-<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">time =</span> time_draws,</span>
-<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">hyperparameters =</span> posterior_hyperparameter_draws,</span>
-<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_index =</span> area_index,</span>
-<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_index =</span> time_index</span>
-<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(posterior_output_dir, <span class="st">"freqcyc_posterior_draws_unit_mrp.rds"</span>),</span>
-<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">compress =</span> <span class="st">"xz"</span></span>
-<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_mrp_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_mrp_rich.csv"</span>))</span>
-<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(shallow_mrp_results, <span class="fu">file.path</span>(base_path, <span class="st">"freqcyc_estimates_mrp_shallow.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema_version =</span> 1L,</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">route =</span> <span class="st">"Unit-level SAE with poststratification"</span>,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> mrp_best_model,</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> 100L,</span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_draws =</span> <span class="fu">length</span>(posterior_draws),</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">fixed =</span> fixed_draws,</span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> area_draws,</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">time =</span> time_draws,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">hyperparameters =</span> posterior_hyperparameter_draws,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_index =</span> area_index,</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_index =</span> time_index</span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(output_path, <span class="st">"freqcyc_posterior_draws_unit_mrp.rds"</span>),</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">compress =</span> <span class="st">"xz"</span></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_mrp_results, <span class="fu">file.path</span>(output_path, <span class="st">"freqcyc_estimates_mrp_rich.csv"</span>))</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(shallow_mrp_results, <span class="fu">file.path</span>(output_path, <span class="st">"freqcyc_estimates_mrp_shallow.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 
