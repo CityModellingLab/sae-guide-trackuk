@@ -5,7 +5,7 @@ subtitle: "From sparse survey data to reliable estimates over time and space"
 
 ![](assets/banner.png){width="100%"}
 
-## Small area estimation for Urban Analytics
+## Small area estimation
 
 Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales--such as neighbourhoods, census blocks, or transport zones--to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.
 
@@ -13,9 +13,9 @@ This guide introduces several **spatio-temporal Bayesian small area estimation (
 
 ## Bayesian inference and `INLA`
 
-While frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
+While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a **Bayesian approach** instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
 
-The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation (INLA)*, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.
+The workbooks use `R-INLA`, the R interface to *Integrated Nested Laplace Approximation (INLA)*, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation workflows.
 
 ![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.](assets/bayesiansae.png){width="100%"}
 

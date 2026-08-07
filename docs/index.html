@@ -243,7 +243,7 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#small-area-estimation-for-urban-analytics" id="toc-small-area-estimation-for-urban-analytics" class="nav-link active" data-scroll-target="#small-area-estimation-for-urban-analytics"><span class="header-section-number">1</span> Small area estimation for Urban Analytics</a></li>
+  <li><a href="#small-area-estimation" id="toc-small-area-estimation" class="nav-link active" data-scroll-target="#small-area-estimation"><span class="header-section-number">1</span> Small area estimation</a></li>
   <li><a href="#bayesian-inference-and-inla" id="toc-bayesian-inference-and-inla" class="nav-link" data-scroll-target="#bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></a></li>
   <li><a href="#navigating-the-guide" id="toc-navigating-the-guide" class="nav-link" data-scroll-target="#navigating-the-guide"><span class="header-section-number">3</span> Navigating the guide</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">4</span> Data</a></li>
@@ -274,15 +274,15 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 <p><img src="assets/banner.png" class="img-fluid" style="width:100.0%"></p>
-<section id="small-area-estimation-for-urban-analytics" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="small-area-estimation-for-urban-analytics"><span class="header-section-number">1</span> Small area estimation for Urban Analytics</h2>
+<section id="small-area-estimation" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="small-area-estimation"><span class="header-section-number">1</span> Small area estimation</h2>
 <p>Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales–such as neighbourhoods, census blocks, or transport zones–to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.</p>
 <p>This guide introduces several <strong>spatio-temporal Bayesian small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>INLA</code>. It aims to help researchers choose a method suited to their research needs and data limitations.</p>
 </section>
 <section id="bayesian-inference-and-inla" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></h2>
-<p>While frequentist SAE methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), Bayesian SAE instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
-<p>The workbooks use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation (INLA)</em>, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for SAE workflow.</p>
+<p>While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a <strong>Bayesian approach</strong> instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
+<p>The workbooks use <code>R-INLA</code>, the R interface to <em>Integrated Nested Laplace Approximation (INLA)</em>, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation workflows.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="assets/bayesiansae.png" class="img-fluid figure-img" style="width:100.0%"></p>
