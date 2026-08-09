@@ -211,13 +211,16 @@ We fit binomial unit-level models to the survey microdata, then use them to pred
 
 m1_formula <- freq_cyclist ~
   1 +
-  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    time_inla_id, 
+    model = "rw1", 
+    scale.model = TRUE
+    ) +
   f(
     area_inla_id,
     model = "bym2",
     graph = spatial_graph_file,
-    scale.model = TRUE,
-    constr = TRUE
+    scale.model = TRUE
   )
 
 m2_formula <- update(m1_formula, . ~ . +
@@ -632,13 +635,16 @@ In the **modelling** step, the model specification uses `age_band` and `sex` as 
 #| code-fold: false
 
 shallow_formula <- freq_cyclist ~
-  f(time_inla_id, model = "rw1", constr = TRUE) +
+  f(
+    time_inla_id, 
+    model = "rw1", 
+    scale.model = TRUE
+  ) +
   f(
     area_inla_id,
     model = "bym2",
     graph = spatial_graph_file,
-    scale.model = TRUE,
-    constr = TRUE
+    scale.model = TRUE
   ) +
   age_band +
   sex +

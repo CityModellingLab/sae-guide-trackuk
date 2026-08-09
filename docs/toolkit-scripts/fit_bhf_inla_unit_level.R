@@ -70,7 +70,7 @@ formula <- as.formula(paste(
   paste(
     c(
       unitpred_cols,
-      "f(time_inla_id, model = 'rw1', constr = TRUE)",
+      "f(time_inla_id, model = 'rw1', scale.model = TRUE, constr = TRUE)",
       "f(area_inla_id, model = 'bym2', graph = spatial_graph_file, scale.model = TRUE, constr = TRUE)"
     ),
     collapse = " + "

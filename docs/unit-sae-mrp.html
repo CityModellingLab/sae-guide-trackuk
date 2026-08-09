@@ -688,27 +688,30 @@ Target estimand
 <div class="cell">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>m1_formula <span class="ot">&lt;-</span> freq_cyclist <span class="sc">~</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="sc">+</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>m2_formula <span class="ot">&lt;-</span> <span class="fu">update</span>(m1_formula, . <span class="sc">~</span> . <span class="sc">+</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  sex</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>m3_formula <span class="ot">&lt;-</span> <span class="fu">update</span>(m2_formula, . <span class="sc">~</span> . <span class="sc">+</span> caraccess)</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>model_formulas <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M1 +TempSpatial"</span> <span class="ot">=</span> m1_formula,</span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M2 +Demographic"</span> <span class="ot">=</span> m2_formula,</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M3 +CarAccess"</span> <span class="ot">=</span> m3_formula</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    time_inla_id, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"rw1"</span>, </span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>m2_formula <span class="ot">&lt;-</span> <span class="fu">update</span>(m1_formula, . <span class="sc">~</span> . <span class="sc">+</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  sex</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>m3_formula <span class="ot">&lt;-</span> <span class="fu">update</span>(m2_formula, . <span class="sc">~</span> . <span class="sc">+</span> caraccess)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>model_formulas <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M1 +TempSpatial"</span> <span class="ot">=</span> m1_formula,</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M2 +Demographic"</span> <span class="ot">=</span> m2_formula,</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>  <span class="st">"M3 +CarAccess"</span> <span class="ot">=</span> m3_formula</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>fit_mrp_model <span class="ot">&lt;-</span> <span class="cf">function</span>(formula) {</span>
@@ -753,18 +756,18 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
-<td style="text-align: right;">2939.675</td>
-<td style="text-align: right;">37.39567</td>
+<td style="text-align: right;">2939.665</td>
+<td style="text-align: right;">37.41620</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
-<td style="text-align: right;">2952.863</td>
-<td style="text-align: right;">37.35901</td>
+<td style="text-align: right;">2952.859</td>
+<td style="text-align: right;">37.35031</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
-<td style="text-align: right;">3042.926</td>
-<td style="text-align: right;">33.31112</td>
+<td style="text-align: right;">3042.911</td>
+<td style="text-align: right;">33.33009</td>
 </tr>
 </tbody>
 </table>
@@ -811,45 +814,45 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.9456587</td>
-<td style="text-align: right;">-2.3957189</td>
-<td style="text-align: right;">-1.4963894</td>
+<td style="text-align: right;">-1.9457477</td>
+<td style="text-align: right;">-2.3958076</td>
+<td style="text-align: right;">-1.4964754</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band25_34</td>
-<td style="text-align: right;">-0.6308041</td>
-<td style="text-align: right;">-1.1326810</td>
-<td style="text-align: right;">-0.1288855</td>
+<td style="text-align: right;">-0.6307991</td>
+<td style="text-align: right;">-1.1326788</td>
+<td style="text-align: right;">-0.1288777</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band35_49</td>
-<td style="text-align: right;">-0.3256708</td>
-<td style="text-align: right;">-0.7684719</td>
-<td style="text-align: right;">0.1171843</td>
+<td style="text-align: right;">-0.3256635</td>
+<td style="text-align: right;">-0.7684673</td>
+<td style="text-align: right;">0.1171941</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band50_64</td>
-<td style="text-align: right;">-0.8742921</td>
-<td style="text-align: right;">-1.3201795</td>
-<td style="text-align: right;">-0.4283839</td>
+<td style="text-align: right;">-0.8742873</td>
+<td style="text-align: right;">-1.3201775</td>
+<td style="text-align: right;">-0.4283764</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band65_plus</td>
-<td style="text-align: right;">-1.3504259</td>
-<td style="text-align: right;">-1.7978490</td>
-<td style="text-align: right;">-0.9029953</td>
+<td style="text-align: right;">-1.3504271</td>
+<td style="text-align: right;">-1.7978534</td>
+<td style="text-align: right;">-0.9029933</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">sexFemale</td>
-<td style="text-align: right;">-0.7336061</td>
-<td style="text-align: right;">-0.9555334</td>
-<td style="text-align: right;">-0.5116877</td>
+<td style="text-align: right;">-0.7336086</td>
+<td style="text-align: right;">-0.9555365</td>
+<td style="text-align: right;">-0.5116896</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5714124</td>
-<td style="text-align: right;">-0.8412854</td>
-<td style="text-align: right;">-0.3015213</td>
+<td style="text-align: right;">-0.5714045</td>
+<td style="text-align: right;">-0.8412793</td>
+<td style="text-align: right;">-0.3015116</td>
 </tr>
 </tbody>
 </table>
@@ -1015,56 +1018,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0232416</td>
-<td style="text-align: right;">0.0000568</td>
-<td style="text-align: right;">0.0119439</td>
-<td style="text-align: right;">0.0417795</td>
-<td style="text-align: right;">0.0298356</td>
+<td style="text-align: right;">0.0231824</td>
+<td style="text-align: right;">0.0000583</td>
+<td style="text-align: right;">0.0113293</td>
+<td style="text-align: right;">0.0411670</td>
+<td style="text-align: right;">0.0298377</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0186573</td>
-<td style="text-align: right;">0.0000425</td>
-<td style="text-align: right;">0.0088050</td>
-<td style="text-align: right;">0.0344786</td>
-<td style="text-align: right;">0.0256736</td>
+<td style="text-align: right;">0.0193371</td>
+<td style="text-align: right;">0.0000404</td>
+<td style="text-align: right;">0.0088028</td>
+<td style="text-align: right;">0.0334096</td>
+<td style="text-align: right;">0.0246068</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0436149</td>
-<td style="text-align: right;">0.0004132</td>
-<td style="text-align: right;">0.0178346</td>
-<td style="text-align: right;">0.0967459</td>
-<td style="text-align: right;">0.0789113</td>
+<td style="text-align: right;">0.0435413</td>
+<td style="text-align: right;">0.0004125</td>
+<td style="text-align: right;">0.0174715</td>
+<td style="text-align: right;">0.0978965</td>
+<td style="text-align: right;">0.0804251</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0292124</td>
-<td style="text-align: right;">0.0001311</td>
-<td style="text-align: right;">0.0135378</td>
-<td style="text-align: right;">0.0521259</td>
-<td style="text-align: right;">0.0385881</td>
+<td style="text-align: right;">0.0301142</td>
+<td style="text-align: right;">0.0001218</td>
+<td style="text-align: right;">0.0139189</td>
+<td style="text-align: right;">0.0595127</td>
+<td style="text-align: right;">0.0455938</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0176219</td>
-<td style="text-align: right;">0.0000443</td>
-<td style="text-align: right;">0.0067541</td>
-<td style="text-align: right;">0.0328184</td>
-<td style="text-align: right;">0.0260642</td>
+<td style="text-align: right;">0.0177232</td>
+<td style="text-align: right;">0.0000444</td>
+<td style="text-align: right;">0.0080714</td>
+<td style="text-align: right;">0.0322352</td>
+<td style="text-align: right;">0.0241638</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0252954</td>
-<td style="text-align: right;">0.0000579</td>
-<td style="text-align: right;">0.0132529</td>
-<td style="text-align: right;">0.0413836</td>
-<td style="text-align: right;">0.0281307</td>
+<td style="text-align: right;">0.0257586</td>
+<td style="text-align: right;">0.0000639</td>
+<td style="text-align: right;">0.0137803</td>
+<td style="text-align: right;">0.0456866</td>
+<td style="text-align: right;">0.0319063</td>
 </tr>
 </tbody>
 </table>
@@ -1318,25 +1321,28 @@ Why poststratification?
 <p>In the <strong>modelling</strong> step, the model specification uses <code>age_band</code> and <code>sex</code> as the poststratification-cell predictors, and adds the contextual area predictor directly as fixed effect terms.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>shallow_formula <span class="ot">&lt;-</span> freq_cyclist <span class="sc">~</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(time_inla_id, <span class="at">model =</span> <span class="st">"rw1"</span>, <span class="at">constr =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">constr =</span> <span class="cn">TRUE</span></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  sex <span class="sc">+</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  z_caraccess_adult_share</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>shallow_context_fit <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> shallow_formula,</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"binomial"</span>,</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> shallow_model_data,</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>, <span class="at">config =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    time_inla_id, </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"rw1"</span>, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">f</span>(</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    area_inla_id,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="st">"bym2"</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">graph =</span> spatial_graph_file,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">scale.model =</span> <span class="cn">TRUE</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>  age_band <span class="sc">+</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>  sex <span class="sc">+</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  z_caraccess_adult_share</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>shallow_context_fit <span class="ot">&lt;-</span> <span class="fu">inla</span>(</span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">formula =</span> shallow_formula,</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">family =</span> <span class="st">"binomial"</span>,</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> shallow_model_data,</span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.predictor =</span> <span class="fu">list</span>(<span class="at">compute =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  <span class="at">control.compute =</span> <span class="fu">list</span>(<span class="at">waic =</span> <span class="cn">TRUE</span>, <span class="at">config =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The WAIC comparison suggests that contextual predictors add less to model performance than the richer specification with the unit-level car-access predictor. When survey microdata and poststratification data are available at compatible predictor grains, the richer specification is preferred.</p>
 <div class="cell">
@@ -1383,14 +1389,14 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">Rich poststratification</td>
 <td style="text-align: left;">Age + Sex + CarAccess</td>
-<td style="text-align: right;">2939.675</td>
-<td style="text-align: right;">37.39567</td>
+<td style="text-align: right;">2939.665</td>
+<td style="text-align: right;">37.41620</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Shallow poststratification</td>
 <td style="text-align: left;">Age + Sex (Context: Car access rate)</td>
-<td style="text-align: right;">2955.057</td>
-<td style="text-align: right;">38.38705</td>
+<td style="text-align: right;">2955.058</td>
+<td style="text-align: right;">38.37049</td>
 </tr>
 </tbody>
 </table>
@@ -1509,56 +1515,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0249240</td>
-<td style="text-align: right;">0.0000766</td>
-<td style="text-align: right;">0.0115021</td>
-<td style="text-align: right;">0.0440451</td>
-<td style="text-align: right;">0.0325429</td>
+<td style="text-align: right;">0.0244460</td>
+<td style="text-align: right;">0.0000578</td>
+<td style="text-align: right;">0.0119512</td>
+<td style="text-align: right;">0.0419026</td>
+<td style="text-align: right;">0.0299513</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0196402</td>
-<td style="text-align: right;">0.0000403</td>
-<td style="text-align: right;">0.0084135</td>
-<td style="text-align: right;">0.0327944</td>
-<td style="text-align: right;">0.0243809</td>
+<td style="text-align: right;">0.0197270</td>
+<td style="text-align: right;">0.0000376</td>
+<td style="text-align: right;">0.0100933</td>
+<td style="text-align: right;">0.0340633</td>
+<td style="text-align: right;">0.0239701</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0408907</td>
-<td style="text-align: right;">0.0003827</td>
-<td style="text-align: right;">0.0144262</td>
-<td style="text-align: right;">0.0896699</td>
-<td style="text-align: right;">0.0752438</td>
+<td style="text-align: right;">0.0406260</td>
+<td style="text-align: right;">0.0003575</td>
+<td style="text-align: right;">0.0160079</td>
+<td style="text-align: right;">0.0846319</td>
+<td style="text-align: right;">0.0686240</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0325258</td>
-<td style="text-align: right;">0.0001368</td>
-<td style="text-align: right;">0.0165482</td>
-<td style="text-align: right;">0.0617359</td>
-<td style="text-align: right;">0.0451877</td>
+<td style="text-align: right;">0.0319407</td>
+<td style="text-align: right;">0.0001542</td>
+<td style="text-align: right;">0.0153684</td>
+<td style="text-align: right;">0.0641560</td>
+<td style="text-align: right;">0.0487876</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0184416</td>
-<td style="text-align: right;">0.0000451</td>
-<td style="text-align: right;">0.0077638</td>
-<td style="text-align: right;">0.0328070</td>
-<td style="text-align: right;">0.0250432</td>
+<td style="text-align: right;">0.0190265</td>
+<td style="text-align: right;">0.0000568</td>
+<td style="text-align: right;">0.0077911</td>
+<td style="text-align: right;">0.0347786</td>
+<td style="text-align: right;">0.0269875</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0258344</td>
-<td style="text-align: right;">0.0000589</td>
-<td style="text-align: right;">0.0134533</td>
-<td style="text-align: right;">0.0429736</td>
-<td style="text-align: right;">0.0295203</td>
+<td style="text-align: right;">0.0257936</td>
+<td style="text-align: right;">0.0000765</td>
+<td style="text-align: right;">0.0125635</td>
+<td style="text-align: right;">0.0461997</td>
+<td style="text-align: right;">0.0336361</td>
 </tr>
 </tbody>
 </table>
