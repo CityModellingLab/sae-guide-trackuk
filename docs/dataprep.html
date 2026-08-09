@@ -705,8 +705,8 @@ Target estimand
 <td>Modelling: Area-level predictors</td>
 <td style="text-align: center;">-</td>
 <td style="text-align: center;">Yes</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
+<td style="text-align: center;">Optional as contextual</td>
+<td style="text-align: center;">Optional as contextual</td>
 </tr>
 <tr class="odd">
 <td>Modelling: Unit-level predictors</td>
@@ -1019,8 +1019,8 @@ Note
 </div>
 </section>
 </section>
-<section id="poststratification-table" class="level4 unnumbered">
-<h4 class="unnumbered anchored" data-anchor-id="poststratification-table">Poststratification Table</h4>
+<section id="poststratification-table" class="level4" data-number="2.4.5">
+<h4 data-number="2.4.5" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.4.5</span> Poststratification Table</h4>
 <p>A more sophisticated unit-level SAE method may use population cell counts, provided in a poststratification table, to aggregate fitted model predictions for each area-time cell. This weights predictions according to the target population distribution of the unit-level predictors instead of relying on area summaries. Predictors included in the poststratification table must be represented as categorical variables. See <a href="./unit-sae-mrp.html">unit-level SAE with poststratification</a></p>
 <p>We use a three-variable poststratification table with <code>age_band</code>, <code>sex</code>, and <code>caraccess</code>, sourced from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>. The population counts must correspond to the target population defined by the estimand—for example, the adult population.</p>
 <p>The poststratification output <em>has one row per area-time-age-sex-caraccess combination</em>:</p>

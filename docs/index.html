@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</title>
+<title>Small Area Estimation for Urban Analytics - Bayesian Spatiotemporal Small-area Estimation: A Practical Guide</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -243,7 +243,7 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#small-area-estimation" id="toc-small-area-estimation" class="nav-link active" data-scroll-target="#small-area-estimation"><span class="header-section-number">1</span> Small area estimation</a></li>
+  <li><a href="#small-area-estimation-in-urban-analytics" id="toc-small-area-estimation-in-urban-analytics" class="nav-link active" data-scroll-target="#small-area-estimation-in-urban-analytics"><span class="header-section-number">1</span> Small-area Estimation in Urban Analytics</a></li>
   <li><a href="#bayesian-inference-and-inla" id="toc-bayesian-inference-and-inla" class="nav-link" data-scroll-target="#bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></a></li>
   <li><a href="#navigating-the-guide" id="toc-navigating-the-guide" class="nav-link" data-scroll-target="#navigating-the-guide"><span class="header-section-number">3</span> Navigating the guide</a></li>
   <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">4</span> Data</a></li>
@@ -257,8 +257,8 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics</h1>
-<p class="subtitle lead">From sparse survey data to reliable estimates over time and space</p>
+<h1 class="title">Bayesian Spatiotemporal Small-area Estimation: A Practical Guide</h1>
+<p class="subtitle lead">From sparse survey data to more reliable local estimates for urban researchers</p>
 </div>
 
 
@@ -274,25 +274,25 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 <p><img src="assets/banner.png" class="img-fluid" style="width:100.0%"></p>
-<section id="small-area-estimation" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="small-area-estimation"><span class="header-section-number">1</span> Small area estimation</h2>
+<section id="small-area-estimation-in-urban-analytics" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="small-area-estimation-in-urban-analytics"><span class="header-section-number">1</span> Small-area Estimation in Urban Analytics</h2>
 <p>Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales–such as neighbourhoods, census blocks, or transport zones–to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.</p>
-<p>This guide introduces several <strong>spatio-temporal Bayesian small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>INLA</code>. It aims to help researchers choose a method suited to their research needs and data limitations.</p>
+<p>This guide introduces several <strong>Bayesian spatiotemporal small area estimation (SAE)</strong> methods for urban analytics, with implementation in <code>R-INLA</code>. It aims to help researchers choose a method suited to their research needs and data limitations.</p>
 </section>
 <section id="bayesian-inference-and-inla" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="bayesian-inference-and-inla"><span class="header-section-number">2</span> Bayesian inference and <code>INLA</code></h2>
-<p>While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a <strong>Bayesian approach</strong> instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
-<p>The workbooks use <code>R-INLA</code>, the R interface to <a href="https://www.r-inla.org/"><em>Integrated Nested Laplace Approximation (INLA)</em></a>, which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation.</p>
+<p>While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a Bayesian paradigm instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="assets/bayesiansae.png" class="img-fluid figure-img" style="width:100.0%"></p>
-<figcaption class="figure-caption">Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.</figcaption>
+<figcaption class="figure-caption">Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a joint probability model.</figcaption>
 </figure>
 </div>
+<p>The workbooks use <code>R-INLA</code>, the R interface to <a href="https://www.r-inla.org/"><em>Integrated Nested Laplace Approximation (INLA)</em></a>. This method provides deterministic approximate Bayesian inference for latent Gaussian models and is faster than Markov chain Monte Carlo (MCMC) methods for complex spatiotemporal small area estimation models (Rue et al, 2009).</p>
 </section>
 <section id="navigating-the-guide" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="navigating-the-guide"><span class="header-section-number">3</span> Navigating the guide</h2>
-<p>The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.</p>
+<p>SAE methods commonly used with urban survey and auxiliary datasets are covered. Method selection depends on the target outcome, direct survey evidence, and auxiliary modelling and popuation data, each with trade-offs in terms of data requirements and the extent of population adjustments to fully or partially address sampling biases.</p>
 <p><img src="assets/sae_method_selection.png" class="img-fluid" style="width:100.0%"></p>
 <ol type="1">
 <li><strong><a href="./dataprep.html">Estimation setup</a></strong></li>

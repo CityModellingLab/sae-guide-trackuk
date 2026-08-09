@@ -241,7 +241,7 @@ This tutorial assumes that all required forms of auxiliary data are available so
 | Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
 |---|:---:|:---:|:---:|:---:|
 | Spatial graph |-| Yes | Yes | Yes |
-| Modelling: Area-level predictors |-| Yes |-|-|
+| Modelling: Area-level predictors |-| Yes |Optional as contextual | Optional as contextual |
 | Modelling: Unit-level predictors |-|-| Yes | Yes |
 | Aggregation: predictor area summaries |-|-| Yes |-|
 | Aggregation: poststratification table |-|-|-| Yes |
@@ -337,7 +337,7 @@ The previously prepared variables `age_adult_mean`, `female_adult_share`, and `c
 Area-level predictors only need to capture relevant variation between areas. Area summaries used to aggregate unit-level predictions must not only cover all unit-level predictors used in the model, they must also correctly represent the target population (e.g., the adult population) and therefore require a stricter preparation pipeline.
 :::
 
-#### Poststratification Table {.unnumbered}
+#### Poststratification Table
 
 A more sophisticated unit-level SAE method may use population cell counts, provided in a poststratification table, to aggregate fitted model predictions for each area-time cell. This weights predictions according to the target population distribution of the unit-level predictors instead of relying on area summaries. Predictors included in the poststratification table must be represented as categorical variables. See [unit-level SAE with poststratification](unit-sae-mrp.qmd)
 

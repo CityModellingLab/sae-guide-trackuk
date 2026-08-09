@@ -1,27 +1,27 @@
 ---
-title: "A practical guide to Spatio-temporal Small Area Estimation for Urban Analytics"
-subtitle: "From sparse survey data to reliable estimates over time and space"
+title: "Bayesian Spatiotemporal Small-area Estimation: A Practical Guide"
+subtitle: "From sparse survey data to more reliable local estimates for urban researchers"
 ---
 
 ![](assets/banner.png){width="100%"}
 
-## Small area estimation
+## Small-area Estimation in Urban Analytics
 
 Urban researchers rely on surveys to understand populations and how they change over time. They often need to examine survey results at different spatial scales--such as neighbourhoods, census blocks, or transport zones--to compare places, track local trends, identify inequalities, and explore links with area-level conditions. The problem is that simply grouping survey responses by area can leave too few respondents to produce reliable estimates. Combining responses from several survey years can increase the sample size, but it may obscure changes over time and introduce bias if differences between years are not properly accounted for.
 
-This guide introduces several **spatio-temporal Bayesian small area estimation (SAE)** methods for urban analytics, with implementation in `INLA`. It aims to help researchers choose a method suited to their research needs and data limitations.
+This guide introduces several **Bayesian spatiotemporal small area estimation (SAE)** methods for urban analytics, with implementation in `R-INLA`. It aims to help researchers choose a method suited to their research needs and data limitations.
 
 ## Bayesian inference and `INLA`
 
-While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a **Bayesian approach** instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
+While frequentist methods generally construct a prediction formula and quantify its uncertainty using an estimated mean squared error (MSE), a Bayesian paradigm instead represents all unknown quantities through a joint posterior distribution. Each posterior draw contains one plausible combination of the regression coefficients, spatial and temporal effects, etc., therefore recalculating the domain estimate for every draw and producing a posterior distribution of plausible values. Its mean provides the reported estimate, while its spread and quantiles quantify uncertainty. By carrying uncertainty from every model component into the domain estimates, this approach provides a coherent and convenient framework for complex spatio-temporal models.
 
-The workbooks use `R-INLA`, the R interface to [*Integrated Nested Laplace Approximation (INLA)*](https://www.r-inla.org/), which provides deterministic approximate Bayesian inference for latent Gaussian models and is generally faster than Markov chain Monte Carlo (MCMC) for small area estimation.
+![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a joint probability model.](assets/bayesiansae.png){width="100%"}
 
-![Bayesian inference combines survey evidence, auxiliary predictors, relationships between neighbouring areas, temporal dependence and uncertainty from sparse domains within a single probability model.](assets/bayesiansae.png){width="100%"}
+The workbooks use `R-INLA`, the R interface to [*Integrated Nested Laplace Approximation (INLA)*](https://www.r-inla.org/). This method provides deterministic approximate Bayesian inference for latent Gaussian models and is faster than Markov chain Monte Carlo (MCMC) methods for complex spatiotemporal small area estimation models (Rue et al, 2009).
 
 ## Navigating the guide
 
-The guide covers SAE routes commonly used with urban survey and auxiliary datasets. Method choice depends on the outcome, survey information, auxiliary data, and available population structure.
+SAE methods commonly used with urban survey and auxiliary datasets are covered. Method selection depends on the target outcome, direct survey evidence, and auxiliary modelling and popuation data, each with trade-offs in terms of data requirements and the extent of population adjustments to fully or partially address sampling biases.
 
 ![](assets/sae_method_selection.png){width="100%"}
 
