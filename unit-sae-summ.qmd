@@ -99,7 +99,9 @@ chart_text_theme <- theme(
 
 Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates. This is useful when direct estimates are too sparse or unstable to provide reliable area-level modelling inputs. Inspired by the Battese--Harter--Fuller model, this approach uses a generalised linear mixed model to model the individual outcome, whether continuous or binary, using predictors available in the survey microdata. Final small area estimates are then produced by applying the fitted model to area-level summaries of those predictors.
 
-Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. Note that aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell.
+Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. Note that aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell. 
+
+The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects. 
 
 ## Prepare model and aggregation data
 

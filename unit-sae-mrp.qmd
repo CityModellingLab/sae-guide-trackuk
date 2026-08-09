@@ -109,11 +109,13 @@ chart_text_theme <- theme(
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE with poststratification combines an unit-level model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells.
+Unit-level SAE with poststratification combines a unit-level model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells.
 
-For this estimand, we model the binary frequent-cycling indicator `freq_cyclist` using `age_band`, `sex`, `caraccess`, and spatial and temporal random effects using a generalised linear mixed model. We then produce predicted cell means for each `age_band` x `sex` x `caraccess` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.
+For this estimand, we model the binary frequent-cycling indicator `freq_cyclist` using `age_band`, `sex`, `caraccess`, and spatial and temporal random effects using a generalised linear mixed model. We then produce predicted cell means for each `age_band` x `sex` x `caraccess` population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws. 
 
 Here, the poststratification table is sourced from [ONS UK Census 2021](https://www.ons.gov.uk/census), giving the 2021 population count for each `age_band` x `sex` x `caraccess` cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, $N_{jtc} = N_{jc,2021}$ for all three waves.
+
+The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects. Poststratification adjusts only for variables represented in the population table.
 
 ## Prepare modelling and poststratification data
 
@@ -903,7 +905,7 @@ for (i in seq_len(length(mrp_wave_years) - 1)) {
 
 wrap_plots(rich_minus_shallow_maps, ncol = 3) +
   plot_annotation(
-    title = "DIfference in estimates between models with rich and shallow poststratification",
+    title = "Difference in estimates between models with rich and shallow poststratification",
     theme = map_annotation_theme
   )
 ```

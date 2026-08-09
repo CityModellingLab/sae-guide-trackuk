@@ -262,7 +262,7 @@ ul.task-list li input[type="checkbox"] {
   <ul>
   <li><a href="#estimate-smoothing-and-target-population-adjustment" id="toc-estimate-smoothing-and-target-population-adjustment" class="nav-link active" data-scroll-target="#estimate-smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Estimate smoothing and target population adjustment</a></li>
   <li><a href="#uncertainty-improvement" id="toc-uncertainty-improvement" class="nav-link" data-scroll-target="#uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</a></li>
-  <li><a href="#spatial-and-temporal-effect" id="toc-spatial-and-temporal-effect" class="nav-link" data-scroll-target="#spatial-and-temporal-effect"><span class="header-section-number">3</span> Spatial and Temporal Effect</a></li>
+  <li><a href="#area-and-temporal-effect-variance" id="toc-area-and-temporal-effect-variance" class="nav-link" data-scroll-target="#area-and-temporal-effect-variance"><span class="header-section-number">3</span> Area and temporal effect variance</a></li>
   </ul>
 </nav>
     </div>
@@ -347,7 +347,7 @@ ul.task-list li input[type="checkbox"] {
 <p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees a upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
+<p>Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-poststratification-effect-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -356,7 +356,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="uncertainty-improvement" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approach produced creidle interval widths which reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
+<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approaches produce credible-interval widths that reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -368,16 +368,19 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </section>
-<section id="spatial-and-temporal-effect" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="spatial-and-temporal-effect"><span class="header-section-number">3</span> Spatial and Temporal Effect</h2>
-<p>The posterior precision hyperparameters, <span class="math inline">\tau</span>, determine the variability of the random effects, with a latent-scale standard deviation of <span class="math inline">1/\sqrt{\tau}</span>. After conversion to the response scale of frequent-cycling prevalence (percentage point), the temporal effect indicates that estimates typically differ by approximately 0.75–1 percentage point between adjacent survey periods. The spatial effect produces a larger typical adjustment in the unit-level model than in the area-level model, indicating that residual geographic variation plays a greater role in differentiating its estimates across MSOAs.</p>
+<section id="area-and-temporal-effect-variance" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="area-and-temporal-effect-variance"><span class="header-section-number">3</span> Area and temporal effect variance</h2>
+<p>The inverse precision, <span class="math inline">1/\tau</span>, gives the variance scale of each scaled random effect. For the BYM2 term, this is the total residual area-effect variance, combining structured and unstructured components. For the RW1 term, it is the variance scale of the temporal effect across the three survey periods. Larger values indicate that the corresponding random effect accounts for more residual variation, while the intervals show uncertainty in that variance.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-spatiotemporal-effects-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>The BYM2 mixing parameter, <span class="math inline">\phi</span>, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. The lower <span class="math inline">\phi</span> estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.</p>
-<p>The unit-level model uses individual responses directly and estimates a higher <span class="math inline">\phi</span>, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.</p>
+<p>The BYM2 mixing parameter, <span class="math inline">\phi</span>, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects.</p>
+<ul>
+<li>The lower <span class="math inline">\phi</span> estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.</li>
+<li>The unit-level model uses individual responses directly and estimates a higher <span class="math inline">\phi</span>, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.</li>
+</ul>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>

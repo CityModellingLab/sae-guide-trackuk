@@ -410,9 +410,10 @@ Target estimand
 </div>
 </div>
 </div>
-<p>Unit-level SAE with poststratification combines an unit-level model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells.</p>
+<p>Unit-level SAE with poststratification combines a unit-level model fitted to survey microdata with a poststratification table describing the target population. This is the core structure of Multilevel Regression with Poststratification (MRP): model predictions are averaged over population cells.</p>
 <p>For this estimand, we model the binary frequent-cycling indicator <code>freq_cyclist</code> using <code>age_band</code>, <code>sex</code>, <code>caraccess</code>, and spatial and temporal random effects using a generalised linear mixed model. We then produce predicted cell means for each <code>age_band</code> x <code>sex</code> x <code>caraccess</code> population cell and aggregate them to MSOA-year estimates using population weights. Uncertainty is propagated by repeating this aggregation across posterior draws.</p>
 <p>Here, the poststratification table is sourced from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>, giving the 2021 population count for each <code>age_band</code> x <code>sex</code> x <code>caraccess</code> cell in each MSOA. For the 2023 and 2025 estimands, the model can still estimate different area-time outcomes through the temporal and spatial terms, but the poststratification weights are held fixed. This assumes that local demographic and car-access composition does not change across the survey years. In other words, <span class="math inline">N_{jtc} = N_{jc,2021}</span> for all three waves.</p>
+<p>The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects. Poststratification adjusts only for variables represented in the population table.</p>
 </section>
 <section id="prepare-modelling-and-poststratification-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-modelling-and-poststratification-data"><span class="header-section-number">1</span> Prepare modelling and poststratification data</h2>
@@ -756,13 +757,13 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
-<td style="text-align: right;">2939.665</td>
-<td style="text-align: right;">37.41620</td>
+<td style="text-align: right;">2939.664</td>
+<td style="text-align: right;">37.41607</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
 <td style="text-align: right;">2952.859</td>
-<td style="text-align: right;">37.35031</td>
+<td style="text-align: right;">37.35034</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -814,9 +815,9 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.9457477</td>
-<td style="text-align: right;">-2.3958076</td>
-<td style="text-align: right;">-1.4964754</td>
+<td style="text-align: right;">-1.9457480</td>
+<td style="text-align: right;">-2.3958080</td>
+<td style="text-align: right;">-1.4964757</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band25_34</td>
@@ -838,8 +839,8 @@ Target estimand
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band65_plus</td>
-<td style="text-align: right;">-1.3504271</td>
-<td style="text-align: right;">-1.7978534</td>
+<td style="text-align: right;">-1.3504272</td>
+<td style="text-align: right;">-1.7978535</td>
 <td style="text-align: right;">-0.9029933</td>
 </tr>
 <tr class="even">
@@ -850,7 +851,7 @@ Target estimand
 </tr>
 <tr class="odd">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5714045</td>
+<td style="text-align: right;">-0.5714044</td>
 <td style="text-align: right;">-0.8412793</td>
 <td style="text-align: right;">-0.3015116</td>
 </tr>
@@ -1018,56 +1019,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0231824</td>
-<td style="text-align: right;">0.0000583</td>
-<td style="text-align: right;">0.0113293</td>
-<td style="text-align: right;">0.0411670</td>
-<td style="text-align: right;">0.0298377</td>
+<td style="text-align: right;">0.0234249</td>
+<td style="text-align: right;">0.0000595</td>
+<td style="text-align: right;">0.0114076</td>
+<td style="text-align: right;">0.0432305</td>
+<td style="text-align: right;">0.0318230</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0193371</td>
-<td style="text-align: right;">0.0000404</td>
-<td style="text-align: right;">0.0088028</td>
-<td style="text-align: right;">0.0334096</td>
-<td style="text-align: right;">0.0246068</td>
+<td style="text-align: right;">0.0181268</td>
+<td style="text-align: right;">0.0000356</td>
+<td style="text-align: right;">0.0089316</td>
+<td style="text-align: right;">0.0327289</td>
+<td style="text-align: right;">0.0237973</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0435413</td>
-<td style="text-align: right;">0.0004125</td>
-<td style="text-align: right;">0.0174715</td>
-<td style="text-align: right;">0.0978965</td>
-<td style="text-align: right;">0.0804251</td>
+<td style="text-align: right;">0.0436973</td>
+<td style="text-align: right;">0.0003554</td>
+<td style="text-align: right;">0.0192705</td>
+<td style="text-align: right;">0.0908406</td>
+<td style="text-align: right;">0.0715701</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0301142</td>
-<td style="text-align: right;">0.0001218</td>
-<td style="text-align: right;">0.0139189</td>
-<td style="text-align: right;">0.0595127</td>
-<td style="text-align: right;">0.0455938</td>
+<td style="text-align: right;">0.0299629</td>
+<td style="text-align: right;">0.0001119</td>
+<td style="text-align: right;">0.0157523</td>
+<td style="text-align: right;">0.0523910</td>
+<td style="text-align: right;">0.0366387</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0177232</td>
-<td style="text-align: right;">0.0000444</td>
-<td style="text-align: right;">0.0080714</td>
-<td style="text-align: right;">0.0322352</td>
-<td style="text-align: right;">0.0241638</td>
+<td style="text-align: right;">0.0179079</td>
+<td style="text-align: right;">0.0000393</td>
+<td style="text-align: right;">0.0089705</td>
+<td style="text-align: right;">0.0314789</td>
+<td style="text-align: right;">0.0225085</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0257586</td>
-<td style="text-align: right;">0.0000639</td>
-<td style="text-align: right;">0.0137803</td>
-<td style="text-align: right;">0.0456866</td>
-<td style="text-align: right;">0.0319063</td>
+<td style="text-align: right;">0.0245748</td>
+<td style="text-align: right;">0.0000489</td>
+<td style="text-align: right;">0.0140567</td>
+<td style="text-align: right;">0.0411693</td>
+<td style="text-align: right;">0.0271127</td>
 </tr>
 </tbody>
 </table>
@@ -1389,14 +1390,14 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">Rich poststratification</td>
 <td style="text-align: left;">Age + Sex + CarAccess</td>
-<td style="text-align: right;">2939.665</td>
-<td style="text-align: right;">37.41620</td>
+<td style="text-align: right;">2939.664</td>
+<td style="text-align: right;">37.41607</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Shallow poststratification</td>
 <td style="text-align: left;">Age + Sex (Context: Car access rate)</td>
 <td style="text-align: right;">2955.058</td>
-<td style="text-align: right;">38.37049</td>
+<td style="text-align: right;">38.37045</td>
 </tr>
 </tbody>
 </table>
@@ -1515,56 +1516,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0244460</td>
-<td style="text-align: right;">0.0000578</td>
-<td style="text-align: right;">0.0119512</td>
-<td style="text-align: right;">0.0419026</td>
-<td style="text-align: right;">0.0299513</td>
+<td style="text-align: right;">0.0240531</td>
+<td style="text-align: right;">0.0000677</td>
+<td style="text-align: right;">0.0122911</td>
+<td style="text-align: right;">0.0431101</td>
+<td style="text-align: right;">0.0308190</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0197270</td>
-<td style="text-align: right;">0.0000376</td>
-<td style="text-align: right;">0.0100933</td>
-<td style="text-align: right;">0.0340633</td>
-<td style="text-align: right;">0.0239701</td>
+<td style="text-align: right;">0.0195221</td>
+<td style="text-align: right;">0.0000428</td>
+<td style="text-align: right;">0.0096615</td>
+<td style="text-align: right;">0.0347038</td>
+<td style="text-align: right;">0.0250424</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0406260</td>
-<td style="text-align: right;">0.0003575</td>
-<td style="text-align: right;">0.0160079</td>
-<td style="text-align: right;">0.0846319</td>
-<td style="text-align: right;">0.0686240</td>
+<td style="text-align: right;">0.0403898</td>
+<td style="text-align: right;">0.0003502</td>
+<td style="text-align: right;">0.0162113</td>
+<td style="text-align: right;">0.0852740</td>
+<td style="text-align: right;">0.0690627</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0319407</td>
-<td style="text-align: right;">0.0001542</td>
-<td style="text-align: right;">0.0153684</td>
-<td style="text-align: right;">0.0641560</td>
-<td style="text-align: right;">0.0487876</td>
+<td style="text-align: right;">0.0305714</td>
+<td style="text-align: right;">0.0001367</td>
+<td style="text-align: right;">0.0152776</td>
+<td style="text-align: right;">0.0589211</td>
+<td style="text-align: right;">0.0436435</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0190265</td>
-<td style="text-align: right;">0.0000568</td>
-<td style="text-align: right;">0.0077911</td>
-<td style="text-align: right;">0.0347786</td>
-<td style="text-align: right;">0.0269875</td>
+<td style="text-align: right;">0.0186220</td>
+<td style="text-align: right;">0.0000445</td>
+<td style="text-align: right;">0.0076765</td>
+<td style="text-align: right;">0.0332182</td>
+<td style="text-align: right;">0.0255417</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0257936</td>
-<td style="text-align: right;">0.0000765</td>
-<td style="text-align: right;">0.0125635</td>
-<td style="text-align: right;">0.0461997</td>
-<td style="text-align: right;">0.0336361</td>
+<td style="text-align: right;">0.0253830</td>
+<td style="text-align: right;">0.0000697</td>
+<td style="text-align: right;">0.0129582</td>
+<td style="text-align: right;">0.0460281</td>
+<td style="text-align: right;">0.0330699</td>
 </tr>
 </tbody>
 </table>

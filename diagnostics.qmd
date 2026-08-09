@@ -18,13 +18,8 @@ library(scales)
 library(tidyr)
 library(tibble)
 
-project_path <- if (dir.exists("data")) {
-  normalizePath(".")
-} else {
-  normalizePath("..")
-}
-base_path <- file.path(project_path, "data")
-output_path <- file.path(project_path, "outputs")
+base_path <- here::here("data")
+output_path <- here::here("outputs")
 
 method_labels <- c(
   "Direct" = "Direct",
@@ -386,11 +381,16 @@ unit_reference_probability <- diagnostic_estimates |>
   summarise(value = mean(estimate, na.rm = TRUE)) |>
   pull(value)
 
-make_effect_draws <- function(bundle, model_name, reference_probability, identity_link) {
-  spatial_precision <- extract_hyperparameter_draws(
+make_effect_variance_draws <- function(
+  bundle,
+  model_name,
+  reference_probability,
+  identity_link
+) {
+  area_precision <- extract_hyperparameter_draws(
     bundle$hyperparameters,
     "^Precision for area_inla_id$",
-    "spatial precision"
+    "area-effect precision"
   )
   temporal_precision <- extract_hyperparameter_draws(
     bundle$hyperparameters,
@@ -398,35 +398,32 @@ make_effect_draws <- function(bundle, model_name, reference_probability, identit
     "temporal precision"
   )
 
-  spatial_sd <- 1 / sqrt(spatial_precision)
-  temporal_sd <- 1 / sqrt(temporal_precision)
-  to_response_scale <- function(latent_sd) {
+  to_response_variance <- function(precision) {
+    latent_variance <- 1 / precision
+
     if (identity_link) {
-      return(100 * latent_sd)
+      return(100^2 * latent_variance)
     }
 
-    reference_logit <- qlogis(reference_probability)
-    50 * (
-      plogis(reference_logit + latent_sd) -
-        plogis(reference_logit - latent_sd)
-    )
+    response_slope <- reference_probability * (1 - reference_probability)
+    (100 * response_slope)^2 * latent_variance
   }
 
   tibble(
     model = model_name,
-    spatial = to_response_scale(spatial_sd),
-    temporal = to_response_scale(temporal_sd)
+    spatial = to_response_variance(area_precision),
+    temporal = to_response_variance(temporal_precision)
   )
 }
 
 bym2_effect_summary <- bind_rows(
-  make_effect_draws(
+  make_effect_variance_draws(
     area_draw_bundle,
     "Area-level SAE",
     area_reference_probability,
     identity_link = TRUE
   ),
-  make_effect_draws(
+  make_effect_variance_draws(
     unit_mrp_draw_bundle,
     "Unit-level SAE",
     unit_reference_probability,
@@ -436,20 +433,22 @@ bym2_effect_summary <- bind_rows(
   pivot_longer(
     cols = c(spatial, temporal),
     names_to = "effect",
-    values_to = "effect_pp"
+    values_to = "effect_variance_pp2"
   ) |>
   group_by(model, effect) |>
   summarise(
-    median = median(effect_pp),
-    lower = quantile(effect_pp, 0.025),
-    upper = quantile(effect_pp, 0.975),
+    median = median(effect_variance_pp2),
+    lower = quantile(effect_variance_pp2, 0.025),
+    upper = quantile(effect_variance_pp2, 0.975),
     .groups = "drop"
   ) |>
   mutate(
     model = factor(
       model,
-      levels = c("Unit-level SAE", "Area-level SAE")
-    )
+      levels = c("Area-level SAE", "Unit-level SAE")
+    ),
+    effect = factor(effect, levels = c("temporal", "spatial")),
+    interval_label = sprintf("%.2f [%.2f, %.2f]", median, lower, upper)
   )
 
 bym2_phi_summary <- bind_rows(
@@ -731,7 +730,7 @@ method_agreement |>
   theme(panel.grid.minor = element_blank())
 ```
 
-Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees a upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
+Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
 
 ```{r}
 #| label: diag-poststratification-effect
@@ -1007,7 +1006,7 @@ ggplot(
 
 ## Uncertainty improvement
 
-Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approach produced creidle interval widths which reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
+Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approaches produce credible-interval widths that reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
 
 ```{r}
 #| label: diag-ci-map
@@ -1068,9 +1067,9 @@ diagnostic_estimates |>
   theme(legend.position = "none")
 ```
 
-## Spatial and Temporal Effect
+## Area and temporal effect variance
 
-The posterior precision hyperparameters, $\tau$, determine the variability of the random effects, with a latent-scale standard deviation of $1/\sqrt{\tau}$. After conversion to the response scale of frequent-cycling prevalence (percentage point), the temporal effect indicates that estimates typically differ by approximately 0.75--1 percentage point between adjacent survey periods. The spatial effect produces a larger typical adjustment in the unit-level model than in the area-level model, indicating that residual geographic variation plays a greater role in differentiating its estimates across MSOAs.
+The inverse precision, $1/\tau$, gives the variance scale of each scaled random effect. For the BYM2 term, this is the total residual area-effect variance, combining structured and unstructured components. For the RW1 term, it is the variance scale of the temporal effect across the three survey periods. Larger values indicate that the corresponding random effect accounts for more residual variation, while the intervals show uncertainty in that variance.
 
 ```{r}
 #| label: diag-spatiotemporal-effects
@@ -1079,81 +1078,86 @@ The posterior precision hyperparameters, $\tau$, determine the variability of th
 #| fig-height: 5
 #| out-width: "100%"
 
-make_effect_panel <- function(effect_name, panel_title, axis_title, show_models) {
-  panel_data <- bym2_effect_summary |>
-    filter(effect == effect_name) |>
-    mutate(
-      interval_label = sprintf("%.2f [%.2f, %.2f]", median, lower, upper)
-    )
-
-  axis_limit <- max(panel_data$upper) * 1.18
-
-  ggplot(panel_data, aes(y = model, colour = model)) +
-    geom_segment(
-      aes(x = lower, xend = upper, yend = model),
-      linewidth = 1.8,
-      lineend = "round"
-    ) +
-    geom_point(aes(x = median), size = 4.8) +
-    geom_text(
-      aes(x = upper + 0.025 * axis_limit, label = interval_label),
-      hjust = 0,
-      colour = "#555B63",
-      size = 4,
-      show.legend = FALSE
-    ) +
-    scale_x_continuous(
-      limits = c(0, axis_limit),
-      breaks = pretty_breaks(n = 5),
-      labels = label_number(accuracy = 0.1),
-      expand = expansion(mult = c(0, 0))
-    ) +
-    scale_colour_manual(values = effect_colours, guide = "none") +
-    coord_cartesian(clip = "off") +
-    labs(title = panel_title, x = axis_title, y = NULL) +
-    theme_minimal(base_size = 13) +
-    theme(
-      plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-      axis.title.x = element_text(size = 12, face = "bold", margin = margin(t = 10)),
-      axis.text.x = element_text(size = 11, colour = "#555B63"),
-      axis.text.y = if (show_models) {
-        element_text(size = 12, face = "bold", colour = "#202124")
-      } else {
-        element_blank()
-      },
-      axis.ticks.y = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.grid.major.y = element_blank(),
-      plot.margin = margin(8, 95, 8, if (show_models) 8 else 0)
-    )
-}
-
-spatial_effect_panel <- make_effect_panel(
-  "spatial",
-  "Spatial effect (BYM2)",
-  "Typical spatial adjustment to estimate (pp)",
-  show_models = TRUE
+effect_labels <- c(
+  "temporal" = "Temporal-effect\nvariance (RW1)",
+  "spatial" = "Area-effect\nvariance (BYM2)"
 )
+effect_axis_limit <- max(bym2_effect_summary$upper) * 1.18
 
-temporal_effect_panel <- make_effect_panel(
-  "temporal",
-  "Temporal effect (RW1)",
-  "Typical change between adjacent periods (pp)",
-  show_models = FALSE
-)
-
-(spatial_effect_panel | temporal_effect_panel) +
-  plot_layout(widths = c(1, 1)) +
-  plot_annotation(
-    title = "Magnitude and precision of spatial and temporal effects",
-    subtitle = "Converted to response scale (pp); all survey periods",
-    theme = annotation_theme
+bym2_effect_summary |>
+  ggplot(aes(y = 0, colour = model)) +
+  geom_segment(
+    aes(x = lower, xend = upper, yend = 0),
+    linewidth = 1.8,
+    lineend = "round"
+  ) +
+  geom_point(aes(x = median), size = 4.8) +
+  geom_text(
+    aes(
+      x = median + 0.015 * effect_axis_limit,
+      label = interval_label
+    ),
+    hjust = 0,
+    nudge_y = 0.16,
+    colour = "#555B63",
+    size = 4,
+    show.legend = FALSE
+  ) +
+  facet_grid(
+    rows = vars(effect),
+    cols = vars(model),
+    labeller = labeller(effect = as_labeller(effect_labels)),
+    switch = "y"
+  ) +
+  scale_x_continuous(
+    limits = c(0, effect_axis_limit),
+    breaks = pretty_breaks(n = 5),
+    labels = label_number(accuracy = 0.1),
+    expand = expansion(mult = c(0, 0))
+  ) +
+  scale_y_continuous(limits = c(-0.5, 0.5), breaks = NULL) +
+  scale_colour_manual(values = effect_colours, guide = "none") +
+  coord_cartesian(clip = "off") +
+  labs(
+    title = "Variance of area and temporal random effects",
+    x = "Posterior variance",
+    y = NULL
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 12, face = "bold", margin = margin(t = 10)),
+    axis.text.x = element_text(size = 11, colour = "#555B63"),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.spacing.x = grid::unit(1.1, "lines"),
+    panel.spacing.y = grid::unit(0.2, "lines"),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    strip.text.x = element_text(
+      colour = "#202124",
+      face = "bold",
+      size = 14,
+      margin = margin(b = 8)
+    ),
+    strip.text.y.left = element_text(
+      angle = 0,
+      colour = "#202124",
+      face = "bold",
+      size = 12,
+      hjust = 1,
+      margin = margin(r = 10)
+    ),
+    plot.margin = margin(8, 95, 8, 8)
   )
 ```
  
-The BYM2 mixing parameter, $\phi$, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. The lower $\phi$ estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.
+The BYM2 mixing parameter, $\phi$, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. 
 
-The unit-level model uses individual responses directly and estimates a higher $\phi$, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.
+- The lower $\phi$ estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.
+- The unit-level model uses individual responses directly and estimates a higher $\phi$, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.
 
 ```{r}
 #| label: diag-area-effect-map

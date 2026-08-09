@@ -400,6 +400,7 @@ Target estimand
 </div>
 <p>Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates. This is useful when direct estimates are too sparse or unstable to provide reliable area-level modelling inputs. Inspired by the Battese–Harter–Fuller model, this approach uses a generalised linear mixed model to model the individual outcome, whether continuous or binary, using predictors available in the survey microdata. Final small area estimates are then produced by applying the fitted model to area-level summaries of those predictors.</p>
 <p>Here, the binary frequent-cycling indicator <code>freq_cyclist</code> is modelled from the survey microdata using temporal and spatial random effects, with unit-level <code>age</code>, <code>sex</code>, and <code>caraccess</code> added across model specifications. The predictor summaries are extracted from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> to produce the final <em>MSOA-year</em> estimates. Note that aggregating using area summaries of predictors assumes the area summaries of <code>age</code>, <code>sex</code>, and <code>caraccess</code> adequately represent the target population composition in each <em>MSOA-year</em> cell.</p>
+<p>The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects.</p>
 </section>
 <section id="prepare-model-and-aggregation-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-model-and-aggregation-data"><span class="header-section-number">1</span> Prepare model and aggregation data</h2>
@@ -745,12 +746,12 @@ Note
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: right;">2947.088</td>
-<td style="text-align: right;">34.27773</td>
+<td style="text-align: right;">34.27763</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
-<td style="text-align: right;">2959.741</td>
-<td style="text-align: right;">34.46323</td>
+<td style="text-align: right;">2959.742</td>
+<td style="text-align: right;">34.46336</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M1 +TempSpatial</td>
@@ -801,9 +802,9 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.5922516</td>
-<td style="text-align: right;">-1.9994875</td>
-<td style="text-align: right;">-1.1856836</td>
+<td style="text-align: right;">-1.5922518</td>
+<td style="text-align: right;">-1.9994877</td>
+<td style="text-align: right;">-1.1856840</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age</td>
@@ -819,9 +820,9 @@ Note
 </tr>
 <tr class="even">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5590197</td>
-<td style="text-align: right;">-0.8271328</td>
-<td style="text-align: right;">-0.2908765</td>
+<td style="text-align: right;">-0.5590196</td>
+<td style="text-align: right;">-0.8271327</td>
+<td style="text-align: right;">-0.2908764</td>
 </tr>
 </tbody>
 </table>
@@ -862,16 +863,16 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">77.002</td>
-<td style="text-align: right;">89.884</td>
-<td style="text-align: right;">7.686</td>
+<td style="text-align: right;">76.999</td>
+<td style="text-align: right;">89.874</td>
+<td style="text-align: right;">7.687</td>
 <td style="text-align: right;">50.012</td>
-<td style="text-align: right;">311.193</td>
+<td style="text-align: right;">311.166</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Precision for area_inla_id</td>
 <td style="text-align: right;">11.157</td>
-<td style="text-align: right;">6.940</td>
+<td style="text-align: right;">6.939</td>
 <td style="text-align: right;">3.634</td>
 <td style="text-align: right;">9.374</td>
 <td style="text-align: right;">29.544</td>
@@ -1030,56 +1031,56 @@ Area summaries and binary outcomes
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0207798</td>
-<td style="text-align: right;">0.0000524</td>
-<td style="text-align: right;">0.0094042</td>
-<td style="text-align: right;">0.0391489</td>
-<td style="text-align: right;">0.0297447</td>
+<td style="text-align: right;">0.0201835</td>
+<td style="text-align: right;">0.0000382</td>
+<td style="text-align: right;">0.0101111</td>
+<td style="text-align: right;">0.0344647</td>
+<td style="text-align: right;">0.0243535</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0165713</td>
-<td style="text-align: right;">0.0000321</td>
-<td style="text-align: right;">0.0082677</td>
-<td style="text-align: right;">0.0299732</td>
-<td style="text-align: right;">0.0217055</td>
+<td style="text-align: right;">0.0170324</td>
+<td style="text-align: right;">0.0000367</td>
+<td style="text-align: right;">0.0080557</td>
+<td style="text-align: right;">0.0329306</td>
+<td style="text-align: right;">0.0248748</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0369708</td>
-<td style="text-align: right;">0.0003812</td>
-<td style="text-align: right;">0.0157530</td>
-<td style="text-align: right;">0.0799021</td>
-<td style="text-align: right;">0.0641491</td>
+<td style="text-align: right;">0.0373439</td>
+<td style="text-align: right;">0.0003275</td>
+<td style="text-align: right;">0.0130853</td>
+<td style="text-align: right;">0.0796286</td>
+<td style="text-align: right;">0.0665433</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0263261</td>
-<td style="text-align: right;">0.0000851</td>
-<td style="text-align: right;">0.0137056</td>
-<td style="text-align: right;">0.0496971</td>
-<td style="text-align: right;">0.0359915</td>
+<td style="text-align: right;">0.0260646</td>
+<td style="text-align: right;">0.0001003</td>
+<td style="text-align: right;">0.0125532</td>
+<td style="text-align: right;">0.0518695</td>
+<td style="text-align: right;">0.0393164</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0155730</td>
-<td style="text-align: right;">0.0000343</td>
-<td style="text-align: right;">0.0061527</td>
-<td style="text-align: right;">0.0292255</td>
-<td style="text-align: right;">0.0230727</td>
+<td style="text-align: right;">0.0158270</td>
+<td style="text-align: right;">0.0000324</td>
+<td style="text-align: right;">0.0065994</td>
+<td style="text-align: right;">0.0297075</td>
+<td style="text-align: right;">0.0231082</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0214155</td>
-<td style="text-align: right;">0.0000422</td>
-<td style="text-align: right;">0.0108875</td>
-<td style="text-align: right;">0.0359293</td>
-<td style="text-align: right;">0.0250419</td>
+<td style="text-align: right;">0.0218240</td>
+<td style="text-align: right;">0.0000526</td>
+<td style="text-align: right;">0.0107823</td>
+<td style="text-align: right;">0.0382918</td>
+<td style="text-align: right;">0.0275095</td>
 </tr>
 </tbody>
 </table>
