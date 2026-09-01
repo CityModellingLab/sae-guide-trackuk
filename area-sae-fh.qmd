@@ -357,6 +357,23 @@ prediction_draws <- predict_from_draws(
 )
 ```
 
+::: {.callout-note}
+## Alternative: extract predictions directly from `INLA`
+
+In the code above, for each posterior draw, we construct predictions for each MSOA-year from the fixed and random effects manually. `INLA` performs the same calculation during model fitting, and `control.predictor = list(compute = TRUE)` retains the resulting linear predictors as `Predictor:` values. Because the model uses an identity link---i.e., no conversion is applied, a fitted value of 0.08 represents an 8% prevalence---the prediction draws can therefore be extracted directly:
+
+```{r}
+#| label: fh-predict-alternative
+#| eval: false
+#| code-fold: false
+
+prediction_draws <- sapply(
+  posterior_draws,
+  \(draw) draw$latent[startsWith(rownames(draw$latent), "Predictor:"), 1]
+)
+```
+:::
+
 The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
 
 ```{r}
