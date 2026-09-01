@@ -230,7 +230,9 @@ m2_formula <- update(m1_formula, . ~ . +
   sex
 )
 
-m3_formula <- update(m2_formula, . ~ . + caraccess)
+m3_formula <- update(m2_formula, . ~ . + 
+  caraccess
+)
 
 model_formulas <- list(
   "M1 +TempSpatial" = m1_formula,
@@ -266,7 +268,6 @@ model_waic <- imap_dfr(
     tibble(
       model = model_name,
       waic = fit$waic$waic,
-      eff_params = fit$waic$p.eff
     )
   }
 ) |>
@@ -300,50 +301,6 @@ mrp_final_fit$summary.fixed |>
 ## Poststratification with posterior draws
 
 As before, posterior draws from the selected `INLA` fit produce MSOA-year estimates. Each draw provides fixed effects, spatial area effects, and temporal effects. The fitted model is evaluated over every `age_band` x `sex` x `caraccess` population cell, transformed to the response scale, weighted by `pop_count`, and summarised as MSOA-year draws.
-
-:::{.callout-note}
-Each posterior draw stores the fixed effects, spatial area effect, and temporal effect together in `INLA`'s latent vector. Fixed effects are labelled as `term:1`, while random effects are labelled as `effect:index`.
-:::
-
-```{r}
-#| label: mrp-draws
-#| code-fold: false
-
-set.seed(100)
-posterior_draws <- inla.posterior.sample(
-  n = 300,
-  result = mrp_final_fit
-)
-
-# Fixed-effect draw matrix
-fixed_terms <- rownames(mrp_final_fit$summary.fixed)
-fixed_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0(fixed_terms, ":1"), 1]),
-    fixed_terms
-  )
-})
-
-# Area-effect draw matrix
-area_ids <- sort(area_index$area_inla_id)
-area_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("area_inla_id:", area_ids), 1]),
-    area_ids
-  )
-})
-
-# Time-effect draw matrix
-time_ids <- sort(time_index$time_inla_id)
-time_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("time_inla_id:", time_ids), 1]),
-    time_ids
-  )
-})
-```
-
-Each posterior draw is evaluated over every poststratification cell. The cell predictions are then weighted by population count and aggregated within each MSOA-year.
 
 ::: {.callout-note title="Why poststratification?"}
 Unit-level SAE with poststratification improves on the previous area-summary approach in two ways.
@@ -420,36 +377,76 @@ bind_rows(
 :::
 
 ```{r}
+#| label: mrp-draws
+#| code-fold: false
+
+set.seed(100)
+posterior_draws <- inla.posterior.sample(
+  n = 300,
+  result = mrp_final_fit
+)
+```
+
+Each posterior draw is evaluated over every poststratification cell. The cell predictions are then weighted by population count and aggregated within each MSOA-year. 
+
+```{r}
 #| label: mrp-predict
 #| code-fold: false
 
-prediction_matrix <- model.matrix(
-  ~ age_band + sex + caraccess,
-  data = poststrat_data
-)[, fixed_terms, drop = FALSE]
-
-cell_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
-  cell_predictions <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
-    area_draws[as.character(poststrat_data$area_inla_id), draw_id] +
-    time_draws[as.character(poststrat_data$time_inla_id), draw_id]
-
-  # Convert log-odds to probabilities.
-  plogis(cell_predictions)
-})
-
-# Aggregate and apply poststrat weight for each area-time
-area_year_id <- paste(poststrat_data$area_id, poststrat_data$time_id, sep = "__")
-
-aggregate_draws <- function(draw_matrix, weights, group) {
-  weighted_sums <- rowsum(draw_matrix * weights, group = group, reorder = FALSE)
-  population_totals <- rowsum(weights, group = group, reorder = FALSE)
-  weighted_sums / as.numeric(population_totals)
+extract_draws <- function(posterior_draws, nodes, row_names = nodes) {
+  matrix(
+    sapply(posterior_draws, \(draw) draw$latent[nodes, 1]),
+    nrow = length(nodes),
+    dimnames = list(row_names, NULL)
+  )
 }
 
-prediction_draws <- aggregate_draws(
-  draw_matrix = cell_draws,
+predict_from_draws <- function(posterior_draws, prediction_data, fixed_term_formula) {
+  # Build prediction matrix
+  prediction_matrix <- model.matrix(
+    fixed_term_formula,
+    prediction_data
+  )
+  
+  # Extract draws of fixed and spatial/temporal effect from posteriors
+  fixed_terms <- colnames(prediction_matrix)
+  area_ids <- sort(unique(prediction_data$area_inla_id))
+  time_ids <- sort(unique(prediction_data$time_inla_id))
+
+  fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"))
+  area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids))
+  time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids))
+
+  # Calculate the linear predictor and convert to probabilities
+  linear_predictor <- prediction_matrix %*% fixed_draws +
+    area_draws[match(prediction_data$area_inla_id, area_ids), ] +
+    time_draws[match(prediction_data$time_inla_id, time_ids), ]
+
+  plogis(linear_predictor)
+}
+
+cell_draws <- predict_from_draws(
+  posterior_draws,
+  poststrat_data,
+  ~ age_band + sex + caraccess
+)
+```
+```{r}
+#| label: mrp-poststrat
+#| code-fold: false
+
+poststratify <- function(cell_draws, weights, area, time) {
+  area_time <- paste(area, time, sep = "__")
+  weighted_predictions <- rowsum(cell_draws * weights, group = area_time)
+  population_totals <- rowsum(weights, group = area_time)
+  weighted_predictions / as.numeric(population_totals)
+}
+
+prediction_draws <- poststratify(
+  cell_draws,
   weights = poststrat_data$pop_count,
-  group = area_year_id
+  area = poststrat_data$area_id,
+  time = poststrat_data$time_id
 )
 ```
 
@@ -459,11 +456,9 @@ The matrix `prediction_draws` now has one MSOA-year estimate per row and one pos
 #| label: mrp-results
 #| code-fold: false
 
-draw_quantile <- \(p) {
-  apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
-}
-
-final_mrp_results <- tibble(area_year_id = rownames(prediction_draws)) |>
+final_mrp_results <- tibble(
+  area_year_id = rownames(prediction_draws)
+) |>
   separate(
     area_year_id,
     into = c("area_id", "time_id"),
@@ -474,8 +469,8 @@ final_mrp_results <- tibble(area_year_id = rownames(prediction_draws)) |>
     tibble(
       mrp_estimate = rowMeans(prediction_draws),
       mrp_variance = apply(prediction_draws, 1, var),
-      mrp_lower = draw_quantile(0.025),
-      mrp_upper = draw_quantile(0.975)
+      mrp_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      mrp_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
     )
   ) |>
   mutate(
@@ -556,6 +551,50 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
 
 These estimates reuse the 2021 age-sex-caraccess population composition for the 2023 and 2025 waves, while the modelled time effect captures changes in the outcome. This requires the relative `age_band` x `sex` x `caraccess` poststratification weights to stay stable across target periods.
 
+
+```{r}
+#| label: mrp-export
+#| code-fold: true
+
+fixed_terms <- rownames(mrp_final_fit$summary.fixed)
+area_ids <- sort(area_index$area_inla_id)
+time_ids <- sort(time_index$time_inla_id)
+
+fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"),fixed_terms)
+area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids),area_ids)
+time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids),time_ids)
+
+posterior_hyperparameter_names <- names(posterior_draws[[1]]$hyperpar)
+posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {
+  setNames(
+    as.numeric(draw$hyperpar[posterior_hyperparameter_names]),
+    posterior_hyperparameter_names
+  )
+})
+
+saveRDS(
+  list(
+    schema_version = 1L,
+    route = "Unit-level SAE with poststratification",
+    model = mrp_best_model,
+    seed = 100L,
+    n_draws = length(posterior_draws),
+    fixed = fixed_draws,
+    area = area_draws,
+    time = time_draws,
+    hyperparameters = posterior_hyperparameter_draws,
+    area_index = area_index,
+    time_index = time_index
+  ),
+  file.path(output_path, "freqcyc_posterior_draws_unit_mrp.rds"),
+  compress = "xz"
+)
+
+write_csv(final_mrp_results, file.path(output_path, "freqcyc_estimates_mrp_rich.csv"))
+```
+
+
+<!-- 
 ## Appendix: Enhance shallow poststratification with contextual predictors
 
 Sometimes the population table is available for every target year but only at a shallow cell grain. ONS mid-year population estimates can give MSOA-year counts by `age_band` and `sex`, but not by `caraccess`. In that setting, poststratification can still be used, but only for unit-level predictors represented in the population table. 
@@ -672,13 +711,11 @@ rich_shallow_waic <- bind_rows(
       workflow = "Rich poststratification",
       model = "Age + Sex + CarAccess",
       waic,
-      eff_params
     ),
   tibble(
     workflow = "Shallow poststratification",
     model = "Age + Sex (Context: Car access rate)",
     waic = shallow_context_fit$waic$waic,
-    eff_params = shallow_context_fit$waic$p.eff
   )
 ) |>
   arrange(waic)
@@ -692,81 +729,51 @@ The shallow **poststratification** step uses the same posterior-draw workflow, b
 #| label: shallow-results
 
 set.seed(101)
+
 shallow_draws <- inla.posterior.sample(
   n = 300,
   result = shallow_context_fit
 )
 
-shallow_fixed_terms <- rownames(shallow_context_fit$summary.fixed)
-shallow_fixed_draws <- sapply(shallow_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0(shallow_fixed_terms, ":1"), 1]),
-    shallow_fixed_terms
-  )
-})
-
-shallow_area_draws <- sapply(shallow_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("area_inla_id:", area_ids), 1]),
-    area_ids
-  )
-})
-
-shallow_time_draws <- sapply(shallow_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("time_inla_id:", time_ids), 1]),
-    time_ids
-  )
-})
-
-shallow_prediction_matrix <- model.matrix(
-  ~ age_band + sex + z_caraccess_adult_share,
-  data = shallow_poststrat_data
-)[, shallow_fixed_terms, drop = FALSE]
-
-shallow_cell_draws <- sapply(seq_along(shallow_draws), \(draw_id) {
-  shallow_cell_predictions <- as.numeric(
-    shallow_prediction_matrix %*% shallow_fixed_draws[, draw_id]
-  ) +
-    shallow_area_draws[as.character(shallow_poststrat_data$area_inla_id), draw_id] +
-    shallow_time_draws[as.character(shallow_poststrat_data$time_inla_id), draw_id]
-
-  # Convert log-odds to probabilities.
-  plogis(shallow_cell_predictions)
-})
-
-shallow_area_year_id <- paste(
-  shallow_poststrat_data$area_id,
-  shallow_poststrat_data$time_id,
-  sep = "__"
+shallow_cell_draws <- predict_from_draws(
+  shallow_draws,
+  shallow_poststrat_data,
+  ~ age_band + sex + z_caraccess_adult_share
 )
 
-shallow_prediction_draws <- aggregate_draws(
-  draw_matrix = shallow_cell_draws,
+shallow_prediction_draws <- poststratify(
+  shallow_cell_draws,
   weights = shallow_poststrat_data$pop_count,
-  group = shallow_area_year_id
+  area = shallow_poststrat_data$area_id,
+  time = shallow_poststrat_data$time_id
 )
 
-shallow_draw_quantile <- \(p) {
-  apply(shallow_prediction_draws, 1, quantile, probs = p, names = FALSE)
-}
-
-shallow_mrp_results <- tibble(area_year_id = rownames(shallow_prediction_draws)) |>
+shallow_mrp_results <- tibble(
+  area_time = rownames(shallow_prediction_draws)
+) |>
   separate(
-    area_year_id,
+    area_time,
     into = c("area_id", "time_id"),
     sep = "__",
     convert = TRUE
   ) |>
-  bind_cols(
-    tibble(
-      shallow_mrp_estimate = rowMeans(shallow_prediction_draws),
-      shallow_mrp_variance = apply(shallow_prediction_draws, 1, var),
-      shallow_mrp_lower = shallow_draw_quantile(0.025),
-      shallow_mrp_upper = shallow_draw_quantile(0.975)
-    )
-  ) |>
   mutate(
+    shallow_mrp_estimate = rowMeans(shallow_prediction_draws),
+    shallow_mrp_variance = apply(shallow_prediction_draws, 1, var),
+    shallow_mrp_lower = apply(
+      shallow_prediction_draws,
+      1,
+      quantile,
+      probs = 0.025,
+      names = FALSE
+    ),
+    shallow_mrp_upper = apply(
+      shallow_prediction_draws,
+      1,
+      quantile,
+      probs = 0.975,
+      names = FALSE
+    ),
     shallow_mrp_ci_width = shallow_mrp_upper - shallow_mrp_lower
   )
 
@@ -909,36 +916,11 @@ wrap_plots(rich_minus_shallow_maps, ncol = 3) +
     theme = map_annotation_theme
   )
 ```
+
 ```{r}
-#| label: mrp-export
+#| label: mrp-export-shallow
 #| code-fold: true
 
-posterior_hyperparameter_names <- names(posterior_draws[[1]]$hyperpar)
-posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$hyperpar[posterior_hyperparameter_names]),
-    posterior_hyperparameter_names
-  )
-})
-
-saveRDS(
-  list(
-    schema_version = 1L,
-    route = "Unit-level SAE with poststratification",
-    model = mrp_best_model,
-    seed = 100L,
-    n_draws = length(posterior_draws),
-    fixed = fixed_draws,
-    area = area_draws,
-    time = time_draws,
-    hyperparameters = posterior_hyperparameter_draws,
-    area_index = area_index,
-    time_index = time_index
-  ),
-  file.path(output_path, "freqcyc_posterior_draws_unit_mrp.rds"),
-  compress = "xz"
-)
-
-write_csv(final_mrp_results, file.path(output_path, "freqcyc_estimates_mrp_rich.csv"))
-write_csv(shallow_mrp_results, file.path(output_path, "freqcyc_estimates_mrp_shallow.csv"))
+# write_csv(shallow_mrp_results, file.path(output_path, "freqcyc_estimates_mrp_shallow.csv"))
 ```
+-->

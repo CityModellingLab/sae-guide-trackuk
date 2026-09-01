@@ -127,7 +127,8 @@ model_data <- survey_microdata |>
     age,
     female = as.integer(sex == 2),
     caraccess
-  )
+  ) |>
+  drop_na(freq_cyclist, age, female, caraccess)
 
 head(model_data)
 ```
@@ -214,7 +215,9 @@ m2_formula <- update(m1_formula, . ~ . +
   female
 )
 
-m3_formula <- update(m2_formula, . ~ . + caraccess)
+m3_formula <- update(m2_formula, . ~ . + 
+  caraccess
+)
 
 model_formulas <- list(
   "M1 +TempSpatial" = m1_formula,
@@ -253,7 +256,6 @@ model_waic <- imap_dfr(
     tibble(
       model = model_name,
       waic = fit$waic$waic,
-      eff_params = fit$waic$p.eff
     )
   }
 ) |>
@@ -300,10 +302,6 @@ The random-effect table reports the posterior summaries for the temporal and spa
 
 The aggregation step uses posterior draws from the selected `INLA` fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.
 
-:::{.callout-note}
-Each posterior draw stores the fixed effects, spatial area effect, and temporal effect together in `INLA`'s latent vector. Fixed effects are labelled as `term:1`, while random effects are labelled as `effect:index`.
-:::
-
 ```{r}
 #| label: bhf-draws
 #| code-fold: false
@@ -313,84 +311,59 @@ posterior_draws <- inla.posterior.sample(
   n = 300,
   result = bhf_selected_fit
 )
-
-# Fixed-effect draw matrix
-fixed_terms <- rownames(bhf_selected_fit$summary.fixed)
-fixed_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0(fixed_terms, ":1"), 1]),
-    fixed_terms
-  )
-})
-
-# Area-effect draw matrix
-area_ids <- sort(area_index$area_inla_id)
-area_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("area_inla_id:", area_ids), 1]),
-    area_ids
-  )
-})
-
-# Time-effect draw matrix
-time_ids <- sort(time_index$time_inla_id)
-time_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("time_inla_id:", time_ids), 1]),
-    time_ids
-  )
-})
 ```
 
 Each posterior draw is evaluated over the MSOA-year aggregation frame by plugging in the area-level predictor summaries and the corresponding area and time effects.
-
-::: {.callout-note title="Area summaries and binary outcomes"}
-For **continuous outcomes**, such as commute time in minutes, substituting area-level predictor summaries into a linear model gives the same result as averaging individual predictions:
-
-$$
-\bar{x}\beta
-=
-\frac{1}{N}\sum_{i=1}^{N} x_i\beta
-$$
-
-For **binary outcomes**, such as `freq_cyclist` (`1` = yes, `0` = no), the target is the population proportion in the area, or the average predicted probability across individuals. Plugging in area-level summaries instead gives the predicted probability for an “average” individual, so it is only an approximation to the target.
-
-$$
-\operatorname{logit}^{-1}(\bar{x}\beta)
-\approx
-\frac{1}{N}\sum_{i=1}^{N}
-\operatorname{logit}^{-1}(x_i\beta)
-$$
-:::
 
 ```{r}
 #| label: bhf-predict
 #| code-fold: false
 
-prediction_matrix <- model.matrix(
-  ~ age + female + caraccess,
-  data = aggregation_data
-)[, fixed_terms, drop = FALSE]
+extract_draws <- function(posterior_draws, nodes, row_names = nodes) {
+  matrix(
+    sapply(posterior_draws, \(draw) draw$latent[nodes, 1]),
+    nrow = length(nodes),
+    dimnames = list(row_names, NULL)
+  )
+}
+predict_from_draws <- function(posterior_draws, prediction_data, fixed_term_formula) {
+  
+  # Build prediction matrix
+  prediction_matrix <- model.matrix(
+    fixed_term_formula,
+    prediction_data
+  )
 
-prediction_draws <- sapply(seq_along(posterior_draws), \(draw_id) {
-  predictions <- as.numeric(prediction_matrix %*% fixed_draws[, draw_id]) +
-    area_draws[as.character(aggregation_data$area_inla_id), draw_id] +
-    time_draws[as.character(aggregation_data$time_inla_id), draw_id]
+  # Extract draws of fixed and spatial/temporal effect from posteriors
+  fixed_terms <- colnames(prediction_matrix)
+  area_ids <- sort(unique(prediction_data$area_inla_id))
+  time_ids <- sort(unique(prediction_data$time_inla_id))
 
-  # Convert log-odds to probabilities.
-  plogis(predictions)
-})
+  fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"))
+  area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids))
+  time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids))
+
+  # Calculate the linear predictor and convert to probabilities
+  linear_predictor <- prediction_matrix %*% fixed_draws +
+    area_draws[match(prediction_data$area_inla_id, area_ids), ] +
+    time_draws[match(prediction_data$time_inla_id, time_ids), ]
+
+  plogis(linear_predictor)
+}
+
+prediction_draws <- predict_from_draws(
+  posterior_draws,
+  aggregation_data,
+  ~ age + female + caraccess
+)
 ```
 
 The matrix `prediction_draws` now has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
 
+
 ```{r}
 #| label: bhf-results
 #| code-fold: false
-
-draw_quantile <- \(p) {
-  apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
-}
 
 final_bhf_results <- aggregation_data |>
   select(area_id, time_id) |>
@@ -398,8 +371,8 @@ final_bhf_results <- aggregation_data |>
     tibble(
       bhf_estimate = rowMeans(prediction_draws),
       bhf_variance = apply(prediction_draws, 1, var),
-      bhf_lower = draw_quantile(0.025),
-      bhf_upper = draw_quantile(0.975)
+      bhf_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      bhf_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
     )
   ) |>
   mutate(
@@ -482,12 +455,39 @@ Although unit-level modelling can stabilise estimates where direct estimates are
 
 This limitation is especially important for a binary outcome modelled using a logistic model (setting `family = "binomial"`). The target is the population-average predicted probability. Substituting area-level predictor summaries to estimate the probability at the average predictor values only is an approximation.
 
+::: {.callout-note title="Area summaries and binary outcomes"}
+For **continuous outcomes**, such as commute time in minutes, substituting area-level predictor summaries into a linear model gives the same result as averaging individual predictions:
+
+$$
+\bar{x}\beta
+=
+\frac{1}{N}\sum_{i=1}^{N} x_i\beta
+$$
+
+For **binary outcomes**, such as `freq_cyclist` (`1` = yes, `0` = no), the target is the population proportion in the area, or the average predicted probability across individuals. Plugging in area-level summaries instead gives the predicted probability for an “average” individual, so it is only an approximation to the target.
+
+$$
+\operatorname{logit}^{-1}(\bar{x}\beta)
+\approx
+\frac{1}{N}\sum_{i=1}^{N}
+\operatorname{logit}^{-1}(x_i\beta)
+$$
+:::
+
 A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.
 
 
 ```{r}
 #| label: bhf-export
 #| code-fold: true
+
+fixed_terms <- rownames(bhf_selected_fit$summary.fixed)
+area_ids <- sort(area_index$area_inla_id)
+time_ids <- sort(time_index$time_inla_id)
+
+fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"),fixed_terms)
+area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids),area_ids)
+time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids),time_ids)
 
 posterior_hyperparameter_names <- names(posterior_draws[[1]]$hyperpar)
 posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {

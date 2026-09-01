@@ -227,7 +227,9 @@ m1_formula <- direct_estimate ~
     scale.model = TRUE
   )
 
-m2_formula <- update(m1_formula, . ~ . + z_age_adult_mean)
+m2_formula <- update(m1_formula, . ~ . + 
+  z_age_adult_mean
+)
 
 m3_formula <- update(m2_formula, . ~ . +
   z_pop_density +
@@ -283,7 +285,6 @@ model_waic <- imap_dfr(
     tibble(
       model = model_name,
       waic = fit$waic$waic,
-      eff_params = fit$waic$p.eff
     )
   }
 ) |>
@@ -304,10 +305,6 @@ Based on this comparison, M2, which includes average MSOA age, performs best. Th
 
 Posterior draws from the selected `INLA` fit give area-level SAE estimates for each MSOA-year cell. The fitted-value draws are summarised into the posterior mean, variance, and 95% credible interval.
 
-:::{.callout-note}
-`INLA` stores the fitted values inside each posterior draw's latent vector. The fitted-value rows are named `Predictor...`.
-:::
-
 ```{r}
 #| label: fh-draws
 #| code-fold: false
@@ -318,15 +315,46 @@ posterior_draws <- inla.posterior.sample(
   result = fh_selected_fit
 )
 ```
-
+Each posterior draw is evaluated for each MSOA-year domain by plugging in the area-level predictor summaries and the corresponding area and time effects. 
 ```{r}
 #| label: fh-predict
 #| code-fold: false
 
-prediction_draws <- sapply(posterior_draws, \(draw) {
-  prediction_rows <- startsWith(rownames(draw$latent), "Predictor")
-  as.numeric(draw$latent[prediction_rows, 1])
-})
+extract_draws <- function(posterior_draws, nodes, row_names = nodes) {
+  matrix(
+    sapply(posterior_draws, \(draw) draw$latent[nodes, 1]),
+    nrow = length(nodes),
+    dimnames = list(row_names, NULL)
+  )
+}
+
+predict_from_draws <- function(posterior_draws, prediction_data, fixed_term_formula) {
+  # Build prediction matrix
+  prediction_matrix <- model.matrix(
+    fixed_term_formula,
+    prediction_data
+  )
+
+  # Extract fixed and random effects into a matrix
+  fixed_terms <- colnames(prediction_matrix)
+  area_ids <- sort(unique(prediction_data$area_inla_id))
+  time_ids <- sort(unique(prediction_data$time_inla_id))
+
+  fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"))
+  area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids))
+  time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids))
+
+  # Calculate fitted value for each draw
+  prediction_matrix %*% fixed_draws +
+    area_draws[match(prediction_data$area_inla_id, area_ids), ] +
+    time_draws[match(prediction_data$time_inla_id, time_ids), ]
+}
+
+prediction_draws <- predict_from_draws(
+  posterior_draws,
+  model_data,
+  ~ z_age_adult_mean
+)
 ```
 
 The matrix `prediction_draws` has one MSOA-year estimate per row and one posterior draw per column. Posterior means, variances, and 95% credible intervals are computed directly from this draw matrix.
@@ -335,18 +363,14 @@ The matrix `prediction_draws` has one MSOA-year estimate per row and one posteri
 #| label: fh-results
 #| code-fold: false
 
-draw_quantile <- \(p) {
-  apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
-}
-
 final_fh_results <- model_data |>
   select(area_id, time_id) |>
   bind_cols(
     tibble(
       fh_estimate = rowMeans(prediction_draws),
       fh_variance = apply(prediction_draws, 1, var),
-      fh_lower = draw_quantile(0.025),
-      fh_upper = draw_quantile(0.975)
+      fh_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      fh_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE)
     )
   ) |>
   mutate(
@@ -432,31 +456,28 @@ The area-level SAE estimates are less jagged across neighbouring areas and show 
 ```{r}
 #| label: fh-collate
 
+fixed_formula <- function(fit) {
+  fixed_terms <- setdiff(
+    rownames(fit$summary.fixed),
+    "(Intercept)"
+  )
+
+  if (length(fixed_terms)) reformulate(fixed_terms) else ~ 1
+}
+
 summarise_fh_draws <- function(fit, model_name, n_draws = 250) {
   posterior_draws <- inla.posterior.sample(
     n = n_draws,
     result = fit
   )
 
-  prediction_draws <- sapply(posterior_draws, \(draw) {
-    prediction_rows <- startsWith(rownames(draw$latent), "Predictor")
-    as.numeric(draw$latent[prediction_rows, 1])
-  })
+  prediction_draws <- predict_from_draws(
+    posterior_draws,
+    model_data,
+    fixed_formula(fit)
+  )
 
-  draw_quantile <- \(p) {
-    apply(prediction_draws, 1, quantile, probs = p, names = FALSE)
-  }
-
-  bind_cols(
-    model_data |>
-      select(area_id, time_id, msoa_name, direct_estimate, variance, n),
-    tibble(
-      fh_estimate = rowMeans(prediction_draws),
-      fh_variance = apply(prediction_draws, 1, var),
-      fh_lower = draw_quantile(0.025),
-      fh_upper = draw_quantile(0.975)
-    )
-  ) |>
+  model_data |>
     transmute(
       model = model_name,
       area_id,
@@ -465,23 +486,38 @@ summarise_fh_draws <- function(fit, model_name, n_draws = 250) {
       direct_estimate,
       variance,
       n,
-      fh_estimate,
-      fh_variance,
-      fh_lower,
-      fh_upper,
+      fh_estimate = rowMeans(prediction_draws),
+      fh_variance = apply(prediction_draws, 1, var),
+      fh_lower = apply(prediction_draws, 1, quantile, probs = 0.025, names = FALSE),
+      fh_upper = apply(prediction_draws, 1, quantile, probs = 0.975, names = FALSE),
       fh_ci_width = fh_upper - fh_lower
     )
 }
 
 all_fh_results <- imap_dfr(
   fh_fits,
-  \(fit, model_name) summarise_fh_draws(fit, model_name)
+  summarise_fh_draws
 ) |>
-  mutate(model = factor(model, levels = names(model_formulas))) |>
+  mutate(
+    model = factor(model, levels = names(model_formulas))
+  ) |>
   pivot_wider(
-    id_cols = c(area_id, time_id, msoa_name, direct_estimate, variance, n),
+    id_cols = c(
+      area_id,
+      time_id,
+      msoa_name,
+      direct_estimate,
+      variance,
+      n
+    ),
     names_from = model,
-    values_from = c(fh_estimate, fh_variance, fh_lower, fh_upper, fh_ci_width),
+    values_from = c(
+      fh_estimate,
+      fh_variance,
+      fh_lower,
+      fh_upper,
+      fh_ci_width
+    ),
     names_sep = "__"
   )
 
@@ -685,13 +721,13 @@ For example, we compare M1 with M3, where M3 adds average age, population densit
 ```{r}
 #| label: fh-predictor-change
 predictor_change <- all_fh_results |>
+  filter(time_id == 2021) |>
   transmute(
     area_id,
     estimate_change =
       .data[["fh_estimate__M3 +PopdensCaraccess"]] -
       .data[["fh_estimate__M1 +TempSpatial"]]
-  ) |>
-  distinct(area_id, .keep_all = TRUE)
+  )
 
 model_data |>
   distinct(area_id, .keep_all = TRUE) |>
@@ -743,7 +779,7 @@ msoa_boundaries |>
   ) +
   labs(
     title = "Estimate change after adding predictors",
-    subtitle = "M3 minus M1"
+    subtitle = "M3 minus M1; survey period 2020-2021"
   ) +
   theme_void() +
   map_text_theme
@@ -766,30 +802,13 @@ The M3 fixed-effect summary suggests that MSOAs with older populations, lower po
 #| label: fh-export
 #| code-fold: true
 
-# Retain only the reusable posterior components
 fixed_terms <- rownames(fh_selected_fit$summary.fixed)
-fixed_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0(fixed_terms, ":1"), 1]),
-    fixed_terms
-  )
-})
-
 area_ids <- sort(area_index$area_inla_id)
-area_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("area_inla_id:", area_ids), 1]),
-    area_ids
-  )
-})
-
 time_ids <- sort(time_index$time_inla_id)
-time_draws <- sapply(posterior_draws, \(draw) {
-  setNames(
-    as.numeric(draw$latent[paste0("time_inla_id:", time_ids), 1]),
-    time_ids
-  )
-})
+
+fixed_draws <- extract_draws(posterior_draws,paste0(fixed_terms, ":1"),fixed_terms)
+area_draws <- extract_draws(posterior_draws,paste0("area_inla_id:", area_ids),area_ids)
+time_draws <- extract_draws(posterior_draws,paste0("time_inla_id:", time_ids),time_ids)
 
 posterior_hyperparameter_names <- names(posterior_draws[[1]]$hyperpar)
 posterior_hyperparameter_draws <- sapply(posterior_draws, \(draw) {
