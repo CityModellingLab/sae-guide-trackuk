@@ -117,7 +117,7 @@ limits <- range(c(final_results$inla, final_results$rstan), na.rm = TRUE)
 
 parity_plot <- ggplot(final_results, aes(rstan, inla)) +
   geom_abline(slope = 1, intercept = 0, colour = "grey55", linetype = "dashed") +
-  geom_point(alpha = 0.65, colour = "#1f4e5f") +
+  geom_point(alpha = 0.75, size = 1.8) +
   coord_equal(xlim = limits, ylim = limits) +
   scale_x_continuous(labels = label_percent(accuracy = 0.1)) +
   scale_y_continuous(labels = label_percent(accuracy = 0.1)) +
