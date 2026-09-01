@@ -10,27 +10,24 @@ n_draw <- 300
 var_tol <- 1e-8
 pseudo_high_var <- 1e8
 
-script_path <- tryCatch(normalizePath(sys.frame(1)$ofile), error = function(e) NA_character_)
-if (is.na(script_path)) {
-  file_arg <- grep("^--file=", commandArgs(FALSE), value = TRUE)
-  script_path <- if (length(file_arg) > 0) normalizePath(sub("^--file=", "", file_arg[1])) else NA_character_
-}
-
-root <- if (!is.na(script_path)) normalizePath(file.path(dirname(script_path), ".."), mustWork = TRUE) else normalizePath(getwd(), mustWork = TRUE)
+root <- here::here("tutorial-site")
 data_dir <- file.path(root, "data")
-out_dir <- file.path(root, "outputs", "compare_fh_smootharea_2025")
+out_dir <- file.path(root, "outputs", "compare_smoothArea_2025")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 plot_limit <- function(x) c(0, max(0.1, quantile(x[is.finite(x)], 0.99, na.rm = TRUE, names = FALSE)))
 pct <- label_percent(accuracy = 0.1)
 
 # Inputs.
+spatial_graph_file <- file.path(data_dir, "clean", "msoa_queen.adj")
+
 domain <- read_csv(file.path(data_dir, "clean", "domain_msoayear.csv"), show_col_types = FALSE) |>
   filter(time_id == year) |>
   select(area_id, time_id, area_inla_id, msoa_name)
 
 survey_2025 <- read_csv(file.path(data_dir, "clean", "surveyind_freqcyc.csv"), show_col_types = FALSE) |>
   filter(time_id == year) |>
+  select(area_id, strata, weight, freq_cyclist) |>
   drop_na(freq_cyclist, weight, area_id, strata)
 
 area_x <- read_csv(file.path(data_dir, "clean", "areapred_freqcyc.csv"), show_col_types = FALSE) |>
@@ -41,7 +38,8 @@ area_x <- read_csv(file.path(data_dir, "clean", "areapred_freqcyc.csv"), show_co
       ~ as.numeric(scale(.x)),
       .names = "z_{.col}"
     )
-  )
+  ) |>
+  select(area_id, z_age_adult_mean, z_pop_density, z_caraccess_adult_share)
 
 boundaries <- st_read(file.path(data_dir, "boundaries-msoa.geojson"), quiet = TRUE) |>
   rename(area_id = MSOA21CD) |>
@@ -50,8 +48,6 @@ boundaries <- st_read(file.path(data_dir, "boundaries-msoa.geojson"), quiet = TR
   arrange(area_inla_id)
 
 nb <- poly2nb(boundaries, queen = TRUE, row.names = boundaries$area_id)
-graph_file <- tempfile(fileext = ".adj")
-nb2INLA(file = graph_file, nb = nb)
 
 adj_mat <- nb2mat(nb, style = "B", zero.policy = TRUE)
 rownames(adj_mat) <- boundaries$area_id
@@ -64,15 +60,13 @@ direct_est <- svyby(~freq_cyclist, ~area_id, design, svymean, vartype = "se", na
   as_tibble() |>
   transmute(area_id, direct_estimate = freq_cyclist, variance = se^2)
 
-direct <- domain |>
-  left_join(direct_est, by = "area_id") |>
-  left_join(count(survey_2025, area_id, name = "n"), by = "area_id") |>
-  mutate(n = replace_na(n, 0L))
+direct_2025 <- domain |>
+  left_join(direct_est, by = "area_id")
 
-max_var <- max(direct$variance[direct$variance > 0], na.rm = TRUE)
+max_var <- max(direct_2025$variance[direct_2025$variance > 0], na.rm = TRUE)
 if (!is.finite(max_var)) stop("No positive direct variances found.", call. = FALSE)
 
-direct <- direct |>
+direct_2025 <- direct_2025 |>
   mutate(
     has_direct = !is.na(direct_estimate),
     adj_variance = case_when(
@@ -83,30 +77,62 @@ direct <- direct |>
   )
 
 # INLA fit.
-model_data <- direct |>
+model_data <- direct_2025 |>
   left_join(area_x, by = "area_id") |>
   arrange(area_inla_id)
 
 fh_fit <- inla(
   direct_estimate ~
-    f(area_inla_id, model = "bym2", graph = graph_file, scale.model = TRUE, constr = TRUE) +
+    f(area_inla_id, model = "bym2", graph = spatial_graph_file, scale.model = TRUE) +
     z_age_adult_mean + z_pop_density + z_caraccess_adult_share,
   family = "gaussian",
   data = model_data,
   scale = 1 / model_data$adj_variance,
-  control.family = list(hyper = list(prec = list(initial = 0, fixed = TRUE))),
-  control.predictor = list(compute = TRUE),
+  control.family = list(
+    hyper = list(
+      prec = list(initial = 0, fixed = TRUE)
+    )
+  ),
   control.compute = list(config = TRUE)
 )
 
 set.seed(100)
-inla_draws <- inla.posterior.sample(n = n_draw, result = fh_fit)
-inla_pred <- sapply(inla_draws, \(draw) {
-  as.numeric(draw$latent[startsWith(rownames(draw$latent), "Predictor"), 1])
-})
+posterior_draws <- inla.posterior.sample(
+  n = n_draw,
+  result = fh_fit
+)
+
+extract_draws <- function(posterior_draws, nodes) {
+  matrix(
+    sapply(posterior_draws, \(draw) draw$latent[nodes, 1]),
+    nrow = length(nodes)
+  )
+}
+
+predict_from_draws <- function(posterior_draws, prediction_data, fixed_term_formula) {
+  prediction_matrix <- model.matrix(
+    fixed_term_formula,
+    prediction_data
+  )
+
+  fixed_terms <- colnames(prediction_matrix)
+  area_ids <- sort(unique(prediction_data$area_inla_id))
+
+  fixed_draws <- extract_draws(posterior_draws, paste0(fixed_terms, ":1"))
+  area_draws <- extract_draws(posterior_draws, paste0("area_inla_id:", area_ids))
+
+  prediction_matrix %*% fixed_draws +
+    area_draws[match(prediction_data$area_inla_id, area_ids), ]
+}
+
+prediction_draws <- predict_from_draws(
+  posterior_draws,
+  model_data,
+  ~ z_age_adult_mean + z_pop_density + z_caraccess_adult_share
+)
 
 # SUMMER fit.
-smooth_direct <- direct |>
+smooth_direct <- direct_2025 |>
   transmute(
     area_id,
     direct_estimate = if_else(has_direct, direct_estimate, weighted.mean(survey_2025$freq_cyclist, survey_2025$weight)),
@@ -129,16 +155,8 @@ summer_est <- as_tibble(summer_fit$bym2.model.est) |>
 
 # Outputs.
 final_results <- model_data |>
-  transmute(
-    area_id,
-    time_id,
-    msoa_name,
-    n,
-    direct_estimate,
-    variance,
-    adj_variance,
-    inla = rowMeans(inla_pred)
-  ) |>
+  select(area_id, time_id, msoa_name) |>
+  bind_cols(tibble(inla = rowMeans(prediction_draws))) |>
   left_join(summer_est, by = "area_id") |>
   mutate(diff = inla - summer)
 
@@ -157,5 +175,3 @@ parity_plot <- final_results |>
   theme_minimal(base_size = 12)
 
 ggsave(file.path(out_dir, "parity_plot.png"), parity_plot, width = 7, height = 6, dpi = 300)
-
-message("Wrote: ", out_dir)
