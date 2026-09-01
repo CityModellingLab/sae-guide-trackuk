@@ -1,0 +1,107 @@
+---
+title: "[WIP] SAE Toolkit"
+subtitle: "Apply to your own survey"
+---
+
+This SAE toolkit provides templates for preparing survey and auxiliary data, a decision framework for choosing an appropriate SAE method, and method-specific scripts with the expected inputs and outputs.
+
+## Define the estimands and estimation domain
+
+Start by defining the estimand:
+
+- what outcome is being estimated;
+- who is in the target population;
+- at which spatial scale;
+- over which time periods.
+
+In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination estimation domain. Each is an **area-time cell**.
+
+## Choose the modelling route
+
+![](assets/sae_method_selection.png){width="100%"}
+
+## Prepare the modelling input
+
+Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.
+
+| Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
+|---|:---:|:---:|:---:|:---:|
+| Spatial graph |-| Yes | Yes | Yes |
+| Modelling: Area-level predictors |-| Yes | Optional as contextual | Optional as contextual |
+| Modelling: Unit-level predictors |-|-| Yes | Yes |
+| Aggregation: predictor area summaries |-|-| Yes |-|
+| Aggregation: poststratification table |-|-|-| Yes |
+
+### Domain frame
+
+Always prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by `INLA`.
+
+| Column | Meaning |
+|---|---|
+| `area_id` | Area to estimate |
+| `time_id` | Time period to estimate |
+| `area_inla_id` | Numeric area index for `INLA` |
+| `time_inla_id` | Numeric time index for `INLA` |
+| labels | Optional area or period labels for display |
+
+### Spatial graph
+
+Prepare a spatial graph if the selected model includes spatial random effects.
+
+| File | Meaning |
+|---|---|
+| `*.adj` | `INLA` adjacency graph, ordered by `area_inla_id` |
+
+### Survey input
+
+Prepare one row per respondent-period for the outcome being estimated.
+
+| Column | Meaning |
+|---|---|
+| `unit_id` | Respondent identifier |
+| `area_id` | Area assigned to the respondent |
+| `time_id` | Survey period |
+| `outcome` | Outcome used in estimation, either binary or continuous |
+| `weight` | Survey design weight |
+| `strata` | Survey stratum, if available |
+| `unitpred_*` | Unit-level predictors, required for unit-level SAE |
+
+### Area-level predictors or summaries
+
+Prepare one row per area. This table is used for area-level SAE, and unit-level SAE with area summaries, if applicable.
+
+| Column | Meaning |
+|---|---|
+| `area_id` | Area identifier |
+| `areapred_*` | Raw area-level predictors |
+| `*_mean` / `*_share` | Area summaries of `unitpred_*`, required for unit-level SAE with area summaries |
+
+### Poststratification data
+
+Required for unit-level SAE with poststratification. The population cells must match the categorical `unitpred_*` variables used in the poststratified unit-level model.
+
+| Column | Meaning |
+|---|---|
+| `area_id` | Area identifier |
+| `time_id` | Time period |
+| population groups | Categories used for poststratification; must match `unitpred_*` |
+| `pop_count` | Population count for each cell |
+
+## `R-INLA` starter scripts
+
+TBD
+
+## Expected outputs
+
+After each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.
+
+| Column | Meaning |
+|---|---|
+| `area_id` | Estimated area |
+| `time_id` | Estimated period |
+| `estimate` | Direct or model-based point estimate |
+| `variance` | Sampling or posterior variance |
+| `lower`, `upper` | Uncertainty interval bounds |
+| `ci_width` | Uncertainty interval width |
+| `n` | Sample size |
+| `remarks` | Estimation method, model specification or other notes |

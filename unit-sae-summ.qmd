@@ -271,7 +271,7 @@ cat("Best fitted model spec: ", bhf_best_model)
 ```
 The fitted model summary reports the estimated coefficients and their uncertainty intervals.
 ```{r}
-#| label: bhf-fixed
+#| label: bhf-hyperpar
 
 bhf_fits[[bhf_best_model]]$summary.fixed |>
   as.data.frame() |>
@@ -284,19 +284,75 @@ bhf_fits[[bhf_best_model]]$summary.fixed |>
   )
 ```
 
-Finally, the **spatial and temporal random-effect** hyperparameters `tau` and `phi` help show what the temporal and spatial terms are doing in the selected model.
+All three model specifications use the same temporal RW1 and spatial BYM2 terms. Comparing each posterior hyperparameter across the specifications shows how adding the demographic and car-access predictors changes the unexplained temporal and spatial variation. The two precision parameters, `tau`, describe the remaining temporal and spatial variation, while the BYM2 mixing parameter, `phi`, gives the share of the area-effect variance that is spatially structured.
 
 ```{r}
-#| label: bhf-hyper
+#| label: bhf-hyperparameters
+#| code-fold: true
 
-bhf_fits[[bhf_best_model]]$summary.hyperpar |>
-  as_tibble(rownames = "parameter") |>
-  filter(str_detect(parameter, "time_inla_id|area_inla_id|Phi")) |>
-  select(parameter, mean, sd, `0.025quant`, `0.5quant`, `0.975quant`) |>
-  mutate(across(where(is.numeric), ~ round(.x, 3)))
+hyperparameter_labels <- c(
+  "Precision for time_inla_id" = "Temporal precision (tau)",
+  "Precision for area_inla_id" = "Spatial precision (tau)",
+  "Phi for area_inla_id" = "Spatial mixing (phi)"
+)
+
+bhf_hyperparameters <- map_dfr(
+  bhf_fits,
+  \(fit) as_tibble(fit$summary.hyperpar, rownames = "parameter"),
+  .id = "model"
+) |>
+  filter(parameter %in% names(hyperparameter_labels)) |>
+  transmute(
+    model = factor(model, levels = rev(names(model_formulas))),
+    parameter = factor(
+      hyperparameter_labels[parameter],
+      levels = unname(hyperparameter_labels)
+    ),
+    mean,
+    lower = `0.025quant`,
+    upper = `0.975quant`
+  )
+
+bhf_hyperparameters |>
+  mutate(across(c(mean, lower, upper), \(x) round(x, 3)))
 ```
 
-The random-effect table reports the posterior summaries for the temporal and spatial components in the selected unit-level specification. Higher precision means less residual variation in that component, while the BYM2 `phi` indicates how much of the area effect is spatially structured.
+```{r}
+#| label: bhf-hyperparameters-plot
+#| echo: false
+#| fig-width: 12
+#| fig-height: 4.5
+#| out-width: "100%"
+
+ggplot(
+  bhf_hyperparameters,
+  aes(y = model, x = mean)
+) +
+  geom_segment(
+    aes(x = lower, xend = upper, yend = model),
+    linewidth = 0.9,
+    colour = "#1f4e5f"
+  ) +
+  geom_point(size = 2.8, colour = "#d95f02") +
+  facet_wrap(vars(parameter), scales = "free_x", nrow = 1) +
+  labs(
+    title = "Spatial and temporal hyperparameters by model specification",
+    subtitle = "Posterior means and 95% credible intervals",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  chart_text_theme +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.text = element_text(hjust = 0),
+    axis.text.y = element_text(colour = "grey20")
+  )
+```
+
+- Temporal precision (`tau`) appears ambivalent, with wide credible intervals. However, such limited temporal variability is expected with temporal smoothing over only three survey periods. We discretionarily choose to retain the RW1 term to allow sparse areas to share information between their adjacent periods.
+- Spatial precision (`tau`) rises only slightly as age, sex, and car access are added, while BYM2 mixing (`phi`) remains stable. The fixed effects therefore explain little between-area variation and do not displace the structured spatial effect, provisionally supporting retention of spatial BYM2.
 
 ## Estimation and aggregation with posterior draws
 

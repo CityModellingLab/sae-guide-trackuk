@@ -172,17 +172,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
     </ul>
   </li>
-  <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Resources</span>
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
-        <li>
-    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
- <span class="dropdown-text">Toolkit</span></a>
-  </li>  
-    </ul>
-  </li>
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -263,23 +252,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Diagnostics</span></a>
-  </div>
-</li>
-      </ul>
-  </li>
-        <li class="sidebar-item sidebar-item-section">
-      <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Resources</span></a>
-          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
-            <i class="bi bi-chevron-right ms-2"></i>
-          </a> 
-      </div>
-      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Toolkit</span></a>
   </div>
 </li>
       </ul>
@@ -800,9 +772,9 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.5812165</td>
-<td style="text-align: right;">-1.9886521</td>
-<td style="text-align: right;">-1.1744310</td>
+<td style="text-align: right;">-1.5812167</td>
+<td style="text-align: right;">-1.9886523</td>
+<td style="text-align: right;">-1.1744312</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age</td>
@@ -818,69 +790,119 @@ Note
 </tr>
 <tr class="even">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5653709</td>
+<td style="text-align: right;">-0.5653708</td>
 <td style="text-align: right;">-0.8334871</td>
-<td style="text-align: right;">-0.2972323</td>
+<td style="text-align: right;">-0.2972322</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<p>Finally, the <strong>spatial and temporal random-effect</strong> hyperparameters <code>tau</code> and <code>phi</code> help show what the temporal and spatial terms are doing in the selected model.</p>
+<p>All three model specifications use the same temporal RW1 and spatial BYM2 terms. Comparing each posterior hyperparameter across the specifications shows how adding the demographic and car-access predictors changes the unexplained temporal and spatial variation. The two precision parameters, <code>tau</code>, describe the remaining temporal and spatial variation, while the BYM2 mixing parameter, <code>phi</code>, gives the share of the area-effect variance that is spatially structured.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>bhf_fits[[bhf_best_model]]<span class="sc">$</span>summary.hyperpar <span class="sc">|&gt;</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">as_tibble</span>(<span class="at">rownames =</span> <span class="st">"parameter"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_detect</span>(parameter, <span class="st">"time_inla_id|area_inla_id|Phi"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(parameter, mean, sd, <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.5quant</span><span class="st">`</span>, <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span>) <span class="sc">|&gt;</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">where</span>(is.numeric), <span class="sc">~</span> <span class="fu">round</span>(.x, <span class="dv">3</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>hyperparameter_labels <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Precision for time_inla_id"</span> <span class="ot">=</span> <span class="st">"Temporal precision (tau)"</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Precision for area_inla_id"</span> <span class="ot">=</span> <span class="st">"Spatial precision (tau)"</span>,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Phi for area_inla_id"</span> <span class="ot">=</span> <span class="st">"Spatial mixing (phi)"</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>bhf_hyperparameters <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  bhf_fits,</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  \(fit) <span class="fu">as_tibble</span>(fit<span class="sc">$</span>summary.hyperpar, <span class="at">rownames =</span> <span class="st">"parameter"</span>),</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">.id =</span> <span class="st">"model"</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(parameter <span class="sc">%in%</span> <span class="fu">names</span>(hyperparameter_labels)) <span class="sc">|&gt;</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> <span class="fu">factor</span>(model, <span class="at">levels =</span> <span class="fu">rev</span>(<span class="fu">names</span>(model_formulas))),</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">parameter =</span> <span class="fu">factor</span>(</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>      hyperparameter_labels[parameter],</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">unname</span>(hyperparameter_labels)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>    mean,</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">lower =</span> <span class="st">`</span><span class="at">0.025quant</span><span class="st">`</span>,</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">upper =</span> <span class="st">`</span><span class="at">0.975quant</span><span class="st">`</span></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>bhf_hyperparameters <span class="sc">|&gt;</span></span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="fu">across</span>(<span class="fu">c</span>(mean, lower, upper), \(x) <span class="fu">round</span>(x, <span class="dv">3</span>)))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div class="kable-table">
 <table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 37%">
-<col style="width: 9%">
-<col style="width: 9%">
-<col style="width: 15%">
-<col style="width: 12%">
-<col style="width: 15%">
-</colgroup>
 <thead>
 <tr class="header">
+<th style="text-align: left;">model</th>
 <th style="text-align: left;">parameter</th>
 <th style="text-align: right;">mean</th>
-<th style="text-align: right;">sd</th>
-<th style="text-align: right;">0.025quant</th>
-<th style="text-align: right;">0.5quant</th>
-<th style="text-align: right;">0.975quant</th>
+<th style="text-align: right;">lower</th>
+<th style="text-align: right;">upper</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Precision for time_inla_id</td>
-<td style="text-align: right;">76.371</td>
-<td style="text-align: right;">89.835</td>
-<td style="text-align: right;">7.502</td>
-<td style="text-align: right;">49.375</td>
-<td style="text-align: right;">310.200</td>
+<td style="text-align: left;">M1 +TempSpatial</td>
+<td style="text-align: left;">Temporal precision (tau)</td>
+<td style="text-align: right;">80.001</td>
+<td style="text-align: right;">7.934</td>
+<td style="text-align: right;">323.886</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Precision for area_inla_id</td>
+<td style="text-align: left;">M1 +TempSpatial</td>
+<td style="text-align: left;">Spatial precision (tau)</td>
+<td style="text-align: right;">9.836</td>
+<td style="text-align: right;">3.466</td>
+<td style="text-align: right;">24.460</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">M1 +TempSpatial</td>
+<td style="text-align: left;">Spatial mixing (phi)</td>
+<td style="text-align: right;">0.762</td>
+<td style="text-align: right;">0.305</td>
+<td style="text-align: right;">0.983</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M2 +Demographic</td>
+<td style="text-align: left;">Temporal precision (tau)</td>
+<td style="text-align: right;">69.758</td>
+<td style="text-align: right;">7.293</td>
+<td style="text-align: right;">275.408</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">M2 +Demographic</td>
+<td style="text-align: left;">Spatial precision (tau)</td>
+<td style="text-align: right;">10.289</td>
+<td style="text-align: right;">3.500</td>
+<td style="text-align: right;">26.356</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M2 +Demographic</td>
+<td style="text-align: left;">Spatial mixing (phi)</td>
+<td style="text-align: right;">0.751</td>
+<td style="text-align: right;">0.286</td>
+<td style="text-align: right;">0.982</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">M3 +CarAccess</td>
+<td style="text-align: left;">Temporal precision (tau)</td>
+<td style="text-align: right;">76.371</td>
+<td style="text-align: right;">7.501</td>
+<td style="text-align: right;">310.204</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">M3 +CarAccess</td>
+<td style="text-align: left;">Spatial precision (tau)</td>
 <td style="text-align: right;">10.897</td>
-<td style="text-align: right;">6.676</td>
 <td style="text-align: right;">3.599</td>
-<td style="text-align: right;">9.193</td>
 <td style="text-align: right;">28.567</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Phi for area_inla_id</td>
+<td style="text-align: left;">M3 +CarAccess</td>
+<td style="text-align: left;">Spatial mixing (phi)</td>
 <td style="text-align: right;">0.749</td>
-<td style="text-align: right;">0.193</td>
 <td style="text-align: right;">0.281</td>
-<td style="text-align: right;">0.800</td>
 <td style="text-align: right;">0.982</td>
 </tr>
 </tbody>
@@ -888,7 +910,15 @@ Note
 </div>
 </div>
 </div>
-<p>The random-effect table reports the posterior summaries for the temporal and spatial components in the selected unit-level specification. Higher precision means less residual variation in that component, while the BYM2 <code>phi</code> indicates how much of the area effect is spatially structured.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="unit-sae-summ_files/figure-html/bhf-hyperparameters-plot-1.png" class="img-fluid" style="width:100.0%"></p>
+</div>
+</div>
+<ul>
+<li>Temporal precision (<code>tau</code>) appears ambivalent, with wide credible intervals. However, such limited temporal variability is expected with temporal smoothing over only three survey periods. We discretionarily choose to retain the RW1 term to allow sparse areas to share information between their adjacent periods.</li>
+<li>Spatial precision (<code>tau</code>) rises only slightly as age, sex, and car access are added, while BYM2 mixing (<code>phi</code>) remains stable. The fixed effects therefore explain little between-area variation and do not displace the structured spatial effect, provisionally supporting retention of spatial BYM2.</li>
+</ul>
 </section>
 <section id="estimation-and-aggregation-with-posterior-draws" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="estimation-and-aggregation-with-posterior-draws"><span class="header-section-number">3</span> Estimation and aggregation with posterior draws</h2>
@@ -984,56 +1014,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0205583</td>
-<td style="text-align: right;">0.0000557</td>
-<td style="text-align: right;">0.0098374</td>
-<td style="text-align: right;">0.0370107</td>
-<td style="text-align: right;">0.0271733</td>
+<td style="text-align: right;">0.0204600</td>
+<td style="text-align: right;">0.0000384</td>
+<td style="text-align: right;">0.0104974</td>
+<td style="text-align: right;">0.0358662</td>
+<td style="text-align: right;">0.0253687</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0165411</td>
-<td style="text-align: right;">0.0000313</td>
-<td style="text-align: right;">0.0079745</td>
-<td style="text-align: right;">0.0311797</td>
-<td style="text-align: right;">0.0232052</td>
+<td style="text-align: right;">0.0165435</td>
+<td style="text-align: right;">0.0000249</td>
+<td style="text-align: right;">0.0083458</td>
+<td style="text-align: right;">0.0269843</td>
+<td style="text-align: right;">0.0186385</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0381751</td>
-<td style="text-align: right;">0.0003287</td>
-<td style="text-align: right;">0.0133730</td>
-<td style="text-align: right;">0.0893205</td>
-<td style="text-align: right;">0.0759475</td>
+<td style="text-align: right;">0.0370630</td>
+<td style="text-align: right;">0.0003291</td>
+<td style="text-align: right;">0.0141886</td>
+<td style="text-align: right;">0.0827874</td>
+<td style="text-align: right;">0.0685988</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0252030</td>
-<td style="text-align: right;">0.0000854</td>
-<td style="text-align: right;">0.0127376</td>
-<td style="text-align: right;">0.0509294</td>
-<td style="text-align: right;">0.0381918</td>
+<td style="text-align: right;">0.0254066</td>
+<td style="text-align: right;">0.0000726</td>
+<td style="text-align: right;">0.0118747</td>
+<td style="text-align: right;">0.0462542</td>
+<td style="text-align: right;">0.0343795</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0154074</td>
-<td style="text-align: right;">0.0000328</td>
-<td style="text-align: right;">0.0067589</td>
-<td style="text-align: right;">0.0288811</td>
-<td style="text-align: right;">0.0221222</td>
+<td style="text-align: right;">0.0156652</td>
+<td style="text-align: right;">0.0000332</td>
+<td style="text-align: right;">0.0068854</td>
+<td style="text-align: right;">0.0312067</td>
+<td style="text-align: right;">0.0243214</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0217958</td>
-<td style="text-align: right;">0.0000425</td>
-<td style="text-align: right;">0.0118077</td>
-<td style="text-align: right;">0.0346882</td>
-<td style="text-align: right;">0.0228805</td>
+<td style="text-align: right;">0.0219942</td>
+<td style="text-align: right;">0.0000505</td>
+<td style="text-align: right;">0.0115391</td>
+<td style="text-align: right;">0.0383724</td>
+<td style="text-align: right;">0.0268333</td>
 </tr>
 </tbody>
 </table>
