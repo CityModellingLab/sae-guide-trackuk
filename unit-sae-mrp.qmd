@@ -271,9 +271,7 @@ mrp_final_fit$summary.fixed |>
 As before, posterior draws from the selected `R-INLA` fit produce MSOA-year estimates. Each draw provides fixed effects, spatial area effects, and temporal effects. The fitted model is evaluated over every `age_band` x `sex` x `caraccess` population cell, transformed to the response scale, weighted by `pop_count`, and summarised as MSOA-year draws.
 
 ::: {.callout-note title="Why poststratification?"}
-Unit-level SAE with poststratification improves on the previous area-summary approach in two ways.
-
-- First, the unit-level model is fitted to survey microdata, but the survey sample may not match the target population composition (see below figure). Poststratification partially adjusts this by predicting the outcome for known population groups and weighting those predictions by the corresponding population counts. This helps align the estimates with the population structure (but only for the variables included in the poststratification table).
+The unit-level model is fitted to survey microdata, but the survey sample may not match the target population composition (see below figure). Poststratification partially adjusts this by predicting the outcome for known population groups and weighting those predictions by the corresponding population counts. This helps align the estimates with the population structure (but only for the variables included in the poststratification table).
 
 ```{r}
 #| label: mrp-composition
@@ -341,7 +339,6 @@ bind_rows(
   )
 ```
 
-- Second, for binary outcomes such as `freq_cyclist` (`1` = yes, `0` = no), the target is the population proportion in each area. Poststratification estimates this adequately by averaging predicted probabilities across population cells, rather than plugging a single set of area-level predictor summaries into the model.
 :::
 
 ```{r}
@@ -355,7 +352,7 @@ posterior_draws <- inla.posterior.sample(
 )
 ```
 
-Each posterior draw is evaluated over every poststratification cell. The cell predictions are then weighted by population count and aggregated within each MSOA-year. 
+Each posterior draw is evaluated over every poststratification cell. 
 
 ```{r}
 #| label: mrp-predict
@@ -399,6 +396,7 @@ cell_draws <- predict_from_draws(
   ~ age_band + sex + caraccess
 )
 ```
+The cell predictions are then 'poststratified'`, i.e., weighted by population count and aggregated within each MSOA-year. 
 ```{r}
 #| label: mrp-poststrat
 #| code-fold: false
@@ -517,7 +515,7 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(mrp_wave_years)) +
   )
 ```
 
-These estimates reuse the 2021 age-sex-caraccess population composition for the 2023 and 2025 waves, while the modelled time effect captures changes in the outcome. This requires the relative `age_band` x `sex` x `caraccess` poststratification weights to stay stable across target periods.
+Estimated values and their uncertainties are compared cross-method in the [final workbook](diagnostics.qmd).
 
 
 ```{r}

@@ -154,6 +154,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="./dataprep-aux.html" rel="" target="">
  <span class="dropdown-text">Auxiliary data</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
+ <span class="dropdown-text">Toolkit: Input data preparation</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -179,14 +183,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Comparison</span></a>
+ <span class="dropdown-text">Method Comparison</span></a>
   </li>  
     </ul>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" href="./toolkit.html" rel="" target="">
- <span class="menu-text">Toolkit</span></a>
-  </li>  
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -245,6 +245,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Auxiliary data</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit: Input data preparation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -283,17 +289,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparison</span></a>
+ <span class="menu-text">Method Comparison</span></a>
   </div>
 </li>
       </ul>
   </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Toolkit</span></a>
-  </div>
-</li>
     </ul>
     </div>
 </nav>
@@ -308,7 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#prepare-model-and-aggregation-data" id="toc-prepare-model-and-aggregation-data" class="nav-link" data-scroll-target="#prepare-model-and-aggregation-data"><span class="header-section-number">1</span> Prepare model and aggregation data</a></li>
   <li><a href="#fit-and-evaluate-models" id="toc-fit-and-evaluate-models" class="nav-link" data-scroll-target="#fit-and-evaluate-models"><span class="header-section-number">2</span> Fit and evaluate models</a></li>
   <li><a href="#estimation-and-aggregation-with-posterior-draws" id="toc-estimation-and-aggregation-with-posterior-draws" class="nav-link" data-scroll-target="#estimation-and-aggregation-with-posterior-draws"><span class="header-section-number">3</span> Estimation and aggregation with posterior draws</a></li>
-  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations"><span class="header-section-number">4</span> Limitations</a></li>
+  <li><a href="#limitation-for-binary-indicators" id="toc-limitation-for-binary-indicators" class="nav-link" data-scroll-target="#limitation-for-binary-indicators"><span class="header-section-number">4</span> Limitation for binary indicators</a></li>
   </ul>
 </nav>
     </div>
@@ -738,7 +738,7 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
-<td style="text-align: right;">2945.347</td>
+<td style="text-align: right;">2945.359</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
@@ -792,27 +792,27 @@ Note
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.5812167</td>
-<td style="text-align: right;">-1.9886522</td>
-<td style="text-align: right;">-1.1744313</td>
+<td style="text-align: right;">-1.5811945</td>
+<td style="text-align: right;">-1.9886359</td>
+<td style="text-align: right;">-1.1744051</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age</td>
-<td style="text-align: right;">-0.0209388</td>
-<td style="text-align: right;">-0.0268854</td>
-<td style="text-align: right;">-0.0149885</td>
+<td style="text-align: right;">-0.0209389</td>
+<td style="text-align: right;">-0.0268855</td>
+<td style="text-align: right;">-0.0149886</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">female</td>
-<td style="text-align: right;">-0.7439754</td>
-<td style="text-align: right;">-0.9657109</td>
-<td style="text-align: right;">-0.5222496</td>
+<td style="text-align: right;">-0.7439757</td>
+<td style="text-align: right;">-0.9657112</td>
+<td style="text-align: right;">-0.5222500</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5653708</td>
-<td style="text-align: right;">-0.8334871</td>
-<td style="text-align: right;">-0.2972322</td>
+<td style="text-align: right;">-0.5653743</td>
+<td style="text-align: right;">-0.8334900</td>
+<td style="text-align: right;">-0.2972363</td>
 </tr>
 </tbody>
 </table>
@@ -886,9 +886,9 @@ Note
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
 <td style="text-align: left;">Temporal precision (tau)</td>
-<td style="text-align: right;">69.757</td>
-<td style="text-align: right;">7.293</td>
-<td style="text-align: right;">275.398</td>
+<td style="text-align: right;">69.756</td>
+<td style="text-align: right;">7.294</td>
+<td style="text-align: right;">275.386</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M2 +Demographic</td>
@@ -907,22 +907,22 @@ Note
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: left;">Temporal precision (tau)</td>
-<td style="text-align: right;">76.369</td>
-<td style="text-align: right;">7.502</td>
-<td style="text-align: right;">310.179</td>
+<td style="text-align: right;">76.407</td>
+<td style="text-align: right;">7.493</td>
+<td style="text-align: right;">310.519</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: left;">Spatial precision (tau)</td>
 <td style="text-align: right;">10.897</td>
 <td style="text-align: right;">3.599</td>
-<td style="text-align: right;">28.567</td>
+<td style="text-align: right;">28.569</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: left;">Spatial mixing (phi)</td>
 <td style="text-align: right;">0.749</td>
-<td style="text-align: right;">0.281</td>
+<td style="text-align: right;">0.278</td>
 <td style="text-align: right;">0.982</td>
 </tr>
 </tbody>
@@ -1034,56 +1034,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0203686</td>
-<td style="text-align: right;">0.0000407</td>
-<td style="text-align: right;">0.0104900</td>
-<td style="text-align: right;">0.0359518</td>
-<td style="text-align: right;">0.0254618</td>
+<td style="text-align: right;">0.0200619</td>
+<td style="text-align: right;">0.0000356</td>
+<td style="text-align: right;">0.0109023</td>
+<td style="text-align: right;">0.0336137</td>
+<td style="text-align: right;">0.0227114</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0162262</td>
-<td style="text-align: right;">0.0000271</td>
-<td style="text-align: right;">0.0077573</td>
-<td style="text-align: right;">0.0287964</td>
-<td style="text-align: right;">0.0210391</td>
+<td style="text-align: right;">0.0161561</td>
+<td style="text-align: right;">0.0000343</td>
+<td style="text-align: right;">0.0069908</td>
+<td style="text-align: right;">0.0313918</td>
+<td style="text-align: right;">0.0244010</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0373635</td>
-<td style="text-align: right;">0.0002969</td>
-<td style="text-align: right;">0.0145101</td>
-<td style="text-align: right;">0.0841986</td>
-<td style="text-align: right;">0.0696885</td>
+<td style="text-align: right;">0.0385065</td>
+<td style="text-align: right;">0.0003974</td>
+<td style="text-align: right;">0.0133599</td>
+<td style="text-align: right;">0.0909034</td>
+<td style="text-align: right;">0.0775435</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0257180</td>
-<td style="text-align: right;">0.0001072</td>
-<td style="text-align: right;">0.0126458</td>
-<td style="text-align: right;">0.0489424</td>
-<td style="text-align: right;">0.0362966</td>
+<td style="text-align: right;">0.0250087</td>
+<td style="text-align: right;">0.0000993</td>
+<td style="text-align: right;">0.0120053</td>
+<td style="text-align: right;">0.0492417</td>
+<td style="text-align: right;">0.0372364</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0161392</td>
-<td style="text-align: right;">0.0000378</td>
-<td style="text-align: right;">0.0066133</td>
-<td style="text-align: right;">0.0319337</td>
-<td style="text-align: right;">0.0253205</td>
+<td style="text-align: right;">0.0156771</td>
+<td style="text-align: right;">0.0000356</td>
+<td style="text-align: right;">0.0069193</td>
+<td style="text-align: right;">0.0313604</td>
+<td style="text-align: right;">0.0244411</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0217648</td>
-<td style="text-align: right;">0.0000436</td>
-<td style="text-align: right;">0.0121563</td>
-<td style="text-align: right;">0.0372594</td>
-<td style="text-align: right;">0.0251031</td>
+<td style="text-align: right;">0.0216192</td>
+<td style="text-align: right;">0.0000428</td>
+<td style="text-align: right;">0.0108812</td>
+<td style="text-align: right;">0.0354013</td>
+<td style="text-align: right;">0.0245201</td>
 </tr>
 </tbody>
 </table>
@@ -1095,9 +1095,10 @@ Note
 <p><img src="unit-sae-summ_files/figure-html/bhf-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+<p>Estimated values and their uncertainties are compared cross-method in the <a href="./diagnostics.html">final workbook</a>.</p>
 </section>
-<section id="limitations" class="level2" data-number="4">
-<h2 data-number="4" class="anchored" data-anchor-id="limitations"><span class="header-section-number">4</span> Limitations</h2>
+<section id="limitation-for-binary-indicators" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="limitation-for-binary-indicators"><span class="header-section-number">4</span> Limitation for binary indicators</h2>
 <p>Although unit-level modelling can stabilise estimates where direct estimates are weak, aggregation using area-level predictor summaries still relies on strong assumptions about population composition. Representing age, sex, and car access using mean adult age, the adult female share, and the adult share with car access can conceal important differences in their joint distribution. Two areas may have similar marginal summaries but very different age–sex–car compositions, leading to similar model-based estimates even when cycling behaviour differs across particular population groups.</p>
 <p>This limitation is especially important for a binary outcome modelled using a logistic model (setting <code>family = "binomial"</code>). The target is the population-average predicted probability. Substituting area-level predictor summaries to estimate the probability at the average predictor values only is an approximation.</p>
 <div class="callout callout-style-default callout-note callout-titled" title="Area summaries and binary outcomes">

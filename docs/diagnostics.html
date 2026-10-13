@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Model diagnostics and comparison</title>
+<title>Small Area Estimation for Urban Analytics - Cross method comparison</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -148,7 +148,7 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Comparison</span></a>
+ <span class="dropdown-text">Method Comparison</span></a>
   </li>  
     </ul>
   </li>
@@ -163,7 +163,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./direct-estimation.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./diagnostics.html">Comparison</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./direct-estimation.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./diagnostics.html">Method Comparison</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -254,7 +254,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Comparison</span></a>
+ <span class="menu-text">Method Comparison</span></a>
   </div>
 </li>
       </ul>
@@ -269,9 +269,9 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#estimate-smoothing-and-target-population-adjustment" id="toc-estimate-smoothing-and-target-population-adjustment" class="nav-link active" data-scroll-target="#estimate-smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Estimate smoothing and target population adjustment</a></li>
-  <li><a href="#uncertainty-improvement" id="toc-uncertainty-improvement" class="nav-link" data-scroll-target="#uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</a></li>
-  <li><a href="#area-and-temporal-effect-variance" id="toc-area-and-temporal-effect-variance" class="nav-link" data-scroll-target="#area-and-temporal-effect-variance"><span class="header-section-number">3</span> Area and temporal effect variance</a></li>
+  <li><a href="#smoothing-and-target-population-adjustment" id="toc-smoothing-and-target-population-adjustment" class="nav-link active" data-scroll-target="#smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Smoothing and target population adjustment</a></li>
+  <li><a href="#improvement-in-precision" id="toc-improvement-in-precision" class="nav-link" data-scroll-target="#improvement-in-precision"><span class="header-section-number">2</span> Improvement in precision</a></li>
+  <li><a href="#examining-spatial-and-temporal-effects" id="toc-examining-spatial-and-temporal-effects" class="nav-link" data-scroll-target="#examining-spatial-and-temporal-effects"><span class="header-section-number">3</span> Examining spatial and temporal effects</a></li>
   </ul>
 </nav>
     </div>
@@ -280,8 +280,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Model diagnostics and comparison</h1>
-<p class="subtitle lead">Estimates, uncertainty, and residual structure</p>
+<h1 class="title">Cross method comparison</h1>
 </div>
 
 
@@ -296,7 +295,8 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.</p>
+<p>We can now compare the direct estimates and three model-based SAE approaches developed in the preceding sections in order to show how each approach changes the estimates, and their uncertainty. The comparison serve to illustrate the practical trade-offs that researchers should consider when selecting an approach for their own data and estimand.</p>
+<p>The table below summarises the main data requirements, strengths, and limitations of each method.</p>
 <table class="table">
 <colgroup>
 <col style="width: 25%">
@@ -308,7 +308,7 @@ ul.task-list li input[type="checkbox"] {
 <tr class="header">
 <th>Method</th>
 <th>Estimation approach</th>
-<th>Data requirements</th>
+<th>Aux. data requirements</th>
 <th>Main limitation</th>
 </tr>
 </thead>
@@ -317,19 +317,19 @@ ul.task-list li input[type="checkbox"] {
 <td>Direct estimation</td>
 <td>Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate.</td>
 <td>None</td>
-<td>Sparse or missing cells can give unstable estimates.</td>
+<td>Sparse or missing cells can produce unstable estimates or invalid sampling variances.</td>
 </tr>
 <tr class="even">
 <td>Area-level SAE</td>
 <td>Uses direct estimates and sampling variances, then smooths them with an area-level model.</td>
 <td>Low</td>
-<td>Depends on the quality of the direct estimates.</td>
+<td>Depends on the reliability of the direct estimates and their sampling variances.</td>
 </tr>
 <tr class="odd">
-<td>Unit-level SAE with area summaries</td>
+<td>Unit-level SAE with predictor summaries</td>
 <td>Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries.</td>
 <td>Moderate</td>
-<td>Area summaries only approximate the population composition, not robust for binary outcome.</td>
+<td>Area summaries may not adequately represent the target population. Not robust for binary indicator.</td>
 </tr>
 <tr class="even">
 <td>Unit-level SAE with poststratification</td>
@@ -339,12 +339,13 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 </tbody>
 </table>
-<section id="estimate-smoothing-and-target-population-adjustment" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="estimate-smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Estimate smoothing and target population adjustment</h2>
+<section id="smoothing-and-target-population-adjustment" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Smoothing and target population adjustment</h2>
 <p>The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.</p>
 <ul>
-<li><strong>Direct estimates</strong> retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The <strong>area-level model</strong> is anchored by the direct estimates, so weak direct evidence can influence the modelled results.</li>
-<li>Differences between the estimates from the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.</li>
+<li><strong>Direct estimates</strong> are highly uneven, while <strong>model-based estimates</strong> are smoother because they borrow strength across areas, years, predictors, or poststratification cells.</li>
+<li>The <strong>area-level model</strong> is anchored by the direct estimates, so the strength of local survey evidence influences the modelled results. In 2025, which has the largest median sample size, the modelled estimates remain closer to the direct estimates. In the earlier waves with weaker direct evidence, the modelled estimates are much higher.</li>
+<li>Differences between the estimates from the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is how the individual predictions are projected to the MSOA–year level.</li>
 </ul>
 <div class="cell">
 <div class="cell-output-display">
@@ -356,16 +357,16 @@ ul.task-list li input[type="checkbox"] {
 <p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
+<p>In a unit-level SAE workflow, <strong>poststratification</strong> changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-poststratification-effect-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
 </section>
-<section id="uncertainty-improvement" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="uncertainty-improvement"><span class="header-section-number">2</span> Uncertainty improvement</h2>
-<p>Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approaches produce credible-interval widths that reflect posterior uncertainty after borrowing strength across areas, years, or predictors.</p>
+<section id="improvement-in-precision" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="improvement-in-precision"><span class="header-section-number">2</span> Improvement in precision</h2>
+<p>Interval width summarises the uncertainty attached to each estimate. For direct estimates, interval width is driven by the sampling variance within each MSOA-year cell. Model-based approaches produce 95% credible intervals that reflect posterior uncertainty. Overall, we see a massive improvement in precision when employing a model-based SAE approach.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-ci-map-1.png" class="img-fluid" style="width:100.0%"></p>
@@ -376,25 +377,25 @@ ul.task-list li input[type="checkbox"] {
 <p><img src="diagnostics_files/figure-html/diag-ci-density-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+<p>Narrower intervals can reflect improved precision, but they may also result from stronger smoothing and greater reliance on model-based estimates when local survey evidence is weak, as seen in the area-level model. In comparison, the marginally wider intervals from the unit-level models reflect their more fine-grained specification since here we are fitting the model over thousands of survey respondents.</p>
 </section>
-<section id="area-and-temporal-effect-variance" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="area-and-temporal-effect-variance"><span class="header-section-number">3</span> Area and temporal effect variance</h2>
-<p>The inverse precision, <span class="math inline">1/\tau</span>, gives the variance scale of each scaled random effect. For the BYM2 term, this is the total residual area-effect variance, combining structured and unstructured components. For the RW1 term, it is the variance scale of the temporal effect across the three survey periods. Larger values indicate that the corresponding random effect accounts for more residual variation, while the intervals show uncertainty in that variance.</p>
+<section id="examining-spatial-and-temporal-effects" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="examining-spatial-and-temporal-effects"><span class="header-section-number">3</span> Examining spatial and temporal effects</h2>
+<p>Spatial and temporal random effects capture residual variation not explained by the fixed predictors. Their relative contribution can differ across SAE approaches because the models use the survey data in different ways.</p>
+<p>We compare the posterior variance of the total BYM2 area effect and the RW1 temporal effect, expressed as inverse precision, <span class="math inline">1/\tau</span>. For RW1, it is the variance of the temporal effect across the three survey periods. For BYM2, this is the total residual area-effect variance, including structured (i.e., spatial variation explained by the neighbourhood structure) and unstructured components. Overall, the unit-level model has a larger spatial-effect variance (i.e., stronger spatial smoothing), although both models are provided with the same neighbourhood-based spatial weight matrix. Instead, the area-level model exhibits stronger temporal smoothing due to highly uneven estimates across years.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-spatiotemporal-effects-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>The BYM2 mixing parameter, <span class="math inline">\phi</span>, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects.</p>
-<ul>
-<li>The lower <span class="math inline">\phi</span> estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.</li>
-<li>The unit-level model uses individual responses directly and estimates a higher <span class="math inline">\phi</span>, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.</li>
-</ul>
+<p>To examine the area effects in more detail, we distinguish between the structured and unstructured components of the BYM2 model suing the mixing parameter, <span class="math inline">\phi</span>, i.e., the proportion of residual area-effect variance assigned to the spatially structured component. The closer to zero the greater the unstructured, area-specific effects not explainable by neighbouring areas.</p>
+<p>The area-level model has a lower median <span class="math inline">\phi</span> than the unit-level model. This indicates that residual area variation is more strongly unstructured in the area-level model, whereas the unit-level model identifies a stronger adjacency-based spatial pattern. This difference is consistent with sparse and unstable direct estimates providing limited information for identifying a coherent spatial pattern.</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-area-effect-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+<p>Overall, these results suggest that the area-level model gains little from including a spatial neighbourhood matrix, compared with the unit-level model. In practice, this means that although the research question may suggest spatial dependence and motivate spatial smoothing in SAE, this structure does not always add useful information. In such cases, an independent, unstructured area random effect may be sufficient.</p>
 
 
 </section>

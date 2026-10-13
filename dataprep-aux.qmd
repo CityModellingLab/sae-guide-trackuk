@@ -29,21 +29,19 @@ area_index <- read_csv(
 ```
 
 
-## Auxiliary data constraints and method selection
-
 Auxiliary data are central to model-based small-area estimation, enabling different modelling approaches. The table below summarises the suitable SAE method for different scenarios of auxiliary data availability.
 
 | Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
 |---|:---:|:---:|:---:|:---:|
-| Modelling: Area-level predictors |-| Yes |Optional as contextual | Optional as contextual |
+| Modelling: Area-level predictors |-| Yes |Optional | Optional |
 | Modelling: Unit-level predictors |-|-| Yes | Yes |
 | Aggregation: predictor summaries |-|-| Yes |-|
 | Aggregation: poststratification table |-|-|-| Yes |
-| Spatial graph |-| Yes | Yes | Yes |
+| Spatial graph |-| Optional | Optional | Optional |
 
 This tutorial assumes that all required forms of auxiliary data are available so that each method can be demonstrated. All auxiliary data is derived from [ONS Census 2021](https://www.ons.gov.uk/census) at MSOA level.
 
-### Spatial Adjacency Matrix
+## Spatial Adjacency Matrix
 
 To represent spatial structure in the model, we may want to provide the model with an adjacency matrix identifying neighbouring MSOAs. Neighbours are defined using Queen contiguity: two MSOAs are adjacent if their boundaries share an edge or a point. This structure allows the model to identify potential spatial autocorrelation and borrow information across neighbouring areas, supporting predictions for areas with limited or missing survey observations.
 
@@ -69,7 +67,7 @@ nb2INLA(
 ```
 ![](assets/spatial_weights_example.png)
 
-### Modelling input: Area-level Predictors
+## Modelling input: Area-level Predictors
 
 Area-level SAE models need area-level predictors that plausibly explain between-area differences in the target outcome. These variables below are chosen because frequent cycling is likely to vary with population composition, density, and car access. The area-predictor input *has one row per MSOA*:
 
@@ -91,7 +89,7 @@ read_csv(
   head()
 ```
 
-### Modelling input: Unit-Level Predictors
+## Modelling input: Unit-Level Predictors
 
 Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual `freq_cyclist`, we extract or transform these unit-level predictors from the survey microdata *for each individual respondent row*:
 
@@ -112,8 +110,8 @@ read_csv(
   head()
 ```
 
-### Aggregation input for unit-level SAE
-#### Predictor area summaries 
+## Aggregation input for unit-level SAE
+### Predictor area summaries 
 
 A unit-level SAE method can aggregate unit-level model predictions to target small areas using area summaries of the corresponding predictors within the model.
 

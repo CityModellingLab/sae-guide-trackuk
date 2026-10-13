@@ -154,6 +154,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <a class="dropdown-item" href="./dataprep-aux.html" rel="" target="">
  <span class="dropdown-text">Auxiliary data</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
+ <span class="dropdown-text">Toolkit: Input data preparation</span></a>
+  </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
@@ -179,14 +183,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Comparison</span></a>
+ <span class="dropdown-text">Method Comparison</span></a>
   </li>  
     </ul>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" href="./toolkit.html" rel="" target="">
- <span class="menu-text">Toolkit</span></a>
-  </li>  
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -245,6 +245,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Auxiliary data</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit: Input data preparation</span></a>
+  </div>
+</li>
       </ul>
   </li>
         <li class="sidebar-item sidebar-item-section">
@@ -283,17 +289,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Comparison</span></a>
+ <span class="menu-text">Method Comparison</span></a>
   </div>
 </li>
       </ul>
   </li>
-        <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Toolkit</span></a>
-  </div>
-</li>
     </ul>
     </div>
 </nav>
@@ -790,21 +790,21 @@ Target estimand
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">-1.9457478</td>
-<td style="text-align: right;">-2.3958077</td>
-<td style="text-align: right;">-1.4964757</td>
+<td style="text-align: right;">-1.9457480</td>
+<td style="text-align: right;">-2.3958079</td>
+<td style="text-align: right;">-1.4964756</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band25_34</td>
-<td style="text-align: right;">-0.6307993</td>
-<td style="text-align: right;">-1.1326789</td>
-<td style="text-align: right;">-0.1288779</td>
+<td style="text-align: right;">-0.6307991</td>
+<td style="text-align: right;">-1.1326788</td>
+<td style="text-align: right;">-0.1288777</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">age_band35_49</td>
-<td style="text-align: right;">-0.3256637</td>
-<td style="text-align: right;">-0.7684674</td>
-<td style="text-align: right;">0.1171940</td>
+<td style="text-align: right;">-0.3256635</td>
+<td style="text-align: right;">-0.7684673</td>
+<td style="text-align: right;">0.1171941</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age_band50_64</td>
@@ -815,20 +815,20 @@ Target estimand
 <tr class="odd">
 <td style="text-align: left;">age_band65_plus</td>
 <td style="text-align: right;">-1.3504272</td>
-<td style="text-align: right;">-1.7978536</td>
-<td style="text-align: right;">-0.9029934</td>
+<td style="text-align: right;">-1.7978535</td>
+<td style="text-align: right;">-0.9029933</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">sexFemale</td>
-<td style="text-align: right;">-0.7336085</td>
-<td style="text-align: right;">-0.9555364</td>
-<td style="text-align: right;">-0.5116895</td>
+<td style="text-align: right;">-0.7336086</td>
+<td style="text-align: right;">-0.9555365</td>
+<td style="text-align: right;">-0.5116896</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">caraccess</td>
-<td style="text-align: right;">-0.5714043</td>
-<td style="text-align: right;">-0.8412792</td>
-<td style="text-align: right;">-0.3015115</td>
+<td style="text-align: right;">-0.5714044</td>
+<td style="text-align: right;">-0.8412793</td>
+<td style="text-align: right;">-0.3015116</td>
 </tr>
 </tbody>
 </table>
@@ -849,18 +849,12 @@ Why poststratification?
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Unit-level SAE with poststratification improves on the previous area-summary approach in two ways.</p>
-<ul>
-<li>First, the unit-level model is fitted to survey microdata, but the survey sample may not match the target population composition (see below figure). Poststratification partially adjusts this by predicting the outcome for known population groups and weighting those predictions by the corresponding population counts. This helps align the estimates with the population structure (but only for the variables included in the poststratification table).</li>
-</ul>
+<p>The unit-level model is fitted to survey microdata, but the survey sample may not match the target population composition (see below figure). Poststratification partially adjusts this by predicting the outcome for known population groups and weighting those predictions by the corresponding population counts. This helps align the estimates with the population structure (but only for the variables included in the poststratification table).</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="unit-sae-mrp_files/figure-html/mrp-composition-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<ul>
-<li>Second, for binary outcomes such as <code>freq_cyclist</code> (<code>1</code> = yes, <code>0</code> = no), the target is the population proportion in each area. Poststratification estimates this adequately by averaging predicted probabilities across population cells, rather than plugging a single set of area-level predictor summaries into the model.</li>
-</ul>
 </div>
 </div>
 <div class="cell">
@@ -870,7 +864,7 @@ Why poststratification?
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">result =</span> mrp_final_fit</span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Each posterior draw is evaluated over every poststratification cell. The cell predictions are then weighted by population count and aggregated within each MSOA-year.</p>
+<p>Each posterior draw is evaluated over every poststratification cell.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>extract_draws <span class="ot">&lt;-</span> <span class="cf">function</span>(posterior_draws, nodes, <span class="at">row_names =</span> nodes) {</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">matrix</span>(</span>
@@ -910,6 +904,7 @@ Why poststratification?
 <span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span> age_band <span class="sc">+</span> sex <span class="sc">+</span> caraccess</span>
 <span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>The cell predictions are then ‘poststratified’`, i.e., weighted by population count and aggregated within each MSOA-year.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>poststratify <span class="ot">&lt;-</span> <span class="cf">function</span>(cell_draws, weights, area, time) {</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  area_time <span class="ot">&lt;-</span> <span class="fu">paste</span>(area, time, <span class="at">sep =</span> <span class="st">"__"</span>)</span>
@@ -976,56 +971,56 @@ Why poststratification?
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0234460</td>
-<td style="text-align: right;">0.0000645</td>
-<td style="text-align: right;">0.0115982</td>
-<td style="text-align: right;">0.0459390</td>
-<td style="text-align: right;">0.0343408</td>
+<td style="text-align: right;">0.0232203</td>
+<td style="text-align: right;">0.0000541</td>
+<td style="text-align: right;">0.0110051</td>
+<td style="text-align: right;">0.0390210</td>
+<td style="text-align: right;">0.0280159</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2023</td>
-<td style="text-align: right;">0.0320319</td>
-<td style="text-align: right;">0.0000941</td>
-<td style="text-align: right;">0.0177917</td>
-<td style="text-align: right;">0.0559702</td>
-<td style="text-align: right;">0.0381785</td>
+<td style="text-align: right;">0.0319267</td>
+<td style="text-align: right;">0.0000910</td>
+<td style="text-align: right;">0.0154129</td>
+<td style="text-align: right;">0.0526908</td>
+<td style="text-align: right;">0.0372779</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2025</td>
-<td style="text-align: right;">0.0370097</td>
-<td style="text-align: right;">0.0001246</td>
-<td style="text-align: right;">0.0201654</td>
-<td style="text-align: right;">0.0633431</td>
-<td style="text-align: right;">0.0431778</td>
+<td style="text-align: right;">0.0372295</td>
+<td style="text-align: right;">0.0001175</td>
+<td style="text-align: right;">0.0183385</td>
+<td style="text-align: right;">0.0597680</td>
+<td style="text-align: right;">0.0414295</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0193894</td>
-<td style="text-align: right;">0.0000408</td>
-<td style="text-align: right;">0.0091183</td>
-<td style="text-align: right;">0.0355935</td>
-<td style="text-align: right;">0.0264752</td>
+<td style="text-align: right;">0.0181733</td>
+<td style="text-align: right;">0.0000351</td>
+<td style="text-align: right;">0.0084642</td>
+<td style="text-align: right;">0.0313990</td>
+<td style="text-align: right;">0.0229349</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2023</td>
-<td style="text-align: right;">0.0267756</td>
-<td style="text-align: right;">0.0000769</td>
-<td style="text-align: right;">0.0129755</td>
-<td style="text-align: right;">0.0457634</td>
-<td style="text-align: right;">0.0327879</td>
+<td style="text-align: right;">0.0250801</td>
+<td style="text-align: right;">0.0000606</td>
+<td style="text-align: right;">0.0116991</td>
+<td style="text-align: right;">0.0416686</td>
+<td style="text-align: right;">0.0299695</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2025</td>
-<td style="text-align: right;">0.0309084</td>
-<td style="text-align: right;">0.0000917</td>
-<td style="text-align: right;">0.0152951</td>
-<td style="text-align: right;">0.0502911</td>
-<td style="text-align: right;">0.0349960</td>
+<td style="text-align: right;">0.0293073</td>
+<td style="text-align: right;">0.0000789</td>
+<td style="text-align: right;">0.0143046</td>
+<td style="text-align: right;">0.0494752</td>
+<td style="text-align: right;">0.0351707</td>
 </tr>
 </tbody>
 </table>
@@ -1037,7 +1032,7 @@ Why poststratification?
 <p><img src="unit-sae-mrp_files/figure-html/mrp-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>These estimates reuse the 2021 age-sex-caraccess population composition for the 2023 and 2025 waves, while the modelled time effect captures changes in the outcome. This requires the relative <code>age_band</code> x <code>sex</code> x <code>caraccess</code> poststratification weights to stay stable across target periods.</p>
+<p>Estimated values and their uncertainties are compared cross-method in the <a href="./diagnostics.html">final workbook</a>.</p>
 
 
 </section>
@@ -1298,7 +1293,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   </div>
   <div class="nav-page nav-page-next">
       <a href="./diagnostics.html" class="pagination-link">
-        <span class="nav-page-text">Comparison</span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">Method Comparison</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

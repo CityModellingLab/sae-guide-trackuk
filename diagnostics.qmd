@@ -1,8 +1,6 @@
 ---
-title: "Model diagnostics and comparison"
-subtitle: "Estimates, uncertainty, and residual structure"
+title: "Cross method comparison"
 ---
-
 
 ```{r}
 #| label: diag-setup
@@ -98,7 +96,7 @@ map_text_theme <- theme(
 annotation_theme <- theme(
   plot.title.position = "plot",
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+  plot.subtitle = element_text(size = 15, hjust = 0.5, colour = "grey30"),
   plot.caption = element_text(size = 10, hjust = 0.5, colour = "grey30")
 )
 
@@ -522,21 +520,24 @@ evidence_adjustment_summary <- diagnostic_estimates |>
   )
 ```
 
-This comparison focuses on the trade-offs between direct estimation, area-level SAE, unit-level SAE models, with and without poststratification.
+We can now compare the direct estimates and three model-based SAE approaches developed in the preceding sections in order to show how each approach changes the estimates, and their uncertainty. The comparison serve to illustrate the practical trade-offs that researchers should consider when selecting an approach for their own data and estimand. 
 
-| Method | Estimation approach | Data requirements | Main limitation |
+The table below summarises the main data requirements, strengths, and limitations of each method.
+
+| Method | Estimation approach | Aux. data requirements | Main limitation |
 |---|---|---|---|
-| Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can give unstable estimates. |
-| Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the quality of the direct estimates. |
-| Unit-level SAE with area summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Moderate | Area summaries only approximate the population composition, not robust for binary outcome. |
+| Direct estimation | Uses survey responses within each MSOA-year cell to calculate a survey-weighted direct estimate. | None | Sparse or missing cells can produce unstable estimates or invalid sampling variances. |
+| Area-level SAE | Uses direct estimates and sampling variances, then smooths them with an area-level model. | Low | Depends on the reliability of the direct estimates and their sampling variances. |
+| Unit-level SAE with predictor summaries | Fits a unit-level model to survey microdata, then evaluates it using MSOA-level predictor summaries. | Moderate | Area summaries may not adequately represent the target population. Not robust for binary indicator. |
 | Unit-level SAE with poststratification | Fits a unit-level model to survey microdata, predicts age-sex-car population cells, then aggregates using cell counts. | High | Adding more predictors produces suppressed cells (false population zeros). |
 
-## Estimate smoothing and target population adjustment
+## Smoothing and target population adjustment
 
 The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
 
-- **Direct estimates** retain the most cell-level variation. Model-based estimates are smoother because they borrow strength across areas, years, predictors, or poststratification cells. The **area-level model** is anchored by the direct estimates, so weak direct evidence can influence the modelled results. 
-- Differences between the estimates from the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is the aggregation step: the poststratified model averages predictions over age-sex-car population cells, while the area-summary model substitutes MSOA-level predictor summaries. Poststratification better aligns predictions with the target population composition; area-summary substitution is more approximate and does not itself correct survey selection bias.
+- **Direct estimates** are highly uneven, while **model-based estimates** are smoother because they borrow strength across areas, years, predictors, or poststratification cells. 
+- The **area-level model** is anchored by the direct estimates, so the strength of local survey evidence influences the modelled results. In 2025, which has the largest median sample size, the modelled estimates remain closer to the direct estimates. In the earlier waves with weaker direct evidence, the modelled estimates are much higher.
+- Differences between the estimates from the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is how the individual predictions are projected to the MSOA--year level.
 
 ```{r}
 #| label: diag-estimate-density-map
@@ -615,10 +616,18 @@ make_route_density <- function(method_name, show_x_title = FALSE) {
 
 make_route_map <- function(method_name, year, show_year = FALSE) {
   map_data <- estimate_map_data |>
-    filter(method == method_name, time_id == year)
+    filter(method == method_name, time_id == year) |>
+    mutate(
+      map_estimate = if_else(
+        method_name == "Direct" &
+          (is.na(estimate) | is.na(ci_width) | ci_width <= 0),
+        NA_real_,
+        estimate
+      )
+    )
 
   ggplot(map_data) +
-    geom_sf(aes(fill = estimate), colour = "transparent") +
+    geom_sf(aes(fill = map_estimate), colour = "transparent") +
     scale_fill_viridis_c(
       name = "Estimate",
       option = estimate_palette,
@@ -696,8 +705,6 @@ map_grid <- (
   theme(legend.position = "bottom")
 ```
 
-
-
 ```{r}
 #| label: diag-method-agreement
 #| echo: false
@@ -725,7 +732,7 @@ method_agreement |>
   theme(panel.grid.minor = element_blank())
 ```
 
-Poststratification changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
+In a unit-level SAE workflow, **poststratification** changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
 
 ```{r}
 #| label: diag-poststratification-effect
@@ -999,9 +1006,9 @@ ggplot(
   )
 ```
 
-## Uncertainty improvement
+## Improvement in precision
 
-Interval width shows the precision gained or lost by each method. Direct-estimate widths reflect sampling variance, while model-based approaches produce credible-interval widths that reflect posterior uncertainty after borrowing strength across areas, years, or predictors.
+Interval width summarises the uncertainty attached to each estimate. For direct estimates, interval width is driven by the sampling variance within each MSOA-year cell. Model-based approaches produce 95% credible intervals that reflect posterior uncertainty. Overall, we see a massive improvement in precision when employing a model-based SAE approach.
 
 ```{r}
 #| label: diag-ci-map
@@ -1062,9 +1069,13 @@ diagnostic_estimates |>
   theme(legend.position = "none")
 ```
 
-## Area and temporal effect variance
+Narrower intervals can reflect improved precision, but they may also result from stronger smoothing and greater reliance on model-based estimates when local survey evidence is weak, as seen in the area-level model. In comparison, the marginally wider intervals from the unit-level models reflect their more fine-grained specification since here we are fitting the model over thousands of survey respondents.
 
-The inverse precision, $1/\tau$, gives the variance scale of each scaled random effect. For the BYM2 term, this is the total residual area-effect variance, combining structured and unstructured components. For the RW1 term, it is the variance scale of the temporal effect across the three survey periods. Larger values indicate that the corresponding random effect accounts for more residual variation, while the intervals show uncertainty in that variance.
+## Examining spatial and temporal effects
+
+Spatial and temporal random effects capture residual variation not explained by the fixed predictors. Their relative contribution can differ across SAE approaches because the models use the survey data in different ways.
+
+We compare the posterior variance of the total BYM2 area effect and the RW1 temporal effect, expressed as inverse precision, $1/\tau$. For RW1, it is the variance of the temporal effect across the three survey periods. For BYM2, this is the total residual area-effect variance, including structured (i.e., spatial variation explained by the neighbourhood structure) and unstructured components. Overall, the unit-level model has a larger spatial-effect variance (i.e., stronger spatial smoothing), although both models are provided with the same neighbourhood-based spatial weight matrix. Instead, the area-level model exhibits stronger temporal smoothing due to highly uneven estimates across years. 
 
 ```{r}
 #| label: diag-spatiotemporal-effects
@@ -1148,11 +1159,10 @@ bym2_effect_summary |>
     plot.margin = margin(8, 95, 8, 8)
   )
 ```
- 
-The BYM2 mixing parameter, $\phi$, describes how residual area variation is divided between the structured and unstructured components: values closer to one indicate greater reliance on the adjacency-based structure, while values closer to zero indicate greater reliance on independent area effects. 
 
-- The lower $\phi$ estimated by the area-level model indicates that less residual variation is attributed to similarities between neighbouring MSOAs. This is consistent with sparse direct estimates and uncertain sampling variances providing limited information from which to identify a coherent spatial pattern.
-- The unit-level model uses individual responses directly and estimates a higher $\phi$, attributing more residual variation to the structured component. This allows information to be shared between neighbouring MSOAs and leaves much smaller unstructured area effects. The adjacency structure therefore appears more informative for the unit-level model in this scenario.
+To examine the area effects in more detail, we distinguish between the structured and unstructured components of the BYM2 model suing the mixing parameter, $\phi$, i.e., the proportion of residual area-effect variance assigned to the spatially structured component. The closer to zero the greater the unstructured, area-specific effects not explainable by neighbouring areas.
+
+The area-level model has a lower median $\phi$ than the unit-level model. This indicates that residual area variation is more strongly unstructured in the area-level model, whereas the unit-level model identifies a stronger adjacency-based spatial pattern. This difference is consistent with sparse and unstable direct estimates providing limited information for identifying a coherent spatial pattern.
 
 ```{r}
 #| label: diag-area-effect-map
@@ -1247,3 +1257,5 @@ phi_panel <- ggplot(
     theme = annotation_theme
   )
 ```
+
+Overall, these results suggest that the area-level model gains little from including a spatial neighbourhood matrix, compared with the unit-level model. In practice, this means that although the research question may suggest spatial dependence and motivate spatial smoothing in SAE, this structure does not always add useful information. In such cases, an independent, unstructured area random effect may be sufficient.
