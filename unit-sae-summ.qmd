@@ -1,30 +1,7 @@
 ---
-title: "Unit-level SAE model with area summaries"
+title: "Unit-level SAE with predictor summaries"
 subtitle: "A Bayesian spatio-temporal extension of a unit-level GLMM with area-summary prediction"
 ---
-
-<!--
-::: {.callout-note title="Theory in brief"}
-Unit-level SAE models the individual outcome before aggregating predictions to area-time estimates. For a continuous outcome, the unit-level model can be written as:
-
-$$
-Y_{ijt}
-=
-\alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt}.
-$$
-
-Here, $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
-
-Population summaries of the predictors $\bar{x}_{jt}$ are substituted into the fitted unit-level model:
-
-$$
-\hat{\mu}_{jt}
-=
-\widehat{\mathbb{E}}(Y \mid j, t, \bar{x}_{jt}).
-$$
-::: -->
-
-
 ```{r}
 #| label: bhf-setup
 library(dplyr)
@@ -80,7 +57,7 @@ map_text_theme <- theme(
 
 map_annotation_theme <- theme(
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+  plot.subtitle = element_text(size = 15, hjust = 0.5, colour = "grey30")
 )
 
 chart_text_theme <- theme(
@@ -93,15 +70,17 @@ chart_text_theme <- theme(
 )
 ```
 
+When respondent-level predictors are available, unit-level SAE models the individual survey responses directly instead of relying on pre-aggregated direct estimates. This avoids the limitations of area-level modelling when direct estimates are too sparse or unstable to provide reliable modelling inputs.
+
 ## Estimation approach {.unnumbered}
 
 {{< include assets/target-estimand.qmd >}}
 
-Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates. This is useful when direct estimates are too sparse or unstable to provide reliable area-level modelling inputs. Inspired by the Battese--Harter--Fuller model, this approach uses a generalised linear mixed model to model the individual outcome, whether continuous or binary, using predictors available in the survey microdata. Final small area estimates are then produced by applying the fitted model to area-level summaries of those predictors.
+There are several unit-level SAE frameworks. This guide uses a generalised linear mixed model inspired by the Battese–Harter–Fuller model. It models individual continuous or binary outcomes using predictors available in the survey microdata. Final small-area estimates are produced by applying the fitted model to area-level summaries of those predictors.
 
-Here, the binary frequent-cycling indicator `freq_cyclist` is modelled from the survey microdata using temporal and spatial random effects, with unit-level `age`, `sex`, and `caraccess` added across model specifications. The predictor summaries are extracted from [ONS UK Census 2021](https://www.ons.gov.uk/census) to produce the final *MSOA-year* estimates. Note that aggregating using area summaries of predictors assumes the area summaries of `age`, `sex`, and `caraccess` adequately represent the target population composition in each *MSOA-year* cell. 
+Here, the binary `freq_cyclist` indicator is modelled using temporal and spatial random effects. The model specifications progressively add the unit-level predictors `age`, `sex`, and `caraccess`. Aggregation with predictor summaries assumes that these summaries adequately represent the target population in each *MSOA-year cell*.
 
-The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects. 
+The unit-level models do not incorporate survey weights in the likelihood. This relies on the assumption that, after conditioning on the fixed and random effects, survey inclusion is independent of frequent cycling.
 
 ## Prepare model and aggregation data
 
@@ -159,7 +138,7 @@ head(aggregation_data)
 The aggregation data contains the complete area-time grid we want to estimate, and the area-level mean of the unit-level predictors. These area means come from Census 2021 and are used as a time-stable MSOA predictor across the three survey waves. This is reasonable only if auxiliary variables are unlikely to change quickly.
 :::
 
-Before fitting the model, we add the `INLA` time and area indices to the prepared datasets.
+Before fitting the model, we add the time and area indices to the prepared datasets.
 
 ```{r}
 #| label: bhf-add-ids
@@ -243,7 +222,7 @@ bhf_fits <- lapply(model_formulas, fit_bhf_model)
 ```
 
 :::{.callout-note}
-When fitting unit-level SAE models with `INLA`, `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
+When fitting unit-level SAE models with `R-INLA`, `control.compute = list(waic = TRUE, config = TRUE)` requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.
 :::
 
 To compare the fitted models' overall performance, we again use `WAIC` as a first check. Here, the car-access specification has the strongest WAIC support among the model specifications.
@@ -356,7 +335,7 @@ ggplot(
 
 ## Estimation and aggregation with posterior draws
 
-The aggregation step uses posterior draws from the selected `INLA` fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.
+The aggregation step uses posterior draws from the selected `R-INLA` fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.
 
 ```{r}
 #| label: bhf-draws
@@ -489,7 +468,7 @@ plot_bhf_ci_width <- function(wave) {
 estimate_maps <- lapply(bhf_wave_years, plot_bhf_estimate)
 uncertainty_maps <- lapply(bhf_wave_years, plot_bhf_ci_width)
 
-estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Final estimate")
+estimate_maps[[1]] <- estimate_maps[[1]] + ylab("Estimate")
 uncertainty_maps[[1]] <- uncertainty_maps[[1]] + ylab("95% CI width")
 
 for (i in seq_len(length(bhf_wave_years) - 1)) {
@@ -506,6 +485,8 @@ wrap_plots(c(estimate_maps, uncertainty_maps), ncol = length(bhf_wave_years)) +
     theme = map_annotation_theme
   )
 ```
+
+## Limitations
 
 Although unit-level modelling can stabilise estimates where direct estimates are weak, aggregation using area-level predictor summaries still relies on strong assumptions about population composition. Representing age, sex, and car access using mean adult age, the adult female share, and the adult share with car access can conceal important differences in their joint distribution. Two areas may have similar marginal summaries but very different age–sex–car compositions, leading to similar model-based estimates even when cycling behaviour differs across particular population groups.
 
@@ -530,12 +511,12 @@ $$
 $$
 :::
 
-A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.
+A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of **multilevel regression with poststratification (MRP)**: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the estimate reflects the composition of the target population.
 
 
 ```{r}
 #| label: bhf-export
-#| code-fold: true
+#| include: false
 
 fixed_terms <- rownames(bhf_selected_fit$summary.fixed)
 area_ids <- sort(area_index$area_inla_id)

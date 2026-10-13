@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Unit-level SAE model with area summaries</title>
+<title>Small Area Estimation for Urban Analytics - Unit-level SAE with predictor summaries</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -142,36 +142,51 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Data</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-data">    
+        <li>
+    <a class="dropdown-item" href="./dataprep-survey.html" rel="" target="">
+ <span class="dropdown-text">Survey data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./dataprep-aux.html" rel="" target="">
+ <span class="dropdown-text">Auxiliary data</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
     <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
  <span class="menu-text">Tutorial</span>
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
         <li>
-    <a class="dropdown-item" href="./dataprep.html" rel="" target="">
- <span class="dropdown-text">Preparation</span></a>
-  </li>  
-        <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
- <span class="dropdown-text">Direct estimation</span></a>
+ <span class="dropdown-text">1. Direct estimation</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./area-sae-fh.html" rel="" target="">
- <span class="dropdown-text">Area-level SAE</span></a>
+ <span class="dropdown-text">2. Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-summ.html" rel="" target="">
- <span class="dropdown-text">Unit-level SAE with Summaries</span></a>
+ <span class="dropdown-text">3. Unit-level SAE with Predictor Summaries</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-mrp.html" rel="" target="">
- <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
+ <span class="dropdown-text">4. Unit-level SAE with Poststratification (MRP)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Diagnostics</span></a>
+ <span class="dropdown-text">Comparison</span></a>
   </li>  
     </ul>
   </li>
+  <li class="nav-item">
+    <a class="nav-link" href="./toolkit.html" rel="" target="">
+ <span class="menu-text">Toolkit</span></a>
+  </li>  
 </ul>
             <div class="quarto-navbar-tools ms-auto">
 </div>
@@ -183,7 +198,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./unit-sae-summ.html">Unit-level SAE with Summaries</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./direct-estimation.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./unit-sae-summ.html">3. Unit-level SAE with Predictor Summaries</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -212,7 +227,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
+ <span class="menu-text">Data</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -220,42 +235,65 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./dataprep.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Preparation</span></a>
+  <a href="./dataprep-survey.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Survey data</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./dataprep-aux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Auxiliary data</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">Tutorial</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./direct-estimation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Direct estimation</span></a>
+ <span class="menu-text">1. Direct estimation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./area-sae-fh.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level SAE</span></a>
+ <span class="menu-text">2. Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./unit-sae-summ.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Unit-level SAE with Summaries</span></a>
+ <span class="menu-text">3. Unit-level SAE with Predictor Summaries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./unit-sae-mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level SAE with Poststrat</span></a>
+ <span class="menu-text">4. Unit-level SAE with Poststratification (MRP)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Diagnostics</span></a>
+ <span class="menu-text">Comparison</span></a>
   </div>
 </li>
       </ul>
   </li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit</span></a>
+  </div>
+</li>
     </ul>
     </div>
 </nav>
@@ -270,6 +308,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#prepare-model-and-aggregation-data" id="toc-prepare-model-and-aggregation-data" class="nav-link" data-scroll-target="#prepare-model-and-aggregation-data"><span class="header-section-number">1</span> Prepare model and aggregation data</a></li>
   <li><a href="#fit-and-evaluate-models" id="toc-fit-and-evaluate-models" class="nav-link" data-scroll-target="#fit-and-evaluate-models"><span class="header-section-number">2</span> Fit and evaluate models</a></li>
   <li><a href="#estimation-and-aggregation-with-posterior-draws" id="toc-estimation-and-aggregation-with-posterior-draws" class="nav-link" data-scroll-target="#estimation-and-aggregation-with-posterior-draws"><span class="header-section-number">3</span> Estimation and aggregation with posterior draws</a></li>
+  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations"><span class="header-section-number">4</span> Limitations</a></li>
   </ul>
 </nav>
     </div>
@@ -278,7 +317,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Unit-level SAE model with area summaries</h1>
+<h1 class="title">Unit-level SAE with predictor summaries</h1>
 <p class="subtitle lead">A Bayesian spatio-temporal extension of a unit-level GLMM with area-summary prediction</p>
 </div>
 
@@ -294,26 +333,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<!--
-::: {.callout-note title="Theory in brief"}
-Unit-level SAE models the individual outcome before aggregating predictions to area-time estimates. For a continuous outcome, the unit-level model can be written as:
-
-$$
-Y_{ijt}
-=
-\alpha + x_{ijt}^{T}\beta + u_j + v_t + \epsilon_{ijt}.
-$$
-
-Here, $x_{ijt}$ contains unit-level predictors, $u_j$ is an area effect, $v_t$ is a time effect, and $\epsilon_{ijt}$ is residual error. For a binary outcome, the model predicts the probability that $Y_{ijt}=1$.
-
-Population summaries of the predictors $\bar{x}_{jt}$ are substituted into the fitted unit-level model:
-
-$$
-\hat{\mu}_{jt}
-=
-\widehat{\mathbb{E}}(Y \mid j, t, \bar{x}_{jt}).
-$$
-::: -->
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -349,6 +368,7 @@ $$
 <span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"msoa_queen.adj"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
+<p>When respondent-level predictors are available, unit-level SAE models the individual survey responses directly instead of relying on pre-aggregated direct estimates. This avoids the limitations of area-level modelling when direct estimates are too sparse or unstable to provide reliable modelling inputs.</p>
 <section id="estimation-approach" class="level2 unnumbered">
 <h2 class="unnumbered anchored" data-anchor-id="estimation-approach">Estimation approach</h2>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
@@ -363,16 +383,16 @@ Target estimand
 <div class="callout-body-container callout-body">
 <div class="estimand-grid">
 <ul>
-<li><strong>Outcome and Population:</strong> Share of adults who cycle frequently</li>
-<li><strong>Geography:</strong> MSOAs in Wales</li>
-<li><strong>Time:</strong> 2021, 2023, and 2025</li>
+<li><strong>Outcome:</strong> Share of adults who cycle for transport several times weekly</li>
+<li><strong>Spatial:</strong> MSOAs in Wales</li>
+<li><strong>Temporal:</strong> Over three survey periods 2020-2021, 2022-2023, and 2024-2025</li>
 </ul>
 </div>
 </div>
 </div>
-<p>Unit-level SAE models survey microdata directly instead of starting from pre-aggregated direct estimates. This is useful when direct estimates are too sparse or unstable to provide reliable area-level modelling inputs. Inspired by the Battese–Harter–Fuller model, this approach uses a generalised linear mixed model to model the individual outcome, whether continuous or binary, using predictors available in the survey microdata. Final small area estimates are then produced by applying the fitted model to area-level summaries of those predictors.</p>
-<p>Here, the binary frequent-cycling indicator <code>freq_cyclist</code> is modelled from the survey microdata using temporal and spatial random effects, with unit-level <code>age</code>, <code>sex</code>, and <code>caraccess</code> added across model specifications. The predictor summaries are extracted from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> to produce the final <em>MSOA-year</em> estimates. Note that aggregating using area summaries of predictors assumes the area summaries of <code>age</code>, <code>sex</code>, and <code>caraccess</code> adequately represent the target population composition in each <em>MSOA-year</em> cell.</p>
-<p>The unit-level models do not use survey weights in the likelihood. They assume that survey inclusion is independent of frequent cycling after conditioning on the fixed and random effects.</p>
+<p>There are several unit-level SAE frameworks. This guide uses a generalised linear mixed model inspired by the Battese–Harter–Fuller model. It models individual continuous or binary outcomes using predictors available in the survey microdata. Final small-area estimates are produced by applying the fitted model to area-level summaries of those predictors.</p>
+<p>Here, the binary <code>freq_cyclist</code> indicator is modelled using temporal and spatial random effects. The model specifications progressively add the unit-level predictors <code>age</code>, <code>sex</code>, and <code>caraccess</code>. Aggregation with predictor summaries assumes that these summaries adequately represent the target population in each <em>MSOA-year cell</em>.</p>
+<p>The unit-level models do not incorporate survey weights in the likelihood. This relies on the assumption that, after conditioning on the fixed and random effects, survey inclusion is independent of frequent cycling.</p>
 </section>
 <section id="prepare-model-and-aggregation-data" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="prepare-model-and-aggregation-data"><span class="header-section-number">1</span> Prepare model and aggregation data</h2>
@@ -586,7 +606,7 @@ Note
 <p>The aggregation data contains the complete area-time grid we want to estimate, and the area-level mean of the unit-level predictors. These area means come from Census 2021 and are used as a time-stable MSOA predictor across the three survey waves. This is reasonable only if auxiliary variables are unlikely to change quickly.</p>
 </div>
 </div>
-<p>Before fitting the model, we add the <code>INLA</code> time and area indices to the prepared datasets.</p>
+<p>Before fitting the model, we add the time and area indices to the prepared datasets.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>area_index <span class="ot">&lt;-</span> domain_frame <span class="sc">|&gt;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(area_id, area_inla_id)</span>
@@ -686,7 +706,7 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>When fitting unit-level SAE models with <code>INLA</code>, <code>control.compute = list(waic = TRUE, config = TRUE)</code> requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.</p>
+<p>When fitting unit-level SAE models with <code>R-INLA</code>, <code>control.compute = list(waic = TRUE, config = TRUE)</code> requests WAIC for comparing model fit and stores the configuration needed for posterior sampling.</p>
 </div>
 </div>
 <p>To compare the fitted models’ overall performance, we again use <code>WAIC</code> as a first check. Here, the car-access specification has the strongest WAIC support among the model specifications.</p>
@@ -773,8 +793,8 @@ Note
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
 <td style="text-align: right;">-1.5812167</td>
-<td style="text-align: right;">-1.9886523</td>
-<td style="text-align: right;">-1.1744312</td>
+<td style="text-align: right;">-1.9886522</td>
+<td style="text-align: right;">-1.1744313</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">age</td>
@@ -866,9 +886,9 @@ Note
 <tr class="even">
 <td style="text-align: left;">M2 +Demographic</td>
 <td style="text-align: left;">Temporal precision (tau)</td>
-<td style="text-align: right;">69.758</td>
+<td style="text-align: right;">69.757</td>
 <td style="text-align: right;">7.293</td>
-<td style="text-align: right;">275.408</td>
+<td style="text-align: right;">275.398</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">M2 +Demographic</td>
@@ -887,9 +907,9 @@ Note
 <tr class="odd">
 <td style="text-align: left;">M3 +CarAccess</td>
 <td style="text-align: left;">Temporal precision (tau)</td>
-<td style="text-align: right;">76.371</td>
-<td style="text-align: right;">7.501</td>
-<td style="text-align: right;">310.204</td>
+<td style="text-align: right;">76.369</td>
+<td style="text-align: right;">7.502</td>
+<td style="text-align: right;">310.179</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">M3 +CarAccess</td>
@@ -922,7 +942,7 @@ Note
 </section>
 <section id="estimation-and-aggregation-with-posterior-draws" class="level2" data-number="3">
 <h2 data-number="3" class="anchored" data-anchor-id="estimation-and-aggregation-with-posterior-draws"><span class="header-section-number">3</span> Estimation and aggregation with posterior draws</h2>
-<p>The aggregation step uses posterior draws from the selected <code>INLA</code> fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.</p>
+<p>The aggregation step uses posterior draws from the selected <code>R-INLA</code> fit to produce unit-level SAE estimates for each MSOA-year cell. We first sample from the posterior and extract the fixed effects, spatial area effect, and temporal effect. We then rebuild the fitted model for every MSOA-year aggregation row and summarise the resulting draws.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">100</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>posterior_draws <span class="ot">&lt;-</span> <span class="fu">inla.posterior.sample</span>(</span>
@@ -1014,56 +1034,56 @@ Note
 <tr class="odd">
 <td style="text-align: left;">W02000001</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0204600</td>
-<td style="text-align: right;">0.0000384</td>
-<td style="text-align: right;">0.0104974</td>
-<td style="text-align: right;">0.0358662</td>
-<td style="text-align: right;">0.0253687</td>
+<td style="text-align: right;">0.0203686</td>
+<td style="text-align: right;">0.0000407</td>
+<td style="text-align: right;">0.0104900</td>
+<td style="text-align: right;">0.0359518</td>
+<td style="text-align: right;">0.0254618</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000002</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0165435</td>
-<td style="text-align: right;">0.0000249</td>
-<td style="text-align: right;">0.0083458</td>
-<td style="text-align: right;">0.0269843</td>
-<td style="text-align: right;">0.0186385</td>
+<td style="text-align: right;">0.0162262</td>
+<td style="text-align: right;">0.0000271</td>
+<td style="text-align: right;">0.0077573</td>
+<td style="text-align: right;">0.0287964</td>
+<td style="text-align: right;">0.0210391</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000003</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0370630</td>
-<td style="text-align: right;">0.0003291</td>
-<td style="text-align: right;">0.0141886</td>
-<td style="text-align: right;">0.0827874</td>
-<td style="text-align: right;">0.0685988</td>
+<td style="text-align: right;">0.0373635</td>
+<td style="text-align: right;">0.0002969</td>
+<td style="text-align: right;">0.0145101</td>
+<td style="text-align: right;">0.0841986</td>
+<td style="text-align: right;">0.0696885</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000004</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0254066</td>
-<td style="text-align: right;">0.0000726</td>
-<td style="text-align: right;">0.0118747</td>
-<td style="text-align: right;">0.0462542</td>
-<td style="text-align: right;">0.0343795</td>
+<td style="text-align: right;">0.0257180</td>
+<td style="text-align: right;">0.0001072</td>
+<td style="text-align: right;">0.0126458</td>
+<td style="text-align: right;">0.0489424</td>
+<td style="text-align: right;">0.0362966</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">W02000005</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0156652</td>
-<td style="text-align: right;">0.0000332</td>
-<td style="text-align: right;">0.0068854</td>
-<td style="text-align: right;">0.0312067</td>
-<td style="text-align: right;">0.0243214</td>
+<td style="text-align: right;">0.0161392</td>
+<td style="text-align: right;">0.0000378</td>
+<td style="text-align: right;">0.0066133</td>
+<td style="text-align: right;">0.0319337</td>
+<td style="text-align: right;">0.0253205</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">W02000006</td>
 <td style="text-align: right;">2021</td>
-<td style="text-align: right;">0.0219942</td>
-<td style="text-align: right;">0.0000505</td>
-<td style="text-align: right;">0.0115391</td>
-<td style="text-align: right;">0.0383724</td>
-<td style="text-align: right;">0.0268333</td>
+<td style="text-align: right;">0.0217648</td>
+<td style="text-align: right;">0.0000436</td>
+<td style="text-align: right;">0.0121563</td>
+<td style="text-align: right;">0.0372594</td>
+<td style="text-align: right;">0.0251031</td>
 </tr>
 </tbody>
 </table>
@@ -1075,6 +1095,9 @@ Note
 <p><img src="unit-sae-summ_files/figure-html/bhf-map-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
+</section>
+<section id="limitations" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="limitations"><span class="header-section-number">4</span> Limitations</h2>
 <p>Although unit-level modelling can stabilise estimates where direct estimates are weak, aggregation using area-level predictor summaries still relies on strong assumptions about population composition. Representing age, sex, and car access using mean adult age, the adult female share, and the adult share with car access can conceal important differences in their joint distribution. Two areas may have similar marginal summaries but very different age–sex–car compositions, leading to similar model-based estimates even when cycling behaviour differs across particular population groups.</p>
 <p>This limitation is especially important for a binary outcome modelled using a logistic model (setting <code>family = "binomial"</code>). The target is the population-average predicted probability. Substituting area-level predictor summaries to estimate the probability at the average predictor values only is an approximation.</p>
 <div class="callout callout-style-default callout-note callout-titled" title="Area summaries and binary outcomes">
@@ -1102,50 +1125,7 @@ Area summaries and binary outcomes
 </span></p>
 </div>
 </div>
-<p>A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of <strong>multilevel regression with poststratification (MRP)</strong>: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the final estimate reflects the composition of the target population.</p>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>fixed_terms <span class="ot">&lt;-</span> <span class="fu">rownames</span>(bhf_selected_fit<span class="sc">$</span>summary.fixed)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>area_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(area_index<span class="sc">$</span>area_inla_id)</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>time_ids <span class="ot">&lt;-</span> <span class="fu">sort</span>(time_index<span class="sc">$</span>time_inla_id)</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>fixed_draws <span class="ot">&lt;-</span> <span class="fu">extract_draws</span>(posterior_draws,<span class="fu">paste0</span>(fixed_terms, <span class="st">":1"</span>),fixed_terms)</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>area_draws <span class="ot">&lt;-</span> <span class="fu">extract_draws</span>(posterior_draws,<span class="fu">paste0</span>(<span class="st">"area_inla_id:"</span>, area_ids),area_ids)</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>time_draws <span class="ot">&lt;-</span> <span class="fu">extract_draws</span>(posterior_draws,<span class="fu">paste0</span>(<span class="st">"time_inla_id:"</span>, time_ids),time_ids)</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_names <span class="ot">&lt;-</span> <span class="fu">names</span>(posterior_draws[[<span class="dv">1</span>]]<span class="sc">$</span>hyperpar)</span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>posterior_hyperparameter_draws <span class="ot">&lt;-</span> <span class="fu">sapply</span>(posterior_draws, \(draw) {</span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">setNames</span>(</span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">as.numeric</span>(draw<span class="sc">$</span>hyperpar[posterior_hyperparameter_names]),</span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>    posterior_hyperparameter_names</span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="fu">saveRDS</span>(</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(</span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">schema_version =</span> 1L,</span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">route =</span> <span class="st">"Unit-level SAE with area summaries"</span>,</span>
-<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">model =</span> bhf_best_model,</span>
-<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">seed =</span> 100L,</span>
-<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_draws =</span> <span class="fu">length</span>(posterior_draws),</span>
-<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">fixed =</span> fixed_draws,</span>
-<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">area =</span> area_draws,</span>
-<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">time =</span> time_draws,</span>
-<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">hyperparameters =</span> posterior_hyperparameter_draws,</span>
-<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_index =</span> area_index,</span>
-<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">time_index =</span> time_index</span>
-<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(</span>
-<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>    output_path,</span>
-<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>    <span class="st">"freqcyc_posterior_draws_unit_summary.rds"</span></span>
-<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">compress =</span> <span class="st">"xz"</span></span>
-<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(final_bhf_results, <span class="fu">file.path</span>(output_path, <span class="st">"freqcyc_estimates_bhf.csv"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
+<p>A poststratification table addresses this limitation by providing population counts for the joint combinations of the relevant predictors. This is the logic of <strong>multilevel regression with poststratification (MRP)</strong>: predict the outcome for each population cell, then aggregate the cell predictions using the corresponding population counts so that the estimate reflects the composition of the target population.</p>
 
 
 </section>
@@ -1401,12 +1381,12 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
       <a href="./area-sae-fh.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Area-level SAE</span>
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">2. Area-level SAE</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
       <a href="./unit-sae-mrp.html" class="pagination-link">
-        <span class="nav-page-text">Unit-level SAE with Poststrat</span> <i class="bi bi-arrow-right-short"></i>
+        <span class="nav-page-text">4. Unit-level SAE with Poststratification (MRP)</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

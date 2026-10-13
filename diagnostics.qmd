@@ -279,11 +279,6 @@ msoa_boundaries <- st_read(
 ) |>
   rename(area_id = MSOA21CD) |>
   filter(str_starts(area_id, "W"))
-
-bicycle_to_work_benchmark <- read_csv(
-  file.path(base_path, "clean", "validation_bicycle_to_work_share.csv"),
-  show_col_types = FALSE
-)
 ```
 
 ```{r}

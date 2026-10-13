@@ -3,22 +3,6 @@ title: "Direct estimation"
 subtitle: "Survey design-based estimates and uncertainty"
 ---
 
-<!-- ::: {.callout-note title="Theory in brief"}
-For an area-time cell $(j,t)$, the target is a population mean or proportion:
-
-$$
-\mu_{jt} = \frac{1}{N_{jt}}\sum_{i=1}^{N_{jt}} y_{ijt}.
-$$
-
-If sampled unit $i$ has inclusion probability $\pi_{ijt}$ and design weight $w_{ijt}=1/\pi_{ijt}$, the Horvitz--Thompson ratio estimator gives the design-weighted direct estimate:
-
-$$
-\hat{\mu}^{w}_{jt} =
-\frac{\sum_{i \in S_{jt}} w_{ijt} y_{ijt}}
-{\sum_{i \in S_{jt}} w_{ijt}}.
-$$
-::: -->
-
 ```{r}
 #| label: direct-setup
 library(dplyr)
@@ -74,7 +58,7 @@ map_text_theme <- theme(
 map_annotation_theme <- theme(
   plot.title.position = "plot",
   plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-  plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30")
+  plot.subtitle = element_text(size = 15, hjust = 0.5, colour = "grey30")
 )
 
 chart_text_theme <- theme(
@@ -170,9 +154,9 @@ head(direct_bike)
 
 Direct estimation provides a useful starting point because it makes three limitations visible:
 
-- **Uneven temporal and spatial coverage:** The number of usable observations varies across survey waves and MSOAs, leaving some area-time cells with much less direct evidence than others.
-- **Unstable area estimates over time:** For some MSOAs, direct estimates change sharply between waves, which may reflect real behavioural change or sampling noise.
-- **Zero within-area variance:** For binary indicators, small samples can contain only one response value, producing zero or unrealistically low variances.
+- **Uneven coverage:** The number of usable observations varies across survey waves and MSOAs, leaving some area-time cells with much less direct evidence than others.
+- **Unstable area estimates over time:** For some MSOAs, direct estimates change sharply between waves, which may reflect real change or simply sampling noise.
+- **Invalid variances:** Since `freq_cyclist` is a binary indicator, all respondents in an area with a small sample size may give the same response. The estimated sampling variance is then zero, incorrectly suggesting that the prevalence estimate has no uncertainty. For all intents and purposes, these small-area estimates are unusable for further analysis.
 
 ```{r}
 #| label: direct-map
@@ -196,7 +180,16 @@ base_map <- function(wave) {
 
 plot_estimate <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = direct_estimate), colour = "transparent") +
+    geom_sf(
+      aes(
+        fill = if_else(
+          is.na(direct_estimate) | direct_estimate == 0,
+          NA_real_,
+          direct_estimate
+        )
+      ),
+      colour = "transparent"
+    ) +
     scale_fill_viridis_c(
       option = "magma",
       limits = c(0, 1),
@@ -208,7 +201,10 @@ plot_estimate <- function(wave) {
 
 plot_uncertainty <- function(wave) {
   base_map(wave) +
-    geom_sf(aes(fill = variance), colour = "transparent") +
+    geom_sf(
+      aes(fill = if_else(is.na(variance) | variance == 0, NA_real_, variance)),
+      colour = "transparent"
+    ) +
     scale_fill_distiller(
       palette = "Oranges",
       direction = 1,
@@ -218,19 +214,6 @@ plot_uncertainty <- function(wave) {
       name = "Variance"
     )
 }
-
-plot_sample <- function(wave) {
-  base_map(wave) +
-    geom_sf(aes(fill = n), colour = "transparent") +
-    scale_fill_gradient(
-      low = "#fff8e1",
-      high = "#4f3b10",
-      limits = c(0, max(direct_bike$n, na.rm = TRUE)),
-      na.value = missing_fill,
-      name = "Sample size"
-    )
-}
-
 
 # Generate and assemble plots
 e_21 <- plot_estimate("2021") +
@@ -248,57 +231,46 @@ u_21 <- plot_uncertainty("2021") +
 u_23 <- plot_uncertainty("2023") + theme(legend.position = "none")
 u_25 <- plot_uncertainty("2025")
 
-s_21 <- plot_sample("2021") +
-  ylab("Sample size") +
-  theme(legend.position = "none")
-s_23 <- plot_sample("2023") + theme(legend.position = "none")
-s_25 <- plot_sample("2025")
-
 diagnostic_panel <- wrap_plots(
   e_21, e_23, e_25,
   u_21, u_23, u_25,
-  s_21, s_23, s_25,
-  ncol = 3, nrow = 3
+  ncol = 3, nrow = 2
 ) +
   plot_annotation(
     title = "Share of adults who cycle for transport frequently",
-    subtitle = "Direct estimates, sampling variance, and usable sample size by wave",
+    subtitle = "Domains with invalid/missing estimates or sampling variances in grey",
     theme = map_annotation_theme
   )
 
-diagnostic_panel
-```
-Sparse and uneven survey coverage limits how far direct estimates can be used on their own. At the target MSOA-year scale, many estimates are unstable or unavailable, so the next step is to use model-based SAE methods that borrow strength across areas, years, and auxiliary predictors.
-
-Two model-based options follow:
-
-- **Area-level SAE models** stabilise direct MSOA-year estimates using sampling variances to control how much weight each direct estimate receives.
-- **Unit-level SAE models** estimate the individual outcome from survey microdata and aggregate predictions to target MSOA-years.
-
-
-```{r}
-#| label: direct-summary
 direct_summary_by_wave <- direct_bike |>
   group_by(time_id) |>
   summarise(
     `Usable observations` = sum(n),
+    `Median sample size` = median(n),
     `MSOAs without direct estimates` = sum(is.na(direct_estimate)),
     `MSOAs without variance` = sum(is.na(variance)),
-    `MSOAs with zero variance` = sum(variance == 0, na.rm = TRUE),
-    `Median sample size` = median(n),
+    `MSOAs with invalid estimates` = sum(variance == 0, na.rm = TRUE),
     .groups = "drop"
   ) |>
   rename(Wave = time_id)
 
+diagnostic_panel
 direct_summary_by_wave
 ```
 
-The choice between area-level and unit-level modelling should depend on two things: the quality of the direct estimates as model inputs, and whether the survey microdata contain unit-level predictors that help explain individual variation in the indicator.
+Sparse and uneven survey coverage at the target MSOA-year scale limits how far direct estimates can be reported on their own. This motivates the use of model-based SAE methods that borrow strength across areas, years, and auxiliary predictors to produce more stable estimates with appropriately quantified uncertainty.
 
-In this setting, the summary points to important limitations for area-level modelling. Because the outcome is binary, many MSOA-year cells contain limited direct survey information: small binary samples often produce all-zero or all-one responses. This motivates prioritising unit-level modelling, where respondent characteristics can be used to model the outcome before predictions are aggregated back to areas. We still fit an [area-level model](area-sae-fh.qmd) first to show how much stabilisation is possible from direct-estimate inputs before moving to [unit-level modelling](unit-sae-summ.qmd).
+Two model-based options follow:
+
+- **Area-level SAE** stabilises direct MSOA-year estimates using sampling variances to control how much weight each direct estimate receives (Fay--Herriot model).
+- **Unit-level SAE** estimates the individual outcome from survey microdata and aggregates predictions to target MSOA-years.
+
+The choice between area-level and unit-level modelling should depend on the quality of the direct estimates and sampling variances as model inputs, and whether the survey microdata contain unit-level predictors that explain variation in the `freq_cyclist` binary indicator. 
+
+In this example, the summary points to important limitations for area-level modelling since there are many domains with invalid variances. Nonetheless, we still fit an [area-level model](area-sae-fh.qmd) at the next workbook first to show how much stabilisation is possible from direct-estimate inputs before moving to [unit-level modelling](unit-sae-summ.qmd).
 
 ```{r}
 #| label: direct-export
-#| code-fold: true
+#| include: false
 write_csv(direct_bike, file.path(output_path, "freqcyc_estimates_direct.csv"))
 ```

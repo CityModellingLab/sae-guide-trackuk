@@ -5,13 +5,14 @@ project:
     - "toolkit-scripts/*.R"
   render:
     - index.qmd
-    - dataprep.qmd
+    - dataprep-survey.qmd
+    - dataprep-aux.qmd
     - direct-estimation.qmd
     - area-sae-fh.qmd
     - unit-sae-summ.qmd
     - unit-sae-mrp.qmd
     - diagnostics.qmd
-    # - toolkit.qmd
+    - toolkit.qmd
   
 website:
   title: "Small Area Estimation for Urban Analytics"
@@ -24,24 +25,26 @@ website:
     left:
       - text: "Home"
         href: index.qmd
+      - text: "Data"
+        menu:
+          - text: "Survey data"
+            href: dataprep-survey.qmd
+          - text: "Auxiliary data"
+            href: dataprep-aux.qmd
+          - text: "Toolkit: Input data preparation"
+            href: toolkit.qmd
       - text: "Tutorial"
         menu:
-          - text: "Preparation"
-            href: dataprep.qmd
-          - text: "Direct estimation"
+          - text: "1. Direct estimation"
             href: direct-estimation.qmd
-          - text: "Area-level SAE"
+          - text: "2. Area-level SAE"
             href: area-sae-fh.qmd
-          - text: "Unit-level SAE with Summaries"
+          - text: "3. Unit-level SAE with Predictor Summaries"
             href: unit-sae-summ.qmd
-          - text: "Unit-level SAE with Poststrat"
+          - text: "4. Unit-level SAE with Poststratification (MRP)"
             href: unit-sae-mrp.qmd
-          - text: "Diagnostics"
+          - text: "Comparison"
             href: diagnostics.qmd
-      # - text: "Resources"
-      #   menu:
-      #     - text: "Toolkit"
-      #       href: toolkit.qmd
 
 
   sidebar:
@@ -50,24 +53,26 @@ website:
     contents:
       - text: "Home"
         href: index.qmd
+      - section: "Data"
+        contents:
+          - text: "Survey data"
+            href: dataprep-survey.qmd
+          - text: "Auxiliary data"
+            href: dataprep-aux.qmd
+          - text: "Toolkit: Input data preparation"
+            href: toolkit.qmd
       - section: "Tutorial"
         contents:
-          - text: "Preparation"
-            href: dataprep.qmd
-          - text: "Direct estimation"
+          - text: "1. Direct estimation"
             href: direct-estimation.qmd
-          - text: "Area-level SAE"
+          - text: "2. Area-level SAE"
             href: area-sae-fh.qmd
-          - text: "Unit-level SAE with Summaries"
+          - text: "3. Unit-level SAE with Predictor Summaries"
             href: unit-sae-summ.qmd
-          - text: "Unit-level SAE with Poststrat"
+          - text: "4. Unit-level SAE with Poststratification (MRP)"
             href: unit-sae-mrp.qmd
-          - text: "Diagnostics"
+          - text: "Comparison"
             href: diagnostics.qmd
-      # - section: "Resources"
-      #   contents:
-      #     - text: "Toolkit"
-      #       href: toolkit.qmd
           
 
 format:

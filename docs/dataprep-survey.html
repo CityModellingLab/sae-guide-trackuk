@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Data Preparation</title>
+<title>Small Area Estimation for Urban Analytics - Survey data</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -64,7 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="site_libs/quarto-search/fuse.min.js"></script>
 <script src="site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="./">
-<link href="./direct-estimation.html" rel="next">
+<link href="./dataprep-aux.html" rel="next">
 <link href="./index.html" rel="prev">
 <link href="./assets/favicon.svg" rel="icon" type="image/svg+xml">
 <script src="site_libs/quarto-html/quarto.js"></script>
@@ -126,33 +126,48 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Data</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-data">    
+        <li>
+    <a class="dropdown-item" href="./dataprep-survey.html" rel="" target="">
+ <span class="dropdown-text">Survey data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./dataprep-aux.html" rel="" target="">
+ <span class="dropdown-text">Auxiliary data</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="./toolkit.html" rel="" target="">
+ <span class="dropdown-text">Toolkit: Input data preparation</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
     <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
  <span class="menu-text">Tutorial</span>
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
         <li>
-    <a class="dropdown-item" href="./dataprep.html" rel="" target="">
- <span class="dropdown-text">Preparation</span></a>
-  </li>  
-        <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
- <span class="dropdown-text">Direct estimation</span></a>
+ <span class="dropdown-text">1. Direct estimation</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./area-sae-fh.html" rel="" target="">
- <span class="dropdown-text">Area-level SAE</span></a>
+ <span class="dropdown-text">2. Area-level SAE</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-summ.html" rel="" target="">
- <span class="dropdown-text">Unit-level SAE with Summaries</span></a>
+ <span class="dropdown-text">3. Unit-level SAE with Predictor Summaries</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./unit-sae-mrp.html" rel="" target="">
- <span class="dropdown-text">Unit-level SAE with Poststrat</span></a>
+ <span class="dropdown-text">4. Unit-level SAE with Poststratification (MRP)</span></a>
   </li>  
         <li>
     <a class="dropdown-item" href="./diagnostics.html" rel="" target="">
- <span class="dropdown-text">Diagnostics</span></a>
+ <span class="dropdown-text">Comparison</span></a>
   </li>  
     </ul>
   </li>
@@ -167,7 +182,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep.html">Tutorial</a></li><li class="breadcrumb-item"><a href="./dataprep.html">Preparation</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep-survey.html">Data</a></li><li class="breadcrumb-item"><a href="./dataprep-survey.html">Survey data</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -196,7 +211,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
+ <span class="menu-text">Data</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -204,38 +219,61 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./dataprep.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Preparation</span></a>
+  <a href="./dataprep-survey.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Survey data</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="./dataprep-aux.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Auxiliary data</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Toolkit: Input data preparation</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">Tutorial</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="./direct-estimation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Direct estimation</span></a>
+ <span class="menu-text">1. Direct estimation</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./area-sae-fh.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Area-level SAE</span></a>
+ <span class="menu-text">2. Area-level SAE</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./unit-sae-summ.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level SAE with Summaries</span></a>
+ <span class="menu-text">3. Unit-level SAE with Predictor Summaries</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./unit-sae-mrp.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Unit-level SAE with Poststrat</span></a>
+ <span class="menu-text">4. Unit-level SAE with Poststratification (MRP)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./diagnostics.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Diagnostics</span></a>
+ <span class="menu-text">Comparison</span></a>
   </div>
 </li>
       </ul>
@@ -250,13 +288,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-survey-microdata" id="toc-the-survey-microdata" class="nav-link active" data-scroll-target="#the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</a></li>
-  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation"><span class="header-section-number">2</span> Data Preparation</a>
+  <li><a href="#about-the-survey" id="toc-about-the-survey" class="nav-link active" data-scroll-target="#about-the-survey"><span class="header-section-number">1</span> About the survey</a></li>
+  <li><a href="#preparation-steps-for-small-area-estimation" id="toc-preparation-steps-for-small-area-estimation" class="nav-link" data-scroll-target="#preparation-steps-for-small-area-estimation"><span class="header-section-number">2</span> Preparation steps for small-area estimation</a>
   <ul class="collapse">
   <li><a href="#target-estimand" id="toc-target-estimand" class="nav-link" data-scroll-target="#target-estimand"><span class="header-section-number">2.1</span> Target Estimand</a></li>
   <li><a href="#estimation-domains" id="toc-estimation-domains" class="nav-link" data-scroll-target="#estimation-domains"><span class="header-section-number">2.2</span> Estimation Domains</a></li>
-  <li><a href="#survey-data" id="toc-survey-data" class="nav-link" data-scroll-target="#survey-data"><span class="header-section-number">2.3</span> Survey Data</a></li>
-  <li><a href="#auxiliary-data-for-spatio-temporal-sae" id="toc-auxiliary-data-for-spatio-temporal-sae" class="nav-link" data-scroll-target="#auxiliary-data-for-spatio-temporal-sae"><span class="header-section-number">2.4</span> Auxiliary Data for spatio-temporal SAE</a></li>
+  <li><a href="#survey-input-data" id="toc-survey-input-data" class="nav-link" data-scroll-target="#survey-input-data"><span class="header-section-number">2.3</span> Survey input data</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -266,8 +303,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data Preparation</h1>
-<p class="subtitle lead">Define the estimand, estimation domains, survey indicator, and model inputs</p>
+<h1 class="title">Survey data</h1>
 </div>
 
 
@@ -292,42 +328,39 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(spdep)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoayear.csv"</span>),</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="at">la_code =</span> LAD21CD) <span class="sc">|&gt;</span></span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(la_code, <span class="st">"W"</span>))</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_id =</span> MSOA21CD,</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">msoa_name =</span> MSOA21NM</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>base_path <span class="ot">&lt;-</span> here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>survey_microdata <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"survey_microdata_msoayear.csv"</span>),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>la_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-ltla.geojson"</span>),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="at">la_code =</span> LAD21CD) <span class="sc">|&gt;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(la_code, <span class="st">"W"</span>))</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>msoa_boundaries <span class="ot">&lt;-</span> <span class="fu">st_read</span>(</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"boundaries-msoa.geojson"</span>),</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">quiet =</span> <span class="cn">TRUE</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="at">area_id =</span> MSOA21CD,</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="at">msoa_name =</span> MSOA21NM</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">str_starts</span>(area_id, <span class="st">"W"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<section id="the-survey-microdata" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="the-survey-microdata"><span class="header-section-number">1</span> The Survey Microdata</h2>
-<p>The analysis uses a teaching dataset based on three waves of the <strong>National Survey for Wales (NSW): 2020-2021, 2022-2023, and 2024-2025</strong>.</p>
-<p>The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering topics such as transport, health, education, public services, housing, internet access, climate change, and the Welsh language. The cleaned microdata combine three survey periods into one harmonised survey microdata.</p>
-<p>The raw survey geography and stratification variable is Local Authority, while the estimation domain here is MSOA. The cleaned survey file therefore assigns each respondent to a synthetic MSOA within their Local Authority using deterministic random allocation. The resulting MSOA estimates should not be interpreted as substantive findings about individual places.</p>
-<p>This design has two purposes:</p>
+<section id="about-the-survey" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="about-the-survey"><span class="header-section-number">1</span> About the survey</h2>
+<p>The analysis uses a harmonised dataset of three waves of the <strong>National Survey for Wales (NSW): 2020-2021, 2022-2023, and 2024-2025</strong>. The NSW is a repeated cross-sectional survey of people in Wales, with annual survey periods covering transport, health, education, public services, housing, internet access, climate change, and the Welsh language.</p>
+<p>The raw survey geography and stratification variable is Local Authority. In this guide, each respondent is assigned to a synthetic MSOA within their Local Authority using random allocation. This serves two purposes:</p>
 <ul>
 <li><strong>Higher spatial resolution.</strong> The synthetic MSOA assignment supports MSOA-level direct estimation, area-level SAE, spatial modelling, and unit-level SAE with poststratification.</li>
-<li><strong>Privacy and disclosure protection.</strong> The assigned MSOA is not the respondent’s true MSOA, so we avoid presenting fine-grained respondent locations.</li>
+<li><strong>Privacy.</strong> The assigned MSOA is not the respondent’s true MSOA, so we avoid presenting fine-grained respondent locations.</li>
 </ul>
 <div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -339,28 +372,25 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Survey period labels use their end year. For example, the <code>2020-2021</code> survey wave is labelled as the <code>2021</code> wave.</p>
+<p>In the UK, <strong>Local Authorities (LAs)</strong> are administrative areas responsible for local government, also referred to as unitary authorities in Wales. <strong>Middle Layer Super Output Areas (MSOAs)</strong> are smaller statistical areas used to report census and other official statistics in England and Wales. Each contains about 2,000–6,000 households and 5,000–15,000 residents, and lies within a single Local Authority.</p>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
-<p><img src="dataprep_files/figure-html/data-geo-counts-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
+<p><img src="dataprep-survey_files/figure-html/data-geo-counts-1.png" class="img-fluid figure-img" style="width:100.0%"></p>
 </figure>
 </div>
 </div>
 </div>
 </section>
-<section id="data-preparation" class="level2" data-number="2">
-<h2 data-number="2" class="anchored" data-anchor-id="data-preparation"><span class="header-section-number">2</span> Data Preparation</h2>
+<section id="preparation-steps-for-small-area-estimation" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="preparation-steps-for-small-area-estimation"><span class="header-section-number">2</span> Preparation steps for small-area estimation</h2>
 <section id="target-estimand" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="target-estimand"><span class="header-section-number">2.1</span> Target Estimand</h3>
-<p>The <em>target estimand</em> is the quantity we want to estimate. It defines the outcome, population, geography, time period, and the auxiliary data needed for modelling, such as predictors or population counts.</p>
-<blockquote class="blockquote">
-<p>Estimate <strong>what outcome among which population</strong>, across <strong>which geography</strong> and <strong>time period</strong>.</p>
-</blockquote>
-<p>For example,</p>
+<p>The <em>target estimand</em> is the quantity we want to estimate. It defines the outcome, population, geography, time period, and the auxiliary data needed for modelling, such as predictors or population counts, and can be articulated in the following format. Note that the most common outcomes to estimate are <strong>means</strong> of continuous variables and <strong>prevalence</strong>—expressed as shares or proportions—within the target population.</p>
+<p>In this guide, our target estimand is:</p>
 <div class="target-estimand callout callout-style-simple callout-note no-icon callout-titled" title="Target estimand">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -373,19 +403,31 @@ Target estimand
 <div class="callout-body-container callout-body">
 <div class="estimand-grid">
 <ul>
-<li><strong>Outcome and Population:</strong> Share of adults who cycle frequently</li>
-<li><strong>Geography:</strong> MSOAs in Wales</li>
-<li><strong>Time:</strong> 2021, 2023, and 2025</li>
+<li><strong>Outcome:</strong> Share of adults who cycle for transport several times weekly</li>
+<li><strong>Spatial:</strong> MSOAs in Wales</li>
+<li><strong>Temporal:</strong> Over three survey periods 2020-2021, 2022-2023, and 2024-2025</li>
 </ul>
 </div>
 </div>
 </div>
-<p>The most common outcomes to estimate are <strong>means</strong> of continuous variables and <strong>prevalence</strong>—expressed as shares or proportions—within the target population.</p>
 </section>
 <section id="estimation-domains" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="estimation-domains"><span class="header-section-number">2.2</span> Estimation Domains</h3>
 <p>In spatio-temporal SAE, the estimand is evaluated for every combination of area and time period. Each combination forms an area-time cell for which an estimate is required. The <strong>estimation domains</strong> are the complete set of these cells.</p>
-<p>For the estimand defined above, the estimation domains therefore include every <em>MSOA-year</em> combination, including cells with no survey observations. For use in <code>INLA</code>, each area and time period is assigned a numeric index.</p>
+<p>For the estimand defined above, the estimation domains therefore include every <em>MSOA–year</em> combination, including cells with no survey observations.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>With <code>R-INLA</code>, each area and time period is assigned a numeric index.</p>
+</div>
+</div>
 <div class="cell">
 <details>
 <summary>Code</summary>
@@ -473,8 +515,8 @@ Target estimand
 </div>
 </div>
 </section>
-<section id="survey-data" class="level3" data-number="2.3">
-<h3 data-number="2.3" class="anchored" data-anchor-id="survey-data"><span class="header-section-number">2.3</span> Survey Data</h3>
+<section id="survey-input-data" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="survey-input-data"><span class="header-section-number">2.3</span> Survey input data</h3>
 <p>With the estimand being the prevalence of frequent cycling among the target population, we derive a binary indicator, <code>freq_cyclist</code>, from <code>AtFrqBke</code> (the active-travel question on cycling frequency).</p>
 <table class="table">
 <colgroup>
@@ -507,12 +549,12 @@ Target estimand
 </tr>
 </tbody>
 </table>
-<p>Each survey respondent may also require a design weight and other survey design components if available such as stratum, which are used to calculate design-based <a href="./direct-estimation.html">direct estimates</a>, i.e.&nbsp;the estimated target population proportions or means using only the observed survey data. First, we include <code>strata</code>, which identifies each respondent’s sampling group and allows the variance calculation to reflect a stratified, non-random sampling design. Second, because the survey question was administered to the full sample in some waves and to a subsample in others, the appropriate <code>weight</code> variable varies by wave:</p>
+<p>Each survey respondent may also require a design weight and other survey design components if available such as <code>strata</code>. Because the survey question was administered to the full sample in some waves and to a subsample in others, the appropriate <code>weight</code> variable in this case varies by wave:</p>
 <ul>
-<li>Use <code>SampleTravelWeight</code> in survey waves where this question was asked to a subsample and the corresponding weight for this module exists (2023),</li>
-<li>Use <code>SampleAdultWeight</code> in survey waves where this question was asked to the main sample (2021, 2025).</li>
+<li>Use <code>SampleAdultWeight</code> in the 2020-2021 and 2024-2025 survey waves where the active travel module was asked to the main sample.</li>
+<li>Use <code>SampleTravelWeight</code> in the 2022-2023 survey wave where the active travel module was asked to only a subsample.</li>
 </ul>
-<p>The final survey indicator input has <em>one row per respondent-wave</em>:</p>
+<p>The final survey input has <em>one row per respondent-wave</em>:</p>
 <table class="table">
 <thead>
 <tr class="header">
@@ -531,7 +573,7 @@ Target estimand
 </tr>
 <tr class="odd">
 <td><code>area_id</code></td>
-<td>MSOA (Synthetic assignment)</td>
+<td>MSOA (randomised assignment)</td>
 </tr>
 <tr class="even">
 <td><code>freq_cyclist</code></td>
@@ -543,7 +585,7 @@ Target estimand
 </tr>
 <tr class="even">
 <td><code>weight</code></td>
-<td>Matched weight</td>
+<td>Weight</td>
 </tr>
 </tbody>
 </table>
@@ -651,480 +693,9 @@ Target estimand
 </tr>
 </tbody>
 </table>
-</section>
-<section id="auxiliary-data-for-spatio-temporal-sae" class="level3" data-number="2.4">
-<h3 data-number="2.4" class="anchored" data-anchor-id="auxiliary-data-for-spatio-temporal-sae"><span class="header-section-number">2.4</span> Auxiliary Data for spatio-temporal SAE</h3>
-<p>This tutorial assumes that all required forms of auxiliary data are available so that each method can be demonstrated. In practice, auxiliary-data availability, quality, coverage, and compatibility with the target estimand are important constraints on method selection.</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Auxiliary data</th>
-<th style="text-align: center;"><a href="./direct-estimation.html">Direct estimation</a></th>
-<th style="text-align: center;"><a href="./area-sae-fh.html">Area-level SAE</a></th>
-<th style="text-align: center;"><a href="./unit-sae-summ.html">Unit-level SAE w/ Summaries</a></th>
-<th style="text-align: center;"><a href="./unit-sae-mrp.html">Unit-level SAE w/ Poststrat</a></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Spatial graph</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr class="even">
-<td>Modelling: Area-level predictors</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Optional as contextual</td>
-<td style="text-align: center;">Optional as contextual</td>
-</tr>
-<tr class="odd">
-<td>Modelling: Unit-level predictors</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-<tr class="even">
-<td>Aggregation: predictor area summaries</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">Yes</td>
-<td style="text-align: center;">-</td>
-</tr>
-<tr class="odd">
-<td>Aggregation: poststratification table</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">-</td>
-<td style="text-align: center;">Yes</td>
-</tr>
-</tbody>
-</table>
-<section id="spatial-adjacency-matrix" class="level4" data-number="2.4.1">
-<h4 data-number="2.4.1" class="anchored" data-anchor-id="spatial-adjacency-matrix"><span class="header-section-number">2.4.1</span> Spatial Adjacency Matrix</h4>
-<p>To represent spatial structure in the model, we construct an adjacency matrix identifying neighbouring MSOAs by their numeric indices. Neighbours are defined using Queen contiguity: two MSOAs are adjacent if their boundaries share an edge or a point. This structure allows the model to identify potential spatial autocorrelation and borrow information across neighbouring areas, supporting predictions for areas with limited or missing survey observations.</p>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>msoa_boundaries_sorted <span class="ot">&lt;-</span> msoa_boundaries <span class="sc">|&gt;</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(area_index, <span class="at">by =</span> <span class="st">"area_id"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(area_inla_id)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>msoa_neighbours <span class="ot">&lt;-</span> <span class="fu">poly2nb</span>(</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  msoa_boundaries_sorted,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">queen =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">row.names =</span> msoa_boundaries_sorted<span class="sc">$</span>area_id</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Write the Queen-contiguity graph in INLA's .adj format.</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>spatial_graph_file <span class="ot">&lt;-</span> <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"msoa_queen.adj"</span>)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="fu">nb2INLA</span>(</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">file =</span> spatial_graph_file,</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">nb =</span> msoa_neighbours</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
-<p><img src="assets/spatial_weights_example.png" class="img-fluid"></p>
-</section>
-<section id="modelling-input-area-level-predictors" class="level4" data-number="2.4.2">
-<h4 data-number="2.4.2" class="anchored" data-anchor-id="modelling-input-area-level-predictors"><span class="header-section-number">2.4.2</span> Modelling input: Area-level Predictors</h4>
-<p>Area-level SAE models need area-level predictors that plausibly explain between-area differences in the target outcome. The area predictors are drawn from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a> at MSOA level. These variables are chosen because frequent cycling is likely to vary with population composition, density, and car access.</p>
-<p>The area-predictor input <em>has one row per MSOA</em>:</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>area_id</code></td>
-<td>MSOA estimation area</td>
-</tr>
-<tr class="even">
-<td><code>pop_density</code></td>
-<td>Population density</td>
-</tr>
-<tr class="odd">
-<td><code>age_adult_mean</code></td>
-<td>Mean adult age</td>
-</tr>
-<tr class="even">
-<td><code>female_adult_share</code></td>
-<td>Adult female share</td>
-</tr>
-<tr class="odd">
-<td><code>caraccess_adult_share</code></td>
-<td>Adult share with car access</td>
-</tr>
-</tbody>
-</table>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"areapred_freqcyc.csv"</span>),</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 12%">
-<col style="width: 15%">
-<col style="width: 19%">
-<col style="width: 24%">
-<col style="width: 28%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">area_id</th>
-<th style="text-align: right;">pop_density</th>
-<th style="text-align: right;">age_adult_mean</th>
-<th style="text-align: right;">female_adult_share</th>
-<th style="text-align: right;">caraccess_adult_share</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">62.8</td>
-<td style="text-align: right;">53.79873</td>
-<td style="text-align: right;">0.5062767</td>
-<td style="text-align: right;">0.9042796</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">53.1</td>
-<td style="text-align: right;">57.52072</td>
-<td style="text-align: right;">0.5122086</td>
-<td style="text-align: right;">0.9322563</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000003</td>
-<td style="text-align: right;">2298.2</td>
-<td style="text-align: right;">49.32470</td>
-<td style="text-align: right;">0.5185096</td>
-<td style="text-align: right;">0.7528430</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000004</td>
-<td style="text-align: right;">99.2</td>
-<td style="text-align: right;">55.72271</td>
-<td style="text-align: right;">0.5165892</td>
-<td style="text-align: right;">0.9350858</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000005</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: right;">57.86602</td>
-<td style="text-align: right;">0.5230947</td>
-<td style="text-align: right;">0.9223441</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000006</td>
-<td style="text-align: right;">152.4</td>
-<td style="text-align: right;">51.49705</td>
-<td style="text-align: right;">0.5169933</td>
-<td style="text-align: right;">0.8796979</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</section>
-<section id="modelling-input-unit-level-predictors" class="level4" data-number="2.4.3">
-<h4 data-number="2.4.3" class="anchored" data-anchor-id="modelling-input-unit-level-predictors"><span class="header-section-number">2.4.3</span> Modelling input: Unit-Level Predictors</h4>
-<p>Unit-level SAE models need predictors that can be used to model the outcome at the individual level. To model individual <code>freq_cyclist</code>, we extract or transform these unit-level predictors from the survey microdata <em>for each individual respondent row</em>:</p>
-<table class="table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>age</code></td>
-<td>Respondent age</td>
-</tr>
-<tr class="even">
-<td><code>sex</code></td>
-<td>Respondent sex (<code>1</code> for Male, <code>2</code> for Female)</td>
-</tr>
-<tr class="odd">
-<td><code>caraccess</code></td>
-<td>Binary car access predictor (<code>1</code> for car/van available, <code>0</code> for none available)</td>
-</tr>
-</tbody>
-</table>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"surveyind_freqcyc.csv"</span>),</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(unit_id, time_id, area_id, sex, age, caraccess) <span class="sc">|&gt;</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th style="text-align: left;">unit_id</th>
-<th style="text-align: right;">time_id</th>
-<th style="text-align: left;">area_id</th>
-<th style="text-align: right;">sex</th>
-<th style="text-align: right;">age</th>
-<th style="text-align: right;">caraccess</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">202100001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000007</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">69</td>
-<td style="text-align: right;">1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">202100002</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000006</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">66</td>
-<td style="text-align: right;">1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">202100003</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">67</td>
-<td style="text-align: right;">1</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">202100004</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000003</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">52</td>
-<td style="text-align: right;">1</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">202100005</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000002</td>
-<td style="text-align: right;">2</td>
-<td style="text-align: right;">81</td>
-<td style="text-align: right;">0</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">202100006</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">W02000004</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">71</td>
-<td style="text-align: right;">1</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</section>
-<section id="aggregation-input-for-unit-level-sae" class="level4" data-number="2.4.4">
-<h4 data-number="2.4.4" class="anchored" data-anchor-id="aggregation-input-for-unit-level-sae"><span class="header-section-number">2.4.4</span> Aggregation input for unit-level SAE</h4>
-<section id="predictor-area-summaries" class="level5 unnumbered">
-<h5 class="unnumbered anchored" data-anchor-id="predictor-area-summaries">Predictor area summaries</h5>
-<p>A unit-level SAE method can aggregate unit-level model predictions to target small areas using area summaries of the corresponding predictors. See <a href="./unit-sae-summ.html">unit-level SAE with predictor summaries</a></p>
-<p>E.g.,</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Predictor</th>
-<th>Corresponding area summary</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>age</code>, continuous</td>
-<td><code>age_adult_mean</code></td>
-</tr>
-<tr class="even">
-<td><code>sex_female</code>, binary</td>
-<td><code>female_adult_share</code></td>
-</tr>
-<tr class="odd">
-<td><code>caraccess</code>, binary</td>
-<td><code>caraccess_adult_share</code></td>
-</tr>
-</tbody>
-</table>
-<p>The previously prepared variables <code>age_adult_mean</code>, <code>female_adult_share</code>, and <code>caraccess_adult_share</code> can therefore serve two different purposes. In an area-level SAE model, they are used as area-level predictors. In a unit-level SAE model, they are used as area summaries of the corresponding unit-level predictors.</p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Note
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Area-level predictors only need to capture relevant variation between areas. Area summaries used to aggregate unit-level predictions must not only cover all unit-level predictors used in the model, they must also correctly represent the target population (e.g., the adult population) and therefore require a stricter preparation pipeline.</p>
-</div>
-</div>
-</section>
-</section>
-<section id="poststratification-table" class="level4" data-number="2.4.5">
-<h4 data-number="2.4.5" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.4.5</span> Poststratification Table</h4>
-<p>A more sophisticated unit-level SAE method may use population cell counts, provided in a poststratification table, to aggregate fitted model predictions for each area-time cell. This weights predictions according to the target population distribution of the unit-level predictors instead of relying on area summaries. Predictors included in the poststratification table must be represented as categorical variables. See <a href="./unit-sae-mrp.html">unit-level SAE with poststratification</a></p>
-<p>We use a three-variable poststratification table with <code>age_band</code>, <code>sex</code>, and <code>caraccess</code>, sourced from <a href="https://www.ons.gov.uk/census">ONS UK Census 2021</a>. The population counts must correspond to the target population defined by the estimand—for example, the adult population.</p>
-<p>The poststratification output <em>has one row per area-time-age-sex-caraccess combination</em>:</p>
-<table class="table">
-<thead>
-<tr class="header">
-<th>Column</th>
-<th>Meaning</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>area_id</code></td>
-<td>MSOA estimation area</td>
-</tr>
-<tr class="even">
-<td><code>time_id</code></td>
-<td>Survey year</td>
-</tr>
-<tr class="odd">
-<td><code>age_band</code></td>
-<td>Census age band</td>
-</tr>
-<tr class="even">
-<td><code>sex</code></td>
-<td>Male / Female</td>
-</tr>
-<tr class="odd">
-<td><code>caraccess</code></td>
-<td>Binary car-access indicator</td>
-</tr>
-<tr class="even">
-<td><code>pop_count</code></td>
-<td><em>Adult</em> population count</td>
-</tr>
-</tbody>
-</table>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">file.path</span>(base_path, <span class="st">"clean"</span>, <span class="st">"poststrat_freqcyc_age_sex_car_21.csv"</span>),</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-<div class="cell-output-display">
-<div class="kable-table">
-<table class="table table-sm table-striped small">
-<colgroup>
-<col style="width: 13%">
-<col style="width: 11%">
-<col style="width: 29%">
-<col style="width: 12%">
-<col style="width: 5%">
-<col style="width: 13%">
-<col style="width: 13%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">area_id</th>
-<th style="text-align: right;">time_id</th>
-<th style="text-align: left;">msoa_name</th>
-<th style="text-align: left;">age_band</th>
-<th style="text-align: right;">sex</th>
-<th style="text-align: right;">caraccess</th>
-<th style="text-align: right;">pop_count</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">16_24</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">42</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">16_24</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">314</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">25_34</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">31</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">25_34</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">373</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">35_49</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">42</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">W02000001</td>
-<td style="text-align: right;">2021</td>
-<td style="text-align: left;">Isle of Anglesey 001</td>
-<td style="text-align: left;">35_49</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">563</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
+<p>The number of usable observations varies substantially by wave, with the 2023 subsample providing the fewest responses. These averages mask variation between MSOAs, so some area-year estimates will be based on very few observations, motivating the small-area estimation approaches introduced in the following sections.</p>
 
 
-</section>
 </section>
 </section>
 
@@ -1383,8 +954,8 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./direct-estimation.html" class="pagination-link">
-        <span class="nav-page-text">Direct estimation</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./dataprep-aux.html" class="pagination-link">
+        <span class="nav-page-text">Auxiliary data</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>
