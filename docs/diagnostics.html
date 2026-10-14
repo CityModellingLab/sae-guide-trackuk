@@ -343,9 +343,9 @@ ul.task-list li input[type="checkbox"] {
 <h2 data-number="1" class="anchored" data-anchor-id="smoothing-and-target-population-adjustment"><span class="header-section-number">1</span> Smoothing and target population adjustment</h2>
 <p>The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.</p>
 <ul>
-<li><strong>Direct estimates</strong> are highly uneven, while <strong>model-based estimates</strong> are smoother because they borrow strength across areas, years, predictors, or poststratification cells.</li>
-<li>The <strong>area-level model</strong> is anchored by the direct estimates, so the strength of local survey evidence influences the modelled results. In 2025, which has the largest median sample size, the modelled estimates remain closer to the direct estimates. In the earlier waves with weaker direct evidence, the modelled estimates are much higher.</li>
-<li>Differences between the estimates from the two <strong>unit-level models</strong> are more subtle because they use similar models and spatio-temporal structure. Their main difference is how the individual predictions are projected to the MSOA–year level.</li>
+<li><strong>Direct estimates</strong> for domains with non-missing estimates and positive variances vary substantially, while model-based estimates are more concentrated.</li>
+<li>The <strong>area-level model</strong> primarily improves the precision of direct estimates, although weak survey evidence limits this improvement. Estimates differ markedly between 2025, which has stronger evidence and a higher median sample size, and the 2021 and 2023 waves, which have weaker evidence.</li>
+<li>The <strong>unit-level models</strong> instead model individual-level patterns and reveal a directional increase in frequent cycling among Welsh adults over time.</li>
 </ul>
 <div class="cell">
 <div class="cell-output-display">
@@ -357,7 +357,8 @@ ul.task-list li input[type="checkbox"] {
 <p><img src="diagnostics_files/figure-html/diag-method-agreement-1.png" class="img-fluid" style="width:100.0%"></p>
 </div>
 </div>
-<p>In a unit-level SAE workflow, <strong>poststratification</strong> changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
+<p>Differences between the estimates from the two unit-level models are more subtle because and lie in how the individual predictions are projected to the MSOA–year estimation domains.</p>
+<p><strong>Poststratification</strong> changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="diagnostics_files/figure-html/diag-poststratification-effect-1.png" class="img-fluid" style="width:100.0%"></p>

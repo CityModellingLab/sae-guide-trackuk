@@ -53,6 +53,7 @@ effect_colours <- c(
 )
 selected_time_id <- 2025
 estimate_palette <- "magma"
+variance_tolerance <- 1e-12
 uncertainty_palette <- "Oranges"
 
 ci_width_label <- label_number(accuracy = 1, scale = 100, suffix = " pp")
@@ -105,7 +106,7 @@ chart_theme <- theme_minimal(base_size = 12) +
     plot.title.position = "plot",
     strip.text = element_text(size = 12, face = "bold"),
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
-    plot.subtitle = element_text(size = 12, hjust = 0.5, colour = "grey30"),
+    plot.subtitle = element_text(size = 15, hjust = 0.5, colour = "grey30"),
     legend.position = "bottom"
   )
 
@@ -179,7 +180,8 @@ read_estimate_set <- function(path, method_name, estimate_col, ci_width_col = NU
       area_id,
       time_id,
       estimate = .data[[estimate_col]],
-      ci_width = ci_width
+      ci_width = ci_width,
+      variance = if (is.null(variance_col)) NA_real_ else .data[[variance_col]]
     )
 }
 
@@ -260,7 +262,17 @@ estimate_sets <- bind_rows(
 )
 
 diagnostic_estimates <- estimate_sets |>
-  mutate(method = factor(method, levels = method_levels))
+  mutate(
+    method = factor(method, levels = method_levels),
+    display_estimate = if_else(
+      method == "Direct" &
+        (!is.finite(estimate) |
+          !is.finite(variance) |
+          variance <= variance_tolerance),
+      NA_real_,
+      estimate
+    )
+  )
 
 area_draw_bundle <- read_draw_bundle(
   file.path(output_path, "freqcyc_posterior_draws_area.rds"),
@@ -290,21 +302,17 @@ ci_width_colour_limits <- safe_limit(
 ci_width_axis_limits <- safe_limit(diagnostic_estimates$ci_width)
 
 estimate_colour_limits <- safe_limit(
-  diagnostic_estimates$estimate,
+  diagnostic_estimates$display_estimate,
   fallback = 0.1,
   p = 0.97
 )
 
 estimate_plot_data <- diagnostic_estimates |>
-  filter(!is.na(estimate)) |>
+  filter(is.finite(display_estimate)) |>
   mutate(
     method = factor(method, levels = method_levels),
     time_id = factor(time_id, levels = period_order)
   )
-
-overall_route_means <- estimate_plot_data |>
-  group_by(method) |>
-  summarise(mean_estimate = mean(estimate, na.rm = TRUE), .groups = "drop")
 
 estimate_map_data <- msoa_boundaries |>
   left_join(diagnostic_estimates, by = "area_id") |>
@@ -535,9 +543,9 @@ The table below summarises the main data requirements, strengths, and limitation
 
 The distribution and rank plots compare the spread of MSOA-year estimates across methods, while the maps compare the local pattern of estimated frequent cycling.
 
-- **Direct estimates** are highly uneven, while **model-based estimates** are smoother because they borrow strength across areas, years, predictors, or poststratification cells. 
-- The **area-level model** is anchored by the direct estimates, so the strength of local survey evidence influences the modelled results. In 2025, which has the largest median sample size, the modelled estimates remain closer to the direct estimates. In the earlier waves with weaker direct evidence, the modelled estimates are much higher.
-- Differences between the estimates from the two **unit-level models** are more subtle because they use similar models and spatio-temporal structure. Their main difference is how the individual predictions are projected to the MSOA--year level.
+- **Direct estimates** for domains with non-missing estimates and positive variances vary substantially, while model-based estimates are more concentrated.
+- The **area-level model** primarily improves the precision of direct estimates, although weak survey evidence limits this improvement. Estimates differ markedly between 2025, which has stronger evidence and a higher median sample size, and the 2021 and 2023 waves, which have weaker evidence.
+- The **unit-level models** instead model individual-level patterns and reveal a directional increase in frequent cycling among Welsh adults over time.
 
 ```{r}
 #| label: diag-estimate-density-map
@@ -547,9 +555,9 @@ The distribution and rank plots compare the spread of MSOA-year estimates across
 #| out-width: "100%"
 
 route_labels <- c(
-  "Direct" = "Direct estimation from survey data",
+  "Direct" = "Direct estimation",
   "FH" = "Area-level SAE",
-  "BHF" = "Unit-level SAE + summaries",
+  "BHF" = "Unit-level SAE + predictor summaries",
   "MRP Rich" = "Unit-level SAE + poststratification"
 )
 
@@ -566,24 +574,14 @@ density_theme <- theme_minimal(base_size = 12) +
   )
 
 make_route_density <- function(method_name, show_x_title = FALSE) {
-  mean_data <- overall_route_means |>
-    filter(method == method_name)
-
   estimate_plot_data |>
     filter(method == method_name) |>
-    ggplot(aes(x = estimate, colour = time_id, fill = time_id)) +
+    ggplot(aes(x = display_estimate, colour = time_id, fill = time_id)) +
     geom_density(linewidth = 0.9, alpha = 0.2, na.rm = TRUE) +
-    geom_vline(
-      data = mean_data,
-      aes(xintercept = mean_estimate, linetype = "Overall mean"),
-      inherit.aes = FALSE,
-      colour = "#202124",
-      linewidth = 0.9
-    ) +
     scale_x_continuous(
       breaks = seq(0, 0.10, by = 0.025),
       labels = label_percent(accuracy = 0.1),
-      limits = c(0, 0.10),
+      limits = c(0, 0.15),
       expand = expansion(mult = c(0, 0.015))
     ) +
     scale_colour_manual(
@@ -596,14 +594,9 @@ make_route_density <- function(method_name, show_x_title = FALSE) {
       breaks = as.character(period_order),
       labels = unname(period_labels[as.character(period_order)])
     ) +
-    scale_linetype_manual(
-      name = NULL,
-      values = c("Overall mean" = "22")
-    ) +
     guides(
       fill = "none",
-      colour = guide_legend(order = 1),
-      linetype = guide_legend(order = 2)
+      colour = guide_legend(order = 1)
     ) +
     labs(
       title = unname(route_labels[[method_name]]),
@@ -616,18 +609,10 @@ make_route_density <- function(method_name, show_x_title = FALSE) {
 
 make_route_map <- function(method_name, year, show_year = FALSE) {
   map_data <- estimate_map_data |>
-    filter(method == method_name, time_id == year) |>
-    mutate(
-      map_estimate = if_else(
-        method_name == "Direct" &
-          (is.na(estimate) | is.na(ci_width) | ci_width <= 0),
-        NA_real_,
-        estimate
-      )
-    )
+    filter(method == method_name, time_id == year)
 
   ggplot(map_data) +
-    geom_sf(aes(fill = map_estimate), colour = "transparent") +
+    geom_sf(aes(fill = display_estimate), colour = "transparent") +
     scale_fill_viridis_c(
       name = "Estimate",
       option = estimate_palette,
@@ -699,7 +684,8 @@ map_grid <- (
 (density_column | map_grid) +
   plot_layout(widths = c(1.25, 1.75), guides = "keep") +
   plot_annotation(
-    title = "Estimated frequent-cycling prevalence across estimation routes",
+    title = "Estimated frequent-cycling prevalence across SAE routes",
+    subtitle = "Domains with missing estimates or invalid variances excluded",
     theme = annotation_theme
   ) &
   theme(legend.position = "bottom")
@@ -732,7 +718,9 @@ method_agreement |>
   theme(panel.grid.minor = element_blank())
 ```
 
-In a unit-level SAE workflow, **poststratification** changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
+Differences between the estimates from the two unit-level models are more subtle because and lie in how the individual predictions are projected to the MSOA--year estimation domains.
+
+**Poststratification** changes how the predicted population cells are aggregated. By examining the two MSOAs with the largest increase and decrease after adjusting to the Census population shares, we see that the Cardiff MSOA with higher proportions of groups that are more likely to be frequent cyclists (e.g., 16-49 males with no cars) sees an upward poststratified adjustment compared to the other where there are higher proportions of groups with lower probabilities (e.g., 50+ females with access to a car).
 
 ```{r}
 #| label: diag-poststratification-effect
