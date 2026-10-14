@@ -74,25 +74,25 @@ Prepare one row per area, or per area-time cell when predictors vary over time. 
 
 ### Poststratification table
 
-Use poststratification when population counts are available for combinations of the unit-level predictors. The table must contain the same categorical predictors used in the poststratified unit-level model.
+Use poststratification when population counts are available for combinations of the unit-level predictors, usually from national censuses as source. The table must contain the same categorical predictors used in the unit-level model.
 
 | Column | Description |
 |---|---|
 | `area_id` | Area identifier |
 | `time_id` | Time period |
-| poststratification variables | Predictor categories used in the model; must match `unitpred_*` |
-| `pop_count` | Population count for each cell |
+| `unitpred_*` | Categorical predictors used in the model |
+| `pop_count` | Population count for each cell (e.g., area x time x female x age 16-24) |
 
 ## Recommended output schema
 
 Use a common output schema so estimates can be mapped, compared across model specifications if needed, or exported.
 
-| Column | Required | Description |
-|---|:---:|---|
-| `area_id` | Yes | Estimated area |
-| `time_id` | Yes | Estimated period |
-| `estimate` | Yes | Small-area estimate |
-| `variance` | Yes | Sampling variance (direct estimates) or posterior variance (model-based estimates) |
-| `lower`, `upper` | Recommended | Lower and upper interval bounds. They can be approximated from `variance`. Other derived uncertainty measures include CI width and the coefficient of variation (CV). |
-| `n` | Recommended | Number of usable survey observations |
-| `remarks` | Recommended | Estimation method, model specification, or other notes |
+| Column | Description |
+|---|---|
+| `area_id` |  Estimation area |
+| `time_id` | Estimation period |
+| `estimate` |  Small-area estimate |
+| `variance` |  Sampling variance (direct estimates) or posterior variance (modelled estimates) |
+| `lower`, `upper` | *(Recommended)* Interval bounds, approximated from `variance`. Other derived uncertainty measures include CI widths and coefficients of variation (CV) |
+| `n` | *(Recommended)* Number of usable survey observations |
+| `remarks` | *(Recommended)* Estimation method, model specification, or other notes |

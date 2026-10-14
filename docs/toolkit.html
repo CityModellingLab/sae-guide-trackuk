@@ -477,7 +477,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="poststratification-table" class="level3" data-number="2.5">
 <h3 data-number="2.5" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.5</span> Poststratification table</h3>
-<p>Use poststratification when population counts are available for combinations of the unit-level predictors. The table must contain the same categorical predictors used in the poststratified unit-level model.</p>
+<p>Use poststratification when population counts are available for combinations of the unit-level predictors, usually from national censuses as source. The table must contain the same categorical predictors used in the unit-level model.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -499,12 +499,12 @@ ul.task-list li input[type="checkbox"] {
 <td>Time period</td>
 </tr>
 <tr class="odd">
-<td>poststratification variables</td>
-<td>Predictor categories used in the model; must match <code>unitpred_*</code></td>
+<td><code>unitpred_*</code></td>
+<td>Categorical predictors used in the model</td>
 </tr>
 <tr class="even">
 <td><code>pop_count</code></td>
-<td>Population count for each cell</td>
+<td>Population count for each cell (e.g., area x time x female x age 16-24)</td>
 </tr>
 </tbody>
 </table>
@@ -515,52 +515,43 @@ ul.task-list li input[type="checkbox"] {
 <p>Use a common output schema so estimates can be mapped, compared across model specifications if needed, or exported.</p>
 <table class="table">
 <colgroup>
-<col style="width: 27%">
-<col style="width: 45%">
-<col style="width: 27%">
+<col style="width: 50%">
+<col style="width: 50%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Column</th>
-<th style="text-align: center;">Required</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><code>area_id</code></td>
-<td style="text-align: center;">Yes</td>
-<td>Estimated area</td>
+<td>Estimation area</td>
 </tr>
 <tr class="even">
 <td><code>time_id</code></td>
-<td style="text-align: center;">Yes</td>
-<td>Estimated period</td>
+<td>Estimation period</td>
 </tr>
 <tr class="odd">
 <td><code>estimate</code></td>
-<td style="text-align: center;">Yes</td>
 <td>Small-area estimate</td>
 </tr>
 <tr class="even">
 <td><code>variance</code></td>
-<td style="text-align: center;">Yes</td>
-<td>Sampling variance (direct estimates) or posterior variance (model-based estimates)</td>
+<td>Sampling variance (direct estimates) or posterior variance (modelled estimates)</td>
 </tr>
 <tr class="odd">
 <td><code>lower</code>, <code>upper</code></td>
-<td style="text-align: center;">Recommended</td>
-<td>Lower and upper interval bounds. They can be approximated from <code>variance</code>. Other derived uncertainty measures include CI width and the coefficient of variation (CV).</td>
+<td><em>(Recommended)</em> Interval bounds, approximated from <code>variance</code>. Other derived uncertainty measures include CI widths and coefficients of variation (CV)</td>
 </tr>
 <tr class="even">
 <td><code>n</code></td>
-<td style="text-align: center;">Recommended</td>
-<td>Number of usable survey observations</td>
+<td><em>(Recommended)</em> Number of usable survey observations</td>
 </tr>
 <tr class="odd">
 <td><code>remarks</code></td>
-<td style="text-align: center;">Recommended</td>
-<td>Estimation method, model specification, or other notes</td>
+<td><em>(Recommended)</em> Estimation method, model specification, or other notes</td>
 </tr>
 </tbody>
 </table>
