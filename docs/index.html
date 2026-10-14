@@ -91,10 +91,10 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Data</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data-processing" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Data Processing</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-data">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-data-processing">    
         <li>
     <a class="dropdown-item" href="./dataprep-survey.html" rel="" target="">
  <span class="dropdown-text">Survey data</span></a>
@@ -105,15 +105,15 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
- <span class="dropdown-text">Toolkit: Input data preparation</span></a>
+ <span class="dropdown-text">Guide: SAE input preparation</span></a>
   </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Tutorial</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorials" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Tutorials</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorials">    
         <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
  <span class="dropdown-text">1. Direct estimation</span></a>
@@ -176,7 +176,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Data</span></a>
+ <span class="menu-text">Data Processing</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -197,7 +197,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Toolkit: Input data preparation</span></a>
+ <span class="menu-text">Guide: SAE input preparation</span></a>
   </div>
 </li>
       </ul>
@@ -205,7 +205,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
+ <span class="menu-text">Tutorials</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -259,7 +259,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#bayesian-inference-and-r-inla" id="toc-bayesian-inference-and-r-inla" class="nav-link" data-scroll-target="#bayesian-inference-and-r-inla"><span class="header-section-number">1.2</span> Bayesian inference and <code>R-INLA</code></a></li>
   </ul></li>
   <li><a href="#navigating-the-guide" id="toc-navigating-the-guide" class="nav-link" data-scroll-target="#navigating-the-guide"><span class="header-section-number">2</span> Navigating the guide</a></li>
-  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data"><span class="header-section-number">3</span> Data</a></li>
+  <li><a href="#about-the-data" id="toc-about-the-data" class="nav-link" data-scroll-target="#about-the-data"><span class="header-section-number">3</span> About the data</a></li>
   <li><a href="#about-the-project" id="toc-about-the-project" class="nav-link" data-scroll-target="#about-the-project"><span class="header-section-number">4</span> About the project</a></li>
   <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references"><span class="header-section-number">5</span> References</a></li>
   </ul>
@@ -318,11 +318,12 @@ ul.task-list li input[type="checkbox"] {
 <li><strong><a href="./unit-sae-mrp.html">Unit-level SAE with poststratification</a></strong></li>
 </ol>
 <p>Finally, the <strong><a href="./diagnostics.html">comparative diagnostics</a></strong> analyse the different outputs side by side, showing the advantages and trade-offs of each approach.</p>
+<p>This tutorial uses R version <code>4.5.3</code> and key packages: <code>INLA</code> for modelling, <code>spdep</code>/<code>sf</code> for spatial data, and <code>survey</code> for survey design, where applicable.</p>
 </section>
-<section id="data" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="data"><span class="header-section-number">3</span> Data</h2>
+<section id="about-the-data" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="about-the-data"><span class="header-section-number">3</span> About the data</h2>
 <p>The estimand is frequent cycling behaviour among adults in Welsh Middle Layer Super Output Areas (MSOAs), using three waves of the <a href="https://www.gov.wales/national-survey-wales"><strong>National Survey for Wales</strong></a>. Reliable MSOA-level estimates can help policymakers identify inequalities in cycling participation and target active-travel interventions and infrastructure. Auxiliary data derived from the <em>England and Wales Census of 2021</em>, produced by the Office for National Statistics (ONS).</p>
-<p>The preparation of the <strong><a href="./dataprep-survey.html">survey data</a></strong> and <strong><a href="./dataprep-aux.html">auxiliary data</a></strong> is detailed in the following sections. The <strong><a href="./toolkit.html">data preptoolkit</a></strong> guides researchers in reformatting your own data so you can apply the codes in this guide more easily.</p>
+<p>The preparation of the <strong><a href="./dataprep-survey.html">survey data</a></strong> and <strong><a href="./dataprep-aux.html">auxiliary data</a></strong> is detailed in the following sections. The <strong><a href="./toolkit.html">input prepration guide</a></strong> outlines prefered input data schemas for easier application to own data following the tutorial.</p>
 </section>
 <section id="about-the-project" class="level2" data-number="4">
 <h2 data-number="4" class="anchored" data-anchor-id="about-the-project"><span class="header-section-number">4</span> About the project</h2>

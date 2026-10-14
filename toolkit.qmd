@@ -1,99 +1,98 @@
 ---
-title: "Input data preparation toolkit"
+title: "Guide to SAE input preparation"
 subtitle: "Bring your own data"
 ---
 
-This toolkit provides templates for preparing survey and auxiliary data with the expected input and output schemas.
+Use these input and output schemas to prepare survey and auxiliary data for small-area estimation workflows outlined in this guide.
 
-## Define the estimands and estimation domain
+## Define the estimand and estimation domains
 
-Start by defining the estimand:
+Define the estimand by specifying:
 
-- what outcome is being estimated;
-- who is in the target population;
-- at which spatial scale;
-- over which time periods.
+- the outcome;
+- the target population;
+- the spatial scale; and
+- the time periods.
 
-In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination estimation domain. Each is an **area-time cell**.
+In spatio-temporal SAE, estimates are required for every area-time combination. Each combination is an **area-time cell**.
 
 ## Prepare the modelling input
 
-Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.
+Prepare the inputs required by the selected SAE method and the available auxiliary data.
 
-| Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE w/ Summaries](unit-sae-summ.qmd) | [Unit-level SAE w/ Poststrat](unit-sae-mrp.qmd) |
+| Auxiliary data | [Direct estimation](direct-estimation.qmd) | [Area-level SAE](area-sae-fh.qmd) | [Unit-level SAE with Predictor Summaries](unit-sae-summ.qmd) | [Unit-level SAE with Poststratification (MRP)](unit-sae-mrp.qmd) |
 |---|:---:|:---:|:---:|:---:|
 | Modelling: Area-level predictors |-| Yes |Optional | Optional |
 | Modelling: Unit-level predictors |-|-| Yes | Yes |
 | Aggregation: predictor summaries |-|-| Yes |-|
 | Aggregation: poststratification table |-|-|-| Yes |
-| Spatial graph |-| Optional | Optional | Optional |
+| Spatial graph |-| If used | If used | If used |
 
-### Domain frame
+### Estimation domain frame
 
-Always prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by `R-INLA`.
+Prepare a domain frame with one row for every area-time cell that should receive an estimate. It stores the numeric indices used by `R-INLA`.
 
-| Column | Meaning |
+| Column | Description |
 |---|---|
 | `area_id` | Area to estimate |
 | `time_id` | Time period to estimate |
 | `area_inla_id` | Numeric area index for `R-INLA` |
 | `time_inla_id` | Numeric time index for `R-INLA` |
-| labels | Optional area or period labels for display |
+| labels | Optional human-readable area or time labels |
 
 ### Spatial graph
 
-Prepare a spatial graph if the selected model includes spatial random effects.
+Provide a spatial graph when the model includes structured spatial random effects. Create an adjacency graph from polygon boundaries with [`spdep::poly2nb()`](https://r-spatial.github.io/spdep/reference/poly2nb.html) and write it in INLA's `.adj` format with [`spdep::nb2INLA()`](https://r-spatial.github.io/spdep/reference/nb2INLA.html). Its node order must match `area_inla_id`.
 
-| File | Meaning |
+| File | Description |
 |---|---|
 | `*.adj` | Adjacency graph, ordered by `area_inla_id` |
 
 ### Survey input
 
-Prepare one row per respondent-period for the outcome being estimated.
+Prepare one row for each respondent and survey period.
 
-| Column | Meaning |
+| Column | Description |
 |---|---|
 | `unit_id` | Respondent identifier |
-| `area_id` | Area assigned to the respondent |
+| `area_id` | Area associated with the respondent |
 | `time_id` | Survey period |
 | `outcome` | Outcome used in estimation, either binary or continuous |
 | `weight` | Survey design weight |
 | `strata` | Survey stratum, if available |
 | `unitpred_*` | Unit-level predictors, required for unit-level SAE |
 
-### Area-level predictors or summaries
+### Area-level predictors and summaries
 
-Prepare one row per area. This table is used for area-level SAE, and unit-level SAE with area summaries, if applicable.
+Prepare one row per area, or per area-time cell when predictors vary over time. This input supports area-level SAE and unit-level SAE with predictor summaries.
 
-| Column | Meaning |
+| Column | Description |
 |---|---|
 | `area_id` | Area identifier |
-| `areapred_*` | Raw area-level predictors |
-| `*_mean` / `*_share` | Area summaries of `unitpred_*`, required for unit-level SAE with area summaries |
+| `areapred_*` | Area-level predictors used in the model |
+| `*_mean` / `*_share` | Population summaries corresponding to `unitpred_*`, required for unit-level SAE with predictor summaries |
 
-### Poststratification data
+### Poststratification table
 
-Required for unit-level SAE with poststratification. The population cells must match the categorical `unitpred_*` variables used in the poststratified unit-level model.
+Use poststratification when population counts are available for combinations of the unit-level predictors. The table must contain the same categorical predictors used in the poststratified unit-level model.
 
-| Column | Meaning |
+| Column | Description |
 |---|---|
 | `area_id` | Area identifier |
 | `time_id` | Time period |
-| population groups | Categories used for poststratification; must match `unitpred_*` |
+| poststratification variables | Predictor categories used in the model; must match `unitpred_*` |
 | `pop_count` | Population count for each cell |
 
-## Expected outputs
+## Recommended output schema
 
-After each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.
+Use a common output schema so estimates can be mapped, compared across model specifications if needed, or exported.
 
-| Column | Meaning |
-|---|---|
-| `area_id` | Estimated area |
-| `time_id` | Estimated period |
-| `estimate` | Direct or model-based point estimate |
-| `variance` | Sampling or posterior variance |
-| `lower`, `upper` | Uncertainty interval bounds |
-| `ci_width` | Uncertainty interval width |
-| `n` | Sample size |
-| `remarks` | Estimation method, model specs or other notes (optional but recommended) |
+| Column | Required | Description |
+|---|:---:|---|
+| `area_id` | Yes | Estimated area |
+| `time_id` | Yes | Estimated period |
+| `estimate` | Yes | Small-area estimate |
+| `variance` | Yes | Sampling variance (direct estimates) or posterior variance (model-based estimates) |
+| `lower`, `upper` | Recommended | Lower and upper interval bounds. They can be approximated from `variance`. Other derived uncertainty measures include CI width and the coefficient of variation (CV). |
+| `n` | Recommended | Number of usable survey observations |
+| `remarks` | Recommended | Estimation method, model specification, or other notes |

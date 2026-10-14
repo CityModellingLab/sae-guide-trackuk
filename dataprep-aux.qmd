@@ -58,10 +58,9 @@ msoa_neighbours <- poly2nb(
   row.names = msoa_boundaries_sorted$area_id
 )
 
-# Write the Queen-contiguity graph in INLA's .adj format.
-spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
+# Write and save the graph in INLA readable format
 nb2INLA(
-  file = spatial_graph_file,
+  file = file.path(base_path, "clean", "msoa_queen.adj"),
   nb = msoa_neighbours
 )
 ```

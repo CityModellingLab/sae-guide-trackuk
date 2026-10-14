@@ -33,7 +33,7 @@ domain_frame <- read_csv(
   show_col_types = FALSE
 )
 
-spatial_graph_file <- file.path(base_path, "clean", "msoa_queen.adj")
+spatial_graph <- file.path(base_path, "clean", "msoa_queen.adj")
 ```
 
 ```{r}
@@ -189,7 +189,7 @@ m1_formula <- freq_cyclist ~
   f(
     area_inla_id,
     model = "bym2",
-    graph = spatial_graph_file,
+    graph = spatial_graph,
     scale.model = TRUE
   )
 

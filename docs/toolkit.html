@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Small Area Estimation for Urban Analytics - Input data preparation toolkit</title>
+<title>Small Area Estimation for Urban Analytics - Guide to SAE input preparation</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -92,10 +92,10 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Data</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-data-processing" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Data Processing</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-data">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-data-processing">    
         <li>
     <a class="dropdown-item" href="./dataprep-survey.html" rel="" target="">
  <span class="dropdown-text">Survey data</span></a>
@@ -106,15 +106,15 @@ ul.task-list li input[type="checkbox"] {
   </li>  
         <li>
     <a class="dropdown-item" href="./toolkit.html" rel="" target="">
- <span class="dropdown-text">Toolkit: Input data preparation</span></a>
+ <span class="dropdown-text">Guide: SAE input preparation</span></a>
   </li>  
     </ul>
   </li>
   <li class="nav-item dropdown ">
-    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorial" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
- <span class="menu-text">Tutorial</span>
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-tutorials" role="button" data-bs-toggle="dropdown" aria-expanded="false" rel="" target="">
+ <span class="menu-text">Tutorials</span>
     </a>
-    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorial">    
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-tutorials">    
         <li>
     <a class="dropdown-item" href="./direct-estimation.html" rel="" target="">
  <span class="dropdown-text">1. Direct estimation</span></a>
@@ -148,7 +148,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep-survey.html">Data</a></li><li class="breadcrumb-item"><a href="./toolkit.html">Toolkit: Input data preparation</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./dataprep-survey.html">Data Processing</a></li><li class="breadcrumb-item"><a href="./toolkit.html">Guide: SAE input preparation</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -177,7 +177,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
- <span class="menu-text">Data</span></a>
+ <span class="menu-text">Data Processing</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -198,7 +198,7 @@ ul.task-list li input[type="checkbox"] {
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./toolkit.html" class="sidebar-item-text sidebar-link active">
- <span class="menu-text">Toolkit: Input data preparation</span></a>
+ <span class="menu-text">Guide: SAE input preparation</span></a>
   </div>
 </li>
       </ul>
@@ -206,7 +206,7 @@ ul.task-list li input[type="checkbox"] {
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
             <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
- <span class="menu-text">Tutorial</span></a>
+ <span class="menu-text">Tutorials</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
           </a> 
@@ -254,16 +254,16 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#define-the-estimands-and-estimation-domain" id="toc-define-the-estimands-and-estimation-domain" class="nav-link active" data-scroll-target="#define-the-estimands-and-estimation-domain"><span class="header-section-number">1</span> Define the estimands and estimation domain</a></li>
+  <li><a href="#define-the-estimand-and-estimation-domains" id="toc-define-the-estimand-and-estimation-domains" class="nav-link active" data-scroll-target="#define-the-estimand-and-estimation-domains"><span class="header-section-number">1</span> Define the estimand and estimation domains</a></li>
   <li><a href="#prepare-the-modelling-input" id="toc-prepare-the-modelling-input" class="nav-link" data-scroll-target="#prepare-the-modelling-input"><span class="header-section-number">2</span> Prepare the modelling input</a>
   <ul class="collapse">
-  <li><a href="#domain-frame" id="toc-domain-frame" class="nav-link" data-scroll-target="#domain-frame"><span class="header-section-number">2.1</span> Domain frame</a></li>
+  <li><a href="#estimation-domain-frame" id="toc-estimation-domain-frame" class="nav-link" data-scroll-target="#estimation-domain-frame"><span class="header-section-number">2.1</span> Estimation domain frame</a></li>
   <li><a href="#spatial-graph" id="toc-spatial-graph" class="nav-link" data-scroll-target="#spatial-graph"><span class="header-section-number">2.2</span> Spatial graph</a></li>
   <li><a href="#survey-input" id="toc-survey-input" class="nav-link" data-scroll-target="#survey-input"><span class="header-section-number">2.3</span> Survey input</a></li>
-  <li><a href="#area-level-predictors-or-summaries" id="toc-area-level-predictors-or-summaries" class="nav-link" data-scroll-target="#area-level-predictors-or-summaries"><span class="header-section-number">2.4</span> Area-level predictors or summaries</a></li>
-  <li><a href="#poststratification-data" id="toc-poststratification-data" class="nav-link" data-scroll-target="#poststratification-data"><span class="header-section-number">2.5</span> Poststratification data</a></li>
+  <li><a href="#area-level-predictors-and-summaries" id="toc-area-level-predictors-and-summaries" class="nav-link" data-scroll-target="#area-level-predictors-and-summaries"><span class="header-section-number">2.4</span> Area-level predictors and summaries</a></li>
+  <li><a href="#poststratification-table" id="toc-poststratification-table" class="nav-link" data-scroll-target="#poststratification-table"><span class="header-section-number">2.5</span> Poststratification table</a></li>
   </ul></li>
-  <li><a href="#expected-outputs" id="toc-expected-outputs" class="nav-link" data-scroll-target="#expected-outputs"><span class="header-section-number">3</span> Expected outputs</a></li>
+  <li><a href="#recommended-output-schema" id="toc-recommended-output-schema" class="nav-link" data-scroll-target="#recommended-output-schema"><span class="header-section-number">3</span> Recommended output schema</a></li>
   </ul>
 </nav>
     </div>
@@ -272,7 +272,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Input data preparation toolkit</h1>
+<h1 class="title">Guide to SAE input preparation</h1>
 <p class="subtitle lead">Bring your own data</p>
 </div>
 
@@ -288,29 +288,29 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<p>This toolkit provides templates for preparing survey and auxiliary data with the expected input and output schemas.</p>
-<section id="define-the-estimands-and-estimation-domain" class="level2" data-number="1">
-<h2 data-number="1" class="anchored" data-anchor-id="define-the-estimands-and-estimation-domain"><span class="header-section-number">1</span> Define the estimands and estimation domain</h2>
-<p>Start by defining the estimand:</p>
+<p>Use these input and output schemas to prepare survey and auxiliary data for small-area estimation workflows outlined in this guide.</p>
+<section id="define-the-estimand-and-estimation-domains" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="define-the-estimand-and-estimation-domains"><span class="header-section-number">1</span> Define the estimand and estimation domains</h2>
+<p>Define the estimand by specifying:</p>
 <ul>
-<li>what outcome is being estimated;</li>
-<li>who is in the target population;</li>
-<li>at which spatial scale;</li>
-<li>over which time periods.</li>
+<li>the outcome;</li>
+<li>the target population;</li>
+<li>the spatial scale; and</li>
+<li>the time periods.</li>
 </ul>
-<p>In a spatio-temporal SAE workflow, the target estimate is produced for every area-by-period combination estimation domain. Each is an <strong>area-time cell</strong>.</p>
+<p>In spatio-temporal SAE, estimates are required for every area-time combination. Each combination is an <strong>area-time cell</strong>.</p>
 </section>
 <section id="prepare-the-modelling-input" class="level2" data-number="2">
 <h2 data-number="2" class="anchored" data-anchor-id="prepare-the-modelling-input"><span class="header-section-number">2</span> Prepare the modelling input</h2>
-<p>Prepare the inputs according to the route chosen in the flowchart. All methods need a defined area-time grid. Other inputs depend on whether the method uses direct estimates, unit-level modelling, area summaries, or poststratification.</p>
+<p>Prepare the inputs required by the selected SAE method and the available auxiliary data.</p>
 <table class="table">
 <thead>
 <tr class="header">
 <th>Auxiliary data</th>
 <th style="text-align: center;"><a href="./direct-estimation.html">Direct estimation</a></th>
 <th style="text-align: center;"><a href="./area-sae-fh.html">Area-level SAE</a></th>
-<th style="text-align: center;"><a href="./unit-sae-summ.html">Unit-level SAE w/ Summaries</a></th>
-<th style="text-align: center;"><a href="./unit-sae-mrp.html">Unit-level SAE w/ Poststrat</a></th>
+<th style="text-align: center;"><a href="./unit-sae-summ.html">Unit-level SAE with Predictor Summaries</a></th>
+<th style="text-align: center;"><a href="./unit-sae-mrp.html">Unit-level SAE with Poststratification (MRP)</a></th>
 </tr>
 </thead>
 <tbody>
@@ -345,20 +345,20 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>Spatial graph</td>
 <td style="text-align: center;">-</td>
-<td style="text-align: center;">Optional</td>
-<td style="text-align: center;">Optional</td>
-<td style="text-align: center;">Optional</td>
+<td style="text-align: center;">If used</td>
+<td style="text-align: center;">If used</td>
+<td style="text-align: center;">If used</td>
 </tr>
 </tbody>
 </table>
-<section id="domain-frame" class="level3" data-number="2.1">
-<h3 data-number="2.1" class="anchored" data-anchor-id="domain-frame"><span class="header-section-number">2.1</span> Domain frame</h3>
-<p>Always prepare a domain frame. It has one row for every area-time cell that should receive an estimate and stores the numeric indices used by <code>R-INLA</code>.</p>
+<section id="estimation-domain-frame" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="estimation-domain-frame"><span class="header-section-number">2.1</span> Estimation domain frame</h3>
+<p>Prepare a domain frame with one row for every area-time cell that should receive an estimate. It stores the numeric indices used by <code>R-INLA</code>.</p>
 <table class="table">
 <thead>
 <tr class="header">
 <th>Column</th>
-<th>Meaning</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
@@ -380,19 +380,19 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="odd">
 <td>labels</td>
-<td>Optional area or period labels for display</td>
+<td>Optional human-readable area or time labels</td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="spatial-graph" class="level3" data-number="2.2">
 <h3 data-number="2.2" class="anchored" data-anchor-id="spatial-graph"><span class="header-section-number">2.2</span> Spatial graph</h3>
-<p>Prepare a spatial graph if the selected model includes spatial random effects.</p>
+<p>Provide a spatial graph when the model includes structured spatial random effects. Create an adjacency graph from polygon boundaries with <a href="https://r-spatial.github.io/spdep/reference/poly2nb.html"><code>spdep::poly2nb()</code></a> and write it in INLA’s <code>.adj</code> format with <a href="https://r-spatial.github.io/spdep/reference/nb2INLA.html"><code>spdep::nb2INLA()</code></a>. Its node order must match <code>area_inla_id</code>.</p>
 <table class="table">
 <thead>
 <tr class="header">
 <th>File</th>
-<th>Meaning</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
@@ -405,12 +405,12 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="survey-input" class="level3" data-number="2.3">
 <h3 data-number="2.3" class="anchored" data-anchor-id="survey-input"><span class="header-section-number">2.3</span> Survey input</h3>
-<p>Prepare one row per respondent-period for the outcome being estimated.</p>
+<p>Prepare one row for each respondent and survey period.</p>
 <table class="table">
 <thead>
 <tr class="header">
 <th>Column</th>
-<th>Meaning</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
@@ -420,7 +420,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td><code>area_id</code></td>
-<td>Area assigned to the respondent</td>
+<td>Area associated with the respondent</td>
 </tr>
 <tr class="odd">
 <td><code>time_id</code></td>
@@ -445,9 +445,9 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </section>
-<section id="area-level-predictors-or-summaries" class="level3" data-number="2.4">
-<h3 data-number="2.4" class="anchored" data-anchor-id="area-level-predictors-or-summaries"><span class="header-section-number">2.4</span> Area-level predictors or summaries</h3>
-<p>Prepare one row per area. This table is used for area-level SAE, and unit-level SAE with area summaries, if applicable.</p>
+<section id="area-level-predictors-and-summaries" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="area-level-predictors-and-summaries"><span class="header-section-number">2.4</span> Area-level predictors and summaries</h3>
+<p>Prepare one row per area, or per area-time cell when predictors vary over time. This input supports area-level SAE and unit-level SAE with predictor summaries.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -456,7 +456,7 @@ ul.task-list li input[type="checkbox"] {
 <thead>
 <tr class="header">
 <th>Column</th>
-<th>Meaning</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
@@ -466,18 +466,18 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 <tr class="even">
 <td><code>areapred_*</code></td>
-<td>Raw area-level predictors</td>
+<td>Area-level predictors used in the model</td>
 </tr>
 <tr class="odd">
 <td><code>*_mean</code> / <code>*_share</code></td>
-<td>Area summaries of <code>unitpred_*</code>, required for unit-level SAE with area summaries</td>
+<td>Population summaries corresponding to <code>unitpred_*</code>, required for unit-level SAE with predictor summaries</td>
 </tr>
 </tbody>
 </table>
 </section>
-<section id="poststratification-data" class="level3" data-number="2.5">
-<h3 data-number="2.5" class="anchored" data-anchor-id="poststratification-data"><span class="header-section-number">2.5</span> Poststratification data</h3>
-<p>Required for unit-level SAE with poststratification. The population cells must match the categorical <code>unitpred_*</code> variables used in the poststratified unit-level model.</p>
+<section id="poststratification-table" class="level3" data-number="2.5">
+<h3 data-number="2.5" class="anchored" data-anchor-id="poststratification-table"><span class="header-section-number">2.5</span> Poststratification table</h3>
+<p>Use poststratification when population counts are available for combinations of the unit-level predictors. The table must contain the same categorical predictors used in the poststratified unit-level model.</p>
 <table class="table">
 <colgroup>
 <col style="width: 50%">
@@ -486,7 +486,7 @@ ul.task-list li input[type="checkbox"] {
 <thead>
 <tr class="header">
 <th>Column</th>
-<th>Meaning</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
@@ -499,8 +499,8 @@ ul.task-list li input[type="checkbox"] {
 <td>Time period</td>
 </tr>
 <tr class="odd">
-<td>population groups</td>
-<td>Categories used for poststratification; must match <code>unitpred_*</code></td>
+<td>poststratification variables</td>
+<td>Predictor categories used in the model; must match <code>unitpred_*</code></td>
 </tr>
 <tr class="even">
 <td><code>pop_count</code></td>
@@ -510,52 +510,57 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </section>
 </section>
-<section id="expected-outputs" class="level2" data-number="3">
-<h2 data-number="3" class="anchored" data-anchor-id="expected-outputs"><span class="header-section-number">3</span> Expected outputs</h2>
-<p>After each method, convert outputs to a common comparison schema so estimates can be compared, mapped, and joined back to other urban datasets.</p>
+<section id="recommended-output-schema" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="recommended-output-schema"><span class="header-section-number">3</span> Recommended output schema</h2>
+<p>Use a common output schema so estimates can be mapped, compared across model specifications if needed, or exported.</p>
 <table class="table">
 <colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
+<col style="width: 27%">
+<col style="width: 45%">
+<col style="width: 27%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>Column</th>
-<th>Meaning</th>
+<th style="text-align: center;">Required</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><code>area_id</code></td>
+<td style="text-align: center;">Yes</td>
 <td>Estimated area</td>
 </tr>
 <tr class="even">
 <td><code>time_id</code></td>
+<td style="text-align: center;">Yes</td>
 <td>Estimated period</td>
 </tr>
 <tr class="odd">
 <td><code>estimate</code></td>
-<td>Direct or model-based point estimate</td>
+<td style="text-align: center;">Yes</td>
+<td>Small-area estimate</td>
 </tr>
 <tr class="even">
 <td><code>variance</code></td>
-<td>Sampling or posterior variance</td>
+<td style="text-align: center;">Yes</td>
+<td>Sampling variance (direct estimates) or posterior variance (model-based estimates)</td>
 </tr>
 <tr class="odd">
 <td><code>lower</code>, <code>upper</code></td>
-<td>Uncertainty interval bounds</td>
+<td style="text-align: center;">Recommended</td>
+<td>Lower and upper interval bounds. They can be approximated from <code>variance</code>. Other derived uncertainty measures include CI width and the coefficient of variation (CV).</td>
 </tr>
 <tr class="even">
-<td><code>ci_width</code></td>
-<td>Uncertainty interval width</td>
+<td><code>n</code></td>
+<td style="text-align: center;">Recommended</td>
+<td>Number of usable survey observations</td>
 </tr>
 <tr class="odd">
-<td><code>n</code></td>
-<td>Sample size</td>
-</tr>
-<tr class="even">
 <td><code>remarks</code></td>
-<td>Estimation method, model specs or other notes (optional but recommended)</td>
+<td style="text-align: center;">Recommended</td>
+<td>Estimation method, model specification, or other notes</td>
 </tr>
 </tbody>
 </table>
